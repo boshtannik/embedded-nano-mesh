@@ -42,6 +42,6 @@ impl Transciever {
     ) -> Result<(), Error> {
         // Split message into pieces, or not?
 
-        Err(Error::Send)
+        Err(Error::SomeError)
     }
 }
