@@ -2,19 +2,7 @@
 #![no_main]
 
 use core::cell::Cell;
-use std::process::Output;
 
-use arduino_hal::{
-    clock::MHz16,
-    default_serial,
-    hal::{
-        port::{PD0, PD1},
-        Atmega,
-    },
-    pac::USART0,
-    port::mode::Input,
-};
-use heapless::String;
 use packet::DeviceAddress;
 use panic_halt as _;
 
@@ -33,16 +21,6 @@ use transciever::Transciever;
 //
 // 2 - Layer of data routing
 //      2.1 - Transit packets queue
-
-type SerialType = Cell<
-    avr_hal_generic::usart::Usart<
-        Atmega,
-        USART0,
-        avr_hal_generic::port::Pin<Input, PD0>,
-        avr_hal_generic::port::Pin<Output, PD1>,
-        MHz16,
-    >,
->;
 
 #[arduino_hal::entry]
 fn main() -> ! {
