@@ -6,27 +6,27 @@ type MessageQueue = Deque<String64, 10>;
 type PacketQueue = Deque<Packet, 10>;
 
 pub struct Transmitter {
-    messages_queue: MessageQueue,
-    packets_queue: PacketQueue,
+    message_queue: MessageQueue,
+    packet_queue: PacketQueue,
 }
 
 enum Error {
-    PacketsQueueIsFull,
-    MessagesQueueIsFull,
+    PacketQueueIsFull,
+    MessageQueueIsFull,
 }
 
 impl Transmitter {
     pub fn new() -> Transmitter {
         Transmitter {
-            messages_queue: MessageQueue::new(),
-            packets_queue: PacketQueue::new(),
+            message_queue: MessageQueue::new(),
+            packet_queue: PacketQueue::new(),
         }
     }
 
     pub fn send_message(&mut self, item: String64) -> Result<(), Error> {
-        match self.messages_queue.push_back(item) {
+        match self.message_queue.push_back(item) {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::MessagesQueueIsFull),
+            Err(_) => Err(Error::MessageQueueIsFull),
         }
     }
 }
