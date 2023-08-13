@@ -1,18 +1,26 @@
 mod config;
-use heapless::Vec;
+mod traits;
+mod types;
 
-use self::config::{AddressType, ChecksumType, FlagsType};
+pub use types::String64;
+
+use crate::serial_println;
+
+use self::{
+    traits::{Packer, StringPacker},
+    types::{AddressType, ChecksumType, FlagsType, String64Bytes},
+};
+#[derive(Clone)]
 pub struct DeviceAddress(pub AddressType);
 
-pub use config::String64;
-
+#[derive(Clone)]
 pub struct Packet {
     source_device_identifyer: DeviceAddress,
     destination_device_identifyer: DeviceAddress,
     protocol_version: u8,
     flags: FlagsType,
     content_length: usize,
-    content: Vec<u8, { config::CONTENT_SIZE }>,
+    content: String64Bytes,
     checksum: ChecksumType,
 }
 
@@ -20,7 +28,7 @@ impl Packet {
     pub fn new(
         source_device_identifyer: DeviceAddress,
         destination_device_identifyer: DeviceAddress,
-        content: Vec<u8, { config::CONTENT_SIZE }>,
+        content: String64Bytes,
     ) -> Packet {
         let mut new_packet = Packet {
             source_device_identifyer,
@@ -93,5 +101,48 @@ impl Packet {
     /// calculated value into .checksum field
     fn summarize(&mut self) {
         self.checksum = self.calculate_packet_sum();
+    }
+}
+
+impl Packer for Packet {
+    fn pack(
+        source_device_identifyer: DeviceAddress,
+        destination_device_identifyer: DeviceAddress,
+        content: String64Bytes,
+    ) -> Packet {
+        Packet::new(
+            source_device_identifyer,
+            destination_device_identifyer,
+            content,
+        )
+    }
+    fn unpack(packet: Packet) -> String64Bytes {
+        packet.content
+    }
+}
+
+impl StringPacker for Packet {
+    fn pack_message(
+        source_device_identifyer: DeviceAddress,
+        destination_device_identifyer: DeviceAddress,
+        message: String64,
+    ) -> Packet {
+        <Packet as Packer>::pack(
+            source_device_identifyer,
+            destination_device_identifyer,
+            message.into_bytes(),
+        )
+    }
+
+    /// As long as hepless::String type consist of 1 byte characters:
+    /// So the new string will be created, and filled byte by bytre characters.
+    fn unpack_message(got_packet: Packet) -> String64 {
+        let mut result = String64::new();
+        for byte in got_packet.content.iter() {
+            result.push(*byte as char).unwrap_or_else(|_| {
+                serial_println!("Error in StringPacker trait in unpack_message in pushing byte to result string").unwrap();
+            })
+        }
+        result
     }
 }

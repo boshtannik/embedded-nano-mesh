@@ -1,15 +1,15 @@
 #![no_std]
 #![no_main]
 
-use core::cell::Cell;
-
+use arduino_hal::default_serial;
 use packet::DeviceAddress;
 use panic_halt as _;
 
 mod config;
 mod packet;
+mod serial;
 mod transciever;
-use packet::String64;
+
 use transciever::Transciever;
 
 // Multiple layers networking
@@ -27,15 +27,18 @@ fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
-    let led_pin = pins.d13.into_output();
+    serial::init(default_serial!(dp, pins, 57600));
 
-    let mut serial = default_serial!(dp, pins, 57600);
-    let mut celled_serial = Cell::new(serial);
-
-    let mut transciever_ins = Transciever::new(DeviceAddress(1), Cell::clone(&celled_serial));
+    let mut transciever_ins = Transciever::new(DeviceAddress(1));
     // transciever_ins.send_message(String::from("Hello world"), DeviceAddress(2));
+    serial_println!("Second use of serial println").unwrap();
 
-    let stringa = String64::from("Hello world");
-
-    loop {}
+    loop {
+        transciever_ins.update();
+        for received_message in transciever_ins.received_messages() {
+            for byte in received_message.as_bytes() {
+                serial_write_byte!(*byte);
+            }
+        }
+    }
 }

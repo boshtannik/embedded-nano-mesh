@@ -1,47 +1,55 @@
-use core::cell::Cell;
+use core::cell::RefCell;
 
 use crate::packet::DeviceAddress;
-use arduino_hal::{clock::MHz16, hal::Atmega, pac::USART0, usart};
 
-use self::sender::Transmitter;
+mod receiver;
+mod transmitter;
+mod types;
+
+use receiver::Receiver;
+use transmitter::Transmitter;
+
 use crate::packet::String64;
 
-mod sender;
+use self::types::{MessageQueue, PacketQueue};
 
 pub struct Transciever {
     my_address: DeviceAddress,
     transmitter: Transmitter,
-    // receiver: Receiver,
+    receiver: Receiver,
 }
 
 enum Error {
-    SomeError, // Dummy
+    Send,
 }
 
-type CelledSerialType = Cell<
-    avr_hal_generic::usart::Usart<
-        Atmega,
-        USART0,
-        avr_hal_generic::port::Pin<Input, PD0>,
-        avr_hal_generic::port::Pin<Output, PD1>,
-        MHz16,
-    >,
->;
-
 impl Transciever {
-    pub fn new(my_address: DeviceAddress, reead_write: CelledSerialType) -> Transciever {
+    pub fn new(my_address: DeviceAddress) -> Transciever {
+        let mut transit_packet_queue: RefCell<PacketQueue> = RefCell::new(PacketQueue::new());
         Transciever {
             my_address,
-            transmitter: Transmitter::new(),
+            transmitter: Transmitter::new(RefCell::clone(&transit_packet_queue)),
+            receiver: Receiver::new(RefCell::clone(&transit_packet_queue)),
         }
     }
+
     pub fn send_message(
         &mut self,
         message: String64,
         target_address: DeviceAddress,
     ) -> Result<(), Error> {
         // Split message into pieces, or not?
+        Err(Error::Send)
+    }
 
-        Err(Error::SomeError)
+    pub fn update(&mut self) {
+        self.receiver.update();
+        // Iterate over received messages:
+        //     In case if message is addressed to other Transciever -> move it into transit_packet_queue
+        self.transmitter.update();
+    }
+
+    pub fn received_messages(&mut self) -> MessageQueue {
+        self.receiver.received_messages()
     }
 }

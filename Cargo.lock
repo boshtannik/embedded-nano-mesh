@@ -162,6 +162,7 @@ name = "nano-proj"
 version = "0.1.0"
 dependencies = [
  "arduino-hal",
+ "avr-device",
  "embedded-hal",
  "heapless",
  "nb 0.1.3",
