@@ -1,7 +1,8 @@
 use core::cell::RefCell;
 
-use crate::packet::DeviceAddress;
+use crate::packet::DeviceIdentifyer;
 
+mod config;
 mod receiver;
 mod transmitter;
 mod types;
@@ -9,37 +10,42 @@ mod types;
 use receiver::Receiver;
 use transmitter::Transmitter;
 
-use crate::packet::String64;
-
-use self::types::{MessageQueue, PacketQueue};
+use self::types::PacketQueue;
 
 pub struct Transciever {
-    my_address: DeviceAddress,
     transmitter: Transmitter,
     receiver: Receiver,
 }
 
-enum Error {
-    Send,
+pub enum Error {
+    SendError,
 }
 
 impl Transciever {
-    pub fn new(my_address: DeviceAddress) -> Transciever {
+    pub fn new(my_address: DeviceIdentifyer) -> Transciever {
         let mut transit_packet_queue: RefCell<PacketQueue> = RefCell::new(PacketQueue::new());
         Transciever {
-            my_address,
-            transmitter: Transmitter::new(RefCell::clone(&transit_packet_queue)),
-            receiver: Receiver::new(RefCell::clone(&transit_packet_queue)),
+            transmitter: Transmitter::new(
+                my_address.clone(),
+                RefCell::clone(&transit_packet_queue),
+            ),
+            receiver: Receiver::new(my_address.clone(), RefCell::clone(&transit_packet_queue)),
         }
     }
 
+    /*
     pub fn send_message(
         &mut self,
         message: String64,
-        target_address: DeviceAddress,
+        destination_device_identifyer: DeviceIdentifyer,
     ) -> Result<(), Error> {
-        // Split message into pieces, or not?
-        Err(Error::Send)
+        match self
+            .transmitter
+            .send_message(message, destination_device_identifyer)
+        {
+            Ok(_) => Ok(()),
+            Err(_) => Err(Error::SendError),
+        }
     }
 
     pub fn update(&mut self) {
@@ -52,4 +58,5 @@ impl Transciever {
     pub fn received_messages(&mut self) -> MessageQueue {
         self.receiver.received_messages()
     }
+    */
 }

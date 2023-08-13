@@ -1,4 +1,3 @@
-use arduino_hal::prelude::*;
 use avr_device::interrupt::Mutex;
 use core::cell::RefCell;
 
@@ -14,11 +13,9 @@ pub fn init(serial: Usart) {
 #[macro_export]
 macro_rules! serial_println {
     ($($arg:tt)*) => {
-        ::avr_device::interrupt::free(|cs| {
+            ::avr_device::interrupt::free(|cs| {
             if let Some(serial) = &mut *crate::serial::GLOBAL_SERIAL.borrow(cs).borrow_mut() {
-                ::ufmt::uwriteln!(serial, $($arg)*)
-            } else {
-                Ok(())
+                ::ufmt::uwriteln!(serial, $($arg)*).unwrap()
             }
         })
     }

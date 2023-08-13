@@ -1,1 +1,1 @@
-pub const CONTENT_SIZE: usize = 64;
+pub const CONTENT_SIZE: usize = 32;

@@ -1,34 +1,41 @@
 use core::cell::RefCell;
 
-use heapless::Deque;
+use crate::packet::{DeviceIdentifyer, PacketString};
 
-use crate::packet::{Packet, String64};
-
-type MessageQueue = Deque<String64, 10>;
-pub type PacketQueue = Deque<Packet, 10>;
+use super::types::{MessageQueue, PacketQueue};
 
 pub struct Transmitter {
+    current_device_identifyer: DeviceIdentifyer,
     message_queue: MessageQueue,
     packet_queue: PacketQueue,
     transit_packet_queue: RefCell<PacketQueue>,
 }
 
-enum Error {
+pub enum Error {
     PacketQueueIsFull,
     MessageQueueIsFull,
 }
 
 impl Transmitter {
-    pub fn new(transit_packet_queue: RefCell<PacketQueue>) -> Transmitter {
+    pub fn new(
+        current_device_identifyer: DeviceIdentifyer,
+        transit_packet_queue: RefCell<PacketQueue>,
+    ) -> Transmitter {
         Transmitter {
+            current_device_identifyer,
             message_queue: MessageQueue::new(),
             packet_queue: PacketQueue::new(),
             transit_packet_queue,
         }
     }
 
-    pub fn send_message(&mut self, item: String64) -> Result<(), Error> {
-        match self.message_queue.push_back(item) {
+    /*
+    pub fn send_message(
+        &mut self,
+        message: PacketString,
+        destination_device_identifyer: DeviceIdentifyer,
+    ) -> Result<(), Error> {
+        match self.message_queue.push_back(message) {
             Ok(_) => Ok(()),
             Err(_) => Err(Error::MessageQueueIsFull),
         }
@@ -38,4 +45,5 @@ impl Transmitter {
         // Pack messages into packets
         // In case of sending time has come -> Send packets over serial
     }
+    */
 }

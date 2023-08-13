@@ -1,6 +1,8 @@
 use heapless::Deque;
 
-use crate::packet::{Packet, String64};
+use crate::packet::{Packet, PacketString};
 
-pub type MessageQueue = Deque<String64, 10>;
-pub type PacketQueue = Deque<Packet, 10>;
+use super::config::QUEUE_SIZE;
+
+pub type MessageQueue = Deque<PacketString, QUEUE_SIZE>;
+pub type PacketQueue = Deque<Packet, QUEUE_SIZE>;

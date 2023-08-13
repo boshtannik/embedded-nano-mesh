@@ -1,7 +1,9 @@
 use heapless::{String, Vec};
 
-pub type String64 = String<64>;
-pub type String64Bytes = Vec<u8, 64>;
+use super::config::CONTENT_SIZE;
+
+pub type PacketString = String<CONTENT_SIZE>;
+pub type PacketStringBytes = Vec<u8, CONTENT_SIZE>;
 
 pub type AddressType = u8;
 pub type ChecksumType = u8;

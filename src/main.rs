@@ -2,7 +2,7 @@
 #![no_main]
 
 use arduino_hal::default_serial;
-use packet::DeviceAddress;
+use packet::{DeviceIdentifyer, PacketString};
 use panic_halt as _;
 
 mod config;
@@ -12,16 +12,6 @@ mod transciever;
 
 use transciever::Transciever;
 
-// Multiple layers networking
-// 1 - Layer of data conveyuor.
-//      1.1 - Sending queue.
-//      1.2 - Receiving queue.
-//      1.3 - Received messages iterator
-//      1.4 - Sent messages method
-//
-// 2 - Layer of data routing
-//      2.1 - Transit packets queue
-
 #[arduino_hal::entry]
 fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
@@ -29,16 +19,12 @@ fn main() -> ! {
 
     serial::init(default_serial!(dp, pins, 57600));
 
-    let mut transciever_ins = Transciever::new(DeviceAddress(1));
-    // transciever_ins.send_message(String::from("Hello world"), DeviceAddress(2));
-    serial_println!("Second use of serial println").unwrap();
-
+    let mut transciever = Transciever::new(DeviceIdentifyer(1));
+    /*transciever
+        .send_message(String64::from("Hello world"), DeviceIdentifyer(2))
+        .unwrap_or_else(|_| serial_println!("Error of sending message over transciever"));
+    */
     loop {
-        transciever_ins.update();
-        for received_message in transciever_ins.received_messages() {
-            for byte in received_message.as_bytes() {
-                serial_write_byte!(*byte).unwrap();
-            }
-        }
+        // transciever.update();
     }
 }

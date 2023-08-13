@@ -2,33 +2,33 @@ mod config;
 mod traits;
 mod types;
 
-pub use types::String64;
+pub use types::PacketString;
 
 use crate::serial_println;
 
 use self::{
     traits::{Packer, StringPacker},
-    types::{AddressType, ChecksumType, FlagsType, String64Bytes},
+    types::{AddressType, ChecksumType, FlagsType, PacketStringBytes},
 };
 #[derive(Clone)]
-pub struct DeviceAddress(pub AddressType);
+pub struct DeviceIdentifyer(pub AddressType);
 
 #[derive(Clone)]
 pub struct Packet {
-    source_device_identifyer: DeviceAddress,
-    destination_device_identifyer: DeviceAddress,
+    source_device_identifyer: DeviceIdentifyer,
+    destination_device_identifyer: DeviceIdentifyer,
     protocol_version: u8,
     flags: FlagsType,
     content_length: usize,
-    content: String64Bytes,
+    content: PacketStringBytes,
     checksum: ChecksumType,
 }
 
 impl Packet {
     pub fn new(
-        source_device_identifyer: DeviceAddress,
-        destination_device_identifyer: DeviceAddress,
-        content: String64Bytes,
+        source_device_identifyer: DeviceIdentifyer,
+        destination_device_identifyer: DeviceIdentifyer,
+        content: PacketStringBytes,
     ) -> Packet {
         let mut new_packet = Packet {
             source_device_identifyer,
@@ -106,9 +106,9 @@ impl Packet {
 
 impl Packer for Packet {
     fn pack(
-        source_device_identifyer: DeviceAddress,
-        destination_device_identifyer: DeviceAddress,
-        content: String64Bytes,
+        source_device_identifyer: DeviceIdentifyer,
+        destination_device_identifyer: DeviceIdentifyer,
+        content: PacketStringBytes,
     ) -> Packet {
         Packet::new(
             source_device_identifyer,
@@ -116,16 +116,16 @@ impl Packer for Packet {
             content,
         )
     }
-    fn unpack(packet: Packet) -> String64Bytes {
+    fn unpack(packet: Packet) -> PacketStringBytes {
         packet.content
     }
 }
 
 impl StringPacker for Packet {
     fn pack_message(
-        source_device_identifyer: DeviceAddress,
-        destination_device_identifyer: DeviceAddress,
-        message: String64,
+        source_device_identifyer: DeviceIdentifyer,
+        destination_device_identifyer: DeviceIdentifyer,
+        message: PacketString,
     ) -> Packet {
         <Packet as Packer>::pack(
             source_device_identifyer,
@@ -136,11 +136,11 @@ impl StringPacker for Packet {
 
     /// As long as hepless::String type consist of 1 byte characters:
     /// So the new string will be created, and filled byte by bytre characters.
-    fn unpack_message(got_packet: Packet) -> String64 {
-        let mut result = String64::new();
+    fn unpack_message(got_packet: Packet) -> PacketString {
+        let mut result = PacketString::new();
         for byte in got_packet.content.iter() {
             result.push(*byte as char).unwrap_or_else(|_| {
-                serial_println!("Error in StringPacker trait in unpack_message in pushing byte to result string").unwrap();
+                serial_println!("Error in StringPacker trait in unpack_message in pushing byte to result string");
             })
         }
         result
