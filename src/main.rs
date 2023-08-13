@@ -37,7 +37,7 @@ fn main() -> ! {
         transciever_ins.update();
         for received_message in transciever_ins.received_messages() {
             for byte in received_message.as_bytes() {
-                serial_write_byte!(*byte);
+                serial_write_byte!(*byte).unwrap();
             }
         }
     }
