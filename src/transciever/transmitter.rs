@@ -1,19 +1,20 @@
 use core::cell::RefCell;
 
-use crate::packet::{DeviceIdentifyer, PacketString};
+use crate::{
+    packet::{DeviceIdentifyer, Packet, PacketBytesSerializer, PacketString, StringPacker},
+    serial_println, serial_write_byte,
+};
 
-use super::types::{MessageQueue, PacketQueue};
+use super::types::PacketQueue;
 
 pub struct Transmitter {
     current_device_identifyer: DeviceIdentifyer,
-    message_queue: MessageQueue,
     packet_queue: PacketQueue,
     transit_packet_queue: RefCell<PacketQueue>,
 }
 
 pub enum Error {
     PacketQueueIsFull,
-    MessageQueueIsFull,
 }
 
 impl Transmitter {
@@ -23,27 +24,43 @@ impl Transmitter {
     ) -> Transmitter {
         Transmitter {
             current_device_identifyer,
-            message_queue: MessageQueue::new(),
             packet_queue: PacketQueue::new(),
             transit_packet_queue,
         }
     }
 
-    /*
     pub fn send_message(
         &mut self,
         message: PacketString,
         destination_device_identifyer: DeviceIdentifyer,
     ) -> Result<(), Error> {
-        match self.message_queue.push_back(message) {
+        let packed_message = <Packet as StringPacker>::pack(
+            self.current_device_identifyer.clone(),
+            destination_device_identifyer,
+            message,
+        );
+        match self.packet_queue.push_back(packed_message) {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::MessageQueueIsFull),
+            Err(_) => Err(Error::PacketQueueIsFull),
         }
     }
 
     pub fn update(&mut self) {
-        // Pack messages into packets
-        // In case of sending time has come -> Send packets over serial
+        while let Some(packet) = self.packet_queue.pop_front() {
+            for byte in packet.serialize() {
+                serial_write_byte!(byte)
+                    .unwrap_or_else(|_| serial_println!("Could not write packet byte into serial"));
+            }
+        }
+        /*
+        for packet in self.packet_queue. {
+            for byte in packet.serialize() {
+                serial_write_byte!(byte)
+                    .unwrap_or_else(|_| serial_println!("Could not write packet byte into serial"));
+            }
+        }
+        */
+        // Send packet queue.
+        // Send transit queue
     }
-    */
 }

@@ -2,14 +2,16 @@ mod config;
 mod traits;
 mod types;
 
+pub use traits::BytesPacker;
+pub use traits::PacketBytesSerializer;
+pub use traits::StringPacker;
+
 pub use types::PacketString;
 
 use crate::serial_println;
 
-use self::{
-    traits::{Packer, StringPacker},
-    types::{AddressType, ChecksumType, FlagsType, PacketStringBytes},
-};
+use self::types::PacketSerializedBytes;
+use self::types::{AddressType, ChecksumType, FlagsType, PacketStringBytes};
 #[derive(Clone)]
 pub struct DeviceIdentifyer(pub AddressType);
 
@@ -104,7 +106,7 @@ impl Packet {
     }
 }
 
-impl Packer for Packet {
+impl BytesPacker for Packet {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
@@ -122,12 +124,12 @@ impl Packer for Packet {
 }
 
 impl StringPacker for Packet {
-    fn pack_message(
+    fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
         message: PacketString,
     ) -> Packet {
-        <Packet as Packer>::pack(
+        <Packet as BytesPacker>::pack(
             source_device_identifyer,
             destination_device_identifyer,
             message.into_bytes(),
@@ -136,13 +138,78 @@ impl StringPacker for Packet {
 
     /// As long as hepless::String type consist of 1 byte characters:
     /// So the new string will be created, and filled byte by bytre characters.
-    fn unpack_message(got_packet: Packet) -> PacketString {
+    fn unpack(got_packet: Packet) -> PacketString {
         let mut result = PacketString::new();
         for byte in got_packet.content.iter() {
-            result.push(*byte as char).unwrap_or_else(|_| {
-                serial_println!("Error in StringPacker trait in unpack_message in pushing byte to result string");
-            })
+            result.push(*byte as char).unwrap_or_else(|_| {})
         }
         result
+    }
+}
+
+impl PacketBytesSerializer for Packet {
+    /// Serializing is going in order of keeping all bytes in native endian order.
+
+    fn serialize(self: Self) -> PacketSerializedBytes {
+        let mut result = PacketSerializedBytes::new();
+        // source_device_identifyer,
+        // destination_device_identifyer,
+        // protocol_version: 0,
+        // flags: FlagsType::MIN,
+        // content_length: content.len(),
+        // content,
+        // checksum: ChecksumType::MIN,
+
+        for byte in self.source_device_identifyer.0.to_ne_bytes() {
+            result.push(byte).unwrap_or_else(|_| {
+                serial_println!(
+                    "Unable to add byte to result during source_device_identifyer serialization"
+                )
+            });
+        }
+
+        for byte in self.destination_device_identifyer.0.to_ne_bytes() {
+            result.push(byte).unwrap_or_else(|_| {
+                serial_println!("Unable to add byte to result during destination_device_identifyer serialization")
+            });
+        }
+
+        for byte in self.protocol_version.to_ne_bytes() {
+            result.push(byte).unwrap_or_else(|_| {
+                serial_println!(
+                    "Unable to add byte to result during protocol_version serialization"
+                )
+            });
+        }
+
+        for byte in self.flags.to_ne_bytes() {
+            result.push(byte).unwrap_or_else(|_| {
+                serial_println!("Unable to add byte to result during flags serialization")
+            });
+        }
+
+        for byte in self.content_length.to_ne_bytes() {
+            result.push(byte).unwrap_or_else(|_| {
+                serial_println!("Unable to add byte to result during content_length serialization")
+            });
+        }
+
+        for byte in self.content {
+            result.push(byte).unwrap_or_else(|_| {
+                serial_println!("Unable to add byte to result during content serialization")
+            });
+        }
+
+        for byte in self.checksum.to_ne_bytes() {
+            result.push(byte).unwrap_or_else(|_| {
+                serial_println!("Unable to add byte to result during checksum serialization")
+            });
+        }
+
+        result
+    }
+
+    fn deserialize(bytes: PacketSerializedBytes) -> Packet {
+        unimplemented!();
     }
 }

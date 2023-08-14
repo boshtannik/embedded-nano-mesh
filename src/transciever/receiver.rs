@@ -29,7 +29,6 @@ impl Receiver {
         }
     }
 
-    /*
     pub fn update(&mut self) {
         // Check received packets.
         // In case if packet is corrupt -> drop it.
@@ -39,6 +38,7 @@ impl Receiver {
         //      If location is other - Move packet into transit_packet_queue.
     }
 
+    /*
     pub fn received_messages(&self) -> MessageQueue {
         self.message_queue.clone()
     }

@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 
-use crate::packet::DeviceIdentifyer;
+use crate::packet::{DeviceIdentifyer, PacketString};
 
 mod config;
 mod receiver;
@@ -18,12 +18,12 @@ pub struct Transciever {
 }
 
 pub enum Error {
-    SendError,
+    TryAgainLater,
 }
 
 impl Transciever {
     pub fn new(my_address: DeviceIdentifyer) -> Transciever {
-        let mut transit_packet_queue: RefCell<PacketQueue> = RefCell::new(PacketQueue::new());
+        let transit_packet_queue: RefCell<PacketQueue> = RefCell::new(PacketQueue::new());
         Transciever {
             transmitter: Transmitter::new(
                 my_address.clone(),
@@ -33,10 +33,9 @@ impl Transciever {
         }
     }
 
-    /*
     pub fn send_message(
         &mut self,
-        message: String64,
+        message: PacketString,
         destination_device_identifyer: DeviceIdentifyer,
     ) -> Result<(), Error> {
         match self
@@ -44,7 +43,7 @@ impl Transciever {
             .send_message(message, destination_device_identifyer)
         {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::SendError),
+            Err(transmitter::Error::PacketQueueIsFull) => Err(Error::TryAgainLater),
         }
     }
 
@@ -55,6 +54,7 @@ impl Transciever {
         self.transmitter.update();
     }
 
+    /*
     pub fn received_messages(&mut self) -> MessageQueue {
         self.receiver.received_messages()
     }

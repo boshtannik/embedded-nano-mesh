@@ -1,1 +1,1 @@
-pub const QUEUE_SIZE: usize = 10;
+pub const QUEUE_SIZE: usize = 4;

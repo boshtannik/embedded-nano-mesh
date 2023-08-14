@@ -20,11 +20,10 @@ fn main() -> ! {
     serial::init(default_serial!(dp, pins, 57600));
 
     let mut transciever = Transciever::new(DeviceIdentifyer(1));
-    /*transciever
-        .send_message(String64::from("Hello world"), DeviceIdentifyer(2))
-        .unwrap_or_else(|_| serial_println!("Error of sending message over transciever"));
-    */
+    transciever
+        .send_message(PacketString::from("Hello world"), DeviceIdentifyer(2))
+        .unwrap_or_else(|_| {});
     loop {
-        // transciever.update();
+        transciever.update();
     }
 }
