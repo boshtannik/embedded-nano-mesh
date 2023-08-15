@@ -2,15 +2,13 @@
 #![no_main]
 
 use arduino_hal::default_serial;
-use packet::{DeviceIdentifyer, PacketString};
 use panic_halt as _;
 
 mod config;
-mod packet;
 mod serial;
 mod transciever;
 
-use transciever::Transciever;
+use transciever::{DeviceIdentifyer, PacketString, Transciever};
 
 #[arduino_hal::entry]
 fn main() -> ! {

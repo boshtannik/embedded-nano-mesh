@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 
-use crate::packet::DeviceIdentifyer;
+use super::packet::DeviceIdentifyer;
 
 use super::types::{MessageQueue, PacketQueue};
 

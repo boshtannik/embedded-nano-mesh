@@ -1,6 +1,6 @@
 use heapless::Deque;
 
-use crate::packet::{Packet, PacketString};
+use super::packet::{Packet, PacketString};
 
 use super::config::QUEUE_SIZE;
 

@@ -3,7 +3,7 @@ use super::{
     DeviceIdentifyer, Packet, PacketString,
 };
 
-pub trait StringPacker {
+pub trait PacketStringSerializer {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
@@ -12,7 +12,7 @@ pub trait StringPacker {
     fn unpack(got_packet: Packet) -> PacketString;
 }
 
-pub trait BytesPacker {
+pub trait PacketByteSerializer {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,

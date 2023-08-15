@@ -10,3 +10,5 @@ pub type PacketSerializedBytes = Vec<u8, PACKET_BYTES_SIZE>;
 pub type AddressType = u8;
 pub type ChecksumType = u8;
 pub type FlagsType = u8;
+pub type ProtocolVersionType = u8;
+pub type LifetimeType = u8;

@@ -1,11 +1,12 @@
 use core::cell::RefCell;
 
-use crate::packet::{DeviceIdentifyer, PacketString};
-
 mod config;
+mod packet;
 mod receiver;
 mod transmitter;
 mod types;
+
+pub use packet::{DeviceIdentifyer, PacketString};
 
 use receiver::Receiver;
 use transmitter::Transmitter;
@@ -49,8 +50,6 @@ impl Transciever {
 
     pub fn update(&mut self) {
         self.receiver.update();
-        // Iterate over received messages:
-        //     In case if message is addressed to other Transciever -> move it into transit_packet_queue
         self.transmitter.update();
     }
 

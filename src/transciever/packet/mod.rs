@@ -2,24 +2,27 @@ mod config;
 mod traits;
 mod types;
 
-pub use traits::BytesPacker;
+pub use traits::PacketByteSerializer;
 pub use traits::PacketBytesSerializer;
-pub use traits::StringPacker;
+pub use traits::PacketStringSerializer;
 
 pub use types::PacketString;
 
 use crate::serial_println;
 
 use self::types::PacketSerializedBytes;
+use self::types::ProtocolVersionType;
 use self::types::{AddressType, ChecksumType, FlagsType, PacketStringBytes};
 #[derive(Clone)]
 pub struct DeviceIdentifyer(pub AddressType);
 
+/// General data structure to be used to pack messages to
+/// be sent over the radio channel.
 #[derive(Clone)]
 pub struct Packet {
     source_device_identifyer: DeviceIdentifyer,
     destination_device_identifyer: DeviceIdentifyer,
-    protocol_version: u8,
+    protocol_version: ProtocolVersionType,
     flags: FlagsType,
     content_length: usize,
     content: PacketStringBytes,
@@ -106,7 +109,7 @@ impl Packet {
     }
 }
 
-impl BytesPacker for Packet {
+impl PacketByteSerializer for Packet {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
@@ -123,13 +126,13 @@ impl BytesPacker for Packet {
     }
 }
 
-impl StringPacker for Packet {
+impl PacketStringSerializer for Packet {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
         message: PacketString,
     ) -> Packet {
-        <Packet as BytesPacker>::pack(
+        <Packet as PacketByteSerializer>::pack(
             source_device_identifyer,
             destination_device_identifyer,
             message.into_bytes(),
@@ -150,7 +153,7 @@ impl StringPacker for Packet {
 impl PacketBytesSerializer for Packet {
     /// Serializing is going in order of keeping all bytes in native endian order.
 
-    fn serialize(self: Self) -> PacketSerializedBytes {
+    fn serialize(self) -> PacketSerializedBytes {
         let mut result = PacketSerializedBytes::new();
         // source_device_identifyer,
         // destination_device_identifyer,

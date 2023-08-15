@@ -1,8 +1,9 @@
 use core::cell::RefCell;
 
-use crate::{
-    packet::{DeviceIdentifyer, Packet, PacketBytesSerializer, PacketString, StringPacker},
-    serial_println, serial_write_byte,
+use crate::{serial_println, serial_write_byte};
+
+use super::packet::{
+    DeviceIdentifyer, Packet, PacketBytesSerializer, PacketString, PacketStringSerializer,
 };
 
 use super::types::PacketQueue;
@@ -34,7 +35,7 @@ impl Transmitter {
         message: PacketString,
         destination_device_identifyer: DeviceIdentifyer,
     ) -> Result<(), Error> {
-        let packed_message = <Packet as StringPacker>::pack(
+        let packed_message = <Packet as PacketStringSerializer>::pack(
             self.current_device_identifyer.clone(),
             destination_device_identifyer,
             message,
@@ -45,22 +46,27 @@ impl Transmitter {
         }
     }
 
+    /// Needs to be called in the loop.
+    /// This method sends packets, once they are in the queues.
+    /// It sends packets, that were created inside of this node, and
+    /// sends packets, which are collected from other nodes, and their
+    /// destination node is other than this one.
     pub fn update(&mut self) {
+        // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
             for byte in packet.serialize() {
                 serial_write_byte!(byte)
                     .unwrap_or_else(|_| serial_println!("Could not write packet byte into serial"));
             }
         }
-        /*
-        for packet in self.packet_queue. {
+
+        // Send transit queue
+        while let Some(packet) = self.transit_packet_queue.borrow_mut().pop_front() {
             for byte in packet.serialize() {
-                serial_write_byte!(byte)
-                    .unwrap_or_else(|_| serial_println!("Could not write packet byte into serial"));
+                serial_write_byte!(byte).unwrap_or_else(|_| {
+                    serial_println!("Could not write transit packet byte into serial")
+                });
             }
         }
-        */
-        // Send packet queue.
-        // Send transit queue
     }
 }
