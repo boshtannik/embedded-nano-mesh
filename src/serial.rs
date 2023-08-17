@@ -15,7 +15,7 @@ macro_rules! serial_println {
     ($($arg:tt)*) => {
             ::avr_device::interrupt::free(|cs| {
             if let Some(serial) = &mut *crate::serial::GLOBAL_SERIAL.borrow(cs).borrow_mut() {
-                ::ufmt::uwriteln!(serial, $($arg)*).unwrap()
+                ::ufmt::uwriteln!(serial, $($arg)*).unwrap()  // TODO: Review this unwrap
             }
         })
     }
@@ -44,6 +44,15 @@ macro_rules! serial_write_byte {
             } else {
                 Ok(())
             }
+        })
+    };
+}
+
+#[macro_export]
+macro_rules! serial_try_read_byte {
+    () => {
+        ::avr_device::interrupt::free(|cs| {
+            if let Some(serial) = &mut *crate::serial::GLOBAL_SERIAL.borrow(cs).borrow_mut() {}
         })
     };
 }

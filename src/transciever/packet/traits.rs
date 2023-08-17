@@ -1,25 +1,16 @@
 use super::{
-    types::{PacketSerializedBytes, PacketStringBytes},
-    DeviceIdentifyer, Packet, PacketString,
+    types::{PacketDataBytes, PacketSerializedBytes},
+    DeviceIdentifyer, Packet,
 };
 
-pub trait PacketStringSerializer {
+pub trait DataPacker {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
-        message: PacketString,
-    ) -> Packet;
-    fn unpack(got_packet: Packet) -> PacketString;
-}
-
-pub trait PacketByteSerializer {
-    fn pack(
-        source_device_identifyer: DeviceIdentifyer,
-        destination_device_identifyer: DeviceIdentifyer,
-        content: PacketStringBytes,
+        data: PacketDataBytes,
     ) -> Packet;
 
-    fn unpack(packet: Packet) -> PacketStringBytes;
+    fn unpack(packet: Packet) -> PacketDataBytes;
 }
 
 pub trait PacketBytesSerializer {

@@ -2,9 +2,7 @@ use core::cell::RefCell;
 
 use crate::{serial_println, serial_write_byte};
 
-use super::packet::{
-    DeviceIdentifyer, Packet, PacketBytesSerializer, PacketString, PacketStringSerializer,
-};
+use super::packet::{DataPacker, DeviceIdentifyer, Packet, PacketBytesSerializer, PacketDataBytes};
 
 use super::types::PacketQueue;
 
@@ -30,27 +28,25 @@ impl Transmitter {
         }
     }
 
-    pub fn send_message(
+    pub fn send(
         &mut self,
-        message: PacketString,
+        data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
     ) -> Result<(), Error> {
-        let packed_message = <Packet as PacketStringSerializer>::pack(
+        let packed_data = <Packet as DataPacker>::pack(
             self.current_device_identifyer.clone(),
             destination_device_identifyer,
-            message,
+            data,
         );
-        match self.packet_queue.push_back(packed_message) {
+        match self.packet_queue.push_back(packed_data) {
             Ok(_) => Ok(()),
             Err(_) => Err(Error::PacketQueueIsFull),
         }
     }
 
     /// Needs to be called in the loop.
-    /// This method sends packets, once they are in the queues.
-    /// It sends packets, that were created inside of this node, and
-    /// sends packets, which are collected from other nodes, and their
-    /// destination node is other than this one.
+    /// It manages queues of data to be sent, or
+    /// packets that are needed to transit to the next device.
     pub fn update(&mut self) {
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {

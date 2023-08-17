@@ -6,16 +6,14 @@ mod receiver;
 mod transmitter;
 mod types;
 
-pub use packet::{DeviceIdentifyer, PacketString};
+pub use packet::DeviceIdentifyer;
+pub use types::TranscieverString;
 
-use receiver::Receiver;
-use transmitter::Transmitter;
-
-use self::types::PacketQueue;
+use self::{packet::PacketDataBytes, types::PacketQueue};
 
 pub struct Transciever {
-    transmitter: Transmitter,
-    receiver: Receiver,
+    transmitter: transmitter::Transmitter,
+    receiver: receiver::Receiver,
 }
 
 pub enum Error {
@@ -26,36 +24,34 @@ impl Transciever {
     pub fn new(my_address: DeviceIdentifyer) -> Transciever {
         let transit_packet_queue: RefCell<PacketQueue> = RefCell::new(PacketQueue::new());
         Transciever {
-            transmitter: Transmitter::new(
+            transmitter: transmitter::Transmitter::new(
                 my_address.clone(),
                 RefCell::clone(&transit_packet_queue),
             ),
-            receiver: Receiver::new(my_address.clone(), RefCell::clone(&transit_packet_queue)),
+            receiver: receiver::Receiver::new(
+                my_address.clone(),
+                RefCell::clone(&transit_packet_queue),
+            ),
         }
     }
 
-    pub fn send_message(
+    pub fn send(
         &mut self,
-        message: PacketString,
+        data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
     ) -> Result<(), Error> {
-        match self
-            .transmitter
-            .send_message(message, destination_device_identifyer)
-        {
+        match self.transmitter.send(data, destination_device_identifyer) {
             Ok(_) => Ok(()),
             Err(transmitter::Error::PacketQueueIsFull) => Err(Error::TryAgainLater),
         }
+    }
+
+    pub fn receive(&mut self) -> Option<PacketDataBytes> {
+        self.receiver.receive()
     }
 
     pub fn update(&mut self) {
         self.receiver.update();
         self.transmitter.update();
     }
-
-    /*
-    pub fn received_messages(&mut self) -> MessageQueue {
-        self.receiver.received_messages()
-    }
-    */
 }

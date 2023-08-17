@@ -8,7 +8,7 @@ mod config;
 mod serial;
 mod transciever;
 
-use transciever::{DeviceIdentifyer, PacketString, Transciever};
+use transciever::{DeviceIdentifyer, Transciever, TranscieverString};
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -19,9 +19,15 @@ fn main() -> ! {
 
     let mut transciever = Transciever::new(DeviceIdentifyer(1));
     transciever
-        .send_message(PacketString::from("Hello world"), DeviceIdentifyer(2))
+        .send(
+            TranscieverString::from("Hello world").into_bytes(),
+            DeviceIdentifyer(2),
+        )
         .unwrap_or_else(|_| {});
     loop {
         transciever.update();
+        if let Some(_) = transciever.receive() {
+            serial_println!("data been received");
+        }
     }
 }

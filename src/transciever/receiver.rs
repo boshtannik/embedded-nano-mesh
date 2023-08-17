@@ -1,14 +1,15 @@
 use core::cell::RefCell;
 
-use super::packet::DeviceIdentifyer;
+use super::packet::{DeviceIdentifyer, PacketDataBytes};
 
-use super::types::{MessageQueue, PacketQueue};
+use super::types::{PacketBytesBuffer, PacketDataQueue, PacketQueue};
 
 pub struct Receiver {
     current_device_identifyer: DeviceIdentifyer,
-    message_queue: MessageQueue,
+    message_queue: PacketDataQueue,
     packet_queue: PacketQueue,
     transit_packet_queue: RefCell<PacketQueue>,
+    received_bytes: PacketBytesBuffer,
 }
 
 pub enum Error {
@@ -23,9 +24,10 @@ impl Receiver {
     ) -> Receiver {
         Receiver {
             current_device_identifyer,
-            message_queue: MessageQueue::new(),
+            message_queue: PacketDataQueue::new(),
             packet_queue: PacketQueue::new(),
             transit_packet_queue,
+            received_bytes: PacketBytesBuffer::new(),
         }
     }
 
@@ -38,9 +40,7 @@ impl Receiver {
         //      If location is other - Move packet into transit_packet_queue.
     }
 
-    /*
-    pub fn received_messages(&self) -> MessageQueue {
-        self.message_queue.clone()
+    pub fn receive(&mut self) -> Option<PacketDataBytes> {
+        None
     }
-    */
 }
