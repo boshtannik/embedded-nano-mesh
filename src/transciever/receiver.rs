@@ -41,6 +41,6 @@ impl Receiver {
     }
 
     pub fn receive(&mut self) -> Option<PacketDataBytes> {
-        None
+        unimplemented!();
     }
 }
