@@ -2,21 +2,22 @@ mod config;
 mod traits;
 mod types;
 
-pub use traits::DataPacker;
-pub use traits::PacketBytesSerializer;
+use core::ops::Deref;
+
+pub use traits::{DataPacker, PacketSerializer};
 
 pub use config::{CONTENT_SIZE, PACKET_BYTES_SIZE};
 pub use types::PacketDataBytes;
 
-use self::types::PacketSerializedBytes;
 use self::types::ProtocolVersionType;
 use self::types::{AddressType, ChecksumType, FlagsType};
-#[derive(Clone, PartialEq, Eq)]
-pub struct DeviceIdentifyer(pub AddressType);
 
-/// General data structure to be used to pack messages to
-/// be sent over the radio channel.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeviceIdentifyer(pub AddressType);
+use postcard::{from_bytes, to_vec};
+pub use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Packet {
     source_device_identifyer: DeviceIdentifyer,
     destination_device_identifyer: DeviceIdentifyer,
@@ -48,7 +49,7 @@ impl Packet {
 
     /// Checks if the calculated checksum of the packet
     /// matches to the already stored one.
-    fn is_checksum_correct(&self) -> bool {
+    pub fn is_checksum_correct(&self) -> bool {
         self.calculate_packet_sum() == self.checksum
     }
 
@@ -124,14 +125,12 @@ impl DataPacker for Packet {
     }
 }
 
-impl PacketBytesSerializer for Packet {
-    /// Serializing is going in order of keeping all bytes in native endian order.
-
-    fn serialize(self) -> PacketSerializedBytes {
-        unimplemented!()
+impl PacketSerializer for Packet {
+    fn serialize(self) -> types::PacketSerializedBytes {
+        to_vec(&self).unwrap()
     }
 
-    fn deserialize(bytes: PacketSerializedBytes) -> Packet {
-        unimplemented!()
+    fn deserialize(bytes: types::PacketSerializedBytes) -> Self {
+        from_bytes(bytes.deref()).unwrap()
     }
 }

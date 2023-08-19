@@ -34,7 +34,7 @@ impl Receiver {
     pub fn update(&mut self) {
         // Check received packets.
         // In case if packet is corrupt -> drop it.
-        //
+
         // In case if packet is ok:
         //      If location is reached - Move out message into message queue.
         //      If location is other - Move packet into transit_packet_queue.

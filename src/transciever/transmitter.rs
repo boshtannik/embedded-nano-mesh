@@ -2,7 +2,7 @@ use core::cell::RefCell;
 
 use crate::{serial_println, serial_write_byte};
 
-use super::packet::{DataPacker, DeviceIdentifyer, Packet, PacketBytesSerializer, PacketDataBytes};
+use super::packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes, PacketSerializer};
 
 use super::types::PacketQueue;
 
@@ -50,16 +50,17 @@ impl Transmitter {
     pub fn update(&mut self) {
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
-            for byte in packet.serialize() {
-                serial_write_byte!(byte)
-                    .unwrap_or_else(|_| serial_println!("Could not write packet byte into serial"));
+            for serialized_byte in packet.serialize() {
+                serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
+                    serial_println!("Could not write own packet byte into serial")
+                });
             }
         }
 
         // Send transit queue
         while let Some(packet) = self.transit_packet_queue.borrow_mut().pop_front() {
-            for byte in packet.serialize() {
-                serial_write_byte!(byte).unwrap_or_else(|_| {
+            for serialized_byte in packet.serialize() {
+                serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
                     serial_println!("Could not write transit packet byte into serial")
                 });
             }
