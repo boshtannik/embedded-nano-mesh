@@ -1,7 +1,9 @@
 use core::cell::RefCell;
 
+use crate::transciever::config::PACKET_START_BYTE;
 use crate::{serial_println, serial_write_byte};
 
+use super::config::PACKET_START_BYTES_COUNT;
 use super::packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes, PacketSerializer};
 
 use super::types::PacketQueue;
@@ -44,12 +46,19 @@ impl Transmitter {
         }
     }
 
+    fn send_start_byte_sequence(&self) {
+        for _ in 0..PACKET_START_BYTES_COUNT {
+            serial_write_byte!(PACKET_START_BYTE).unwrap();
+        }
+    }
+
     /// Needs to be called in the loop.
     /// It manages queues of data to be sent, or
     /// packets that are needed to transit to the next device.
     pub fn update(&mut self) {
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
+            self.send_start_byte_sequence();
             for serialized_byte in packet.serialize() {
                 serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
                     serial_println!("Could not write own packet byte into serial")
@@ -59,6 +68,7 @@ impl Transmitter {
 
         // Send transit queue
         while let Some(packet) = self.transit_packet_queue.borrow_mut().pop_front() {
+            self.send_start_byte_sequence();
             for serialized_byte in packet.serialize() {
                 serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
                     serial_println!("Could not write transit packet byte into serial")

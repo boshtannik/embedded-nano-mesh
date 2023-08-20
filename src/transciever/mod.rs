@@ -60,7 +60,7 @@ impl Transciever {
             Err(ReceiverError::TransitPacketQueueIsFull) => {
                 serial_println!("Transit packet queue is full")
             }
-            Err(ReceiverError::NoPacketToManage) => serial_println!("Packet was not received"),
+            Err(ReceiverError::NoPacketToManage) => (),
             Ok(_) => (),
         };
         self.transmitter.update();
