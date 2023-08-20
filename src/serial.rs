@@ -50,9 +50,16 @@ macro_rules! serial_write_byte {
 
 #[macro_export]
 macro_rules! serial_try_read_byte {
-    () => {
+    ($mutexed_celled_option:expr) => {
         ::avr_device::interrupt::free(|cs| {
-            if let Some(serial) = &mut *crate::serial::GLOBAL_SERIAL.borrow(cs).borrow_mut() {}
+            if let Some(serial) = &mut *crate::serial::GLOBAL_SERIAL.borrow(cs).borrow_mut() {
+                match serial.read() {
+                    Ok(byte) => $mutexed_celled_option.get_mut().replace(Some(byte)),
+                    Err(_) => $mutexed_celled_option.get_mut().replace(None),
+                };
+            } else {
+                $mutexed_celled_option.get_mut().replace(None);
+            }
         })
     };
 }

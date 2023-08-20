@@ -1,4 +1,4 @@
-use heapless::{String, Vec};
+use heapless::Vec;
 
 use super::config::{CONTENT_SIZE, PACKET_BYTES_SIZE};
 

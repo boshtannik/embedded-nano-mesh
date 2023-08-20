@@ -1,8 +1,14 @@
-use core::cell::RefCell;
+use core::cell::{Cell, RefCell};
+
+use avr_device::interrupt::Mutex;
+
+use crate::{serial_println, serial_try_read_byte, serial_write_byte};
 
 use super::packet::{DeviceIdentifyer, PacketDataBytes};
 
 use super::types::{PacketBytesBuffer, PacketDataQueue, PacketQueue};
+
+use arduino_hal::prelude::_embedded_hal_serial_Read;
 
 pub struct Receiver {
     current_device_identifyer: DeviceIdentifyer,
@@ -35,12 +41,20 @@ impl Receiver {
         // Check received packets.
         // In case if packet is corrupt -> drop it.
 
+        let mut mutexed_celled_option: Mutex<Cell<Option<u8>>> = Mutex::new(Cell::new(None));
+        serial_try_read_byte!(mutexed_celled_option);
+
+        if let Some(byte) = mutexed_celled_option.get_mut().take() {
+            serial_write_byte!(byte).unwrap_or_else(|_| serial_println!("Could not echo byte"));
+        }
+
         // In case if packet is ok:
         //      If location is reached - Move out message into message queue.
         //      If location is other - Move packet into transit_packet_queue.
     }
 
     pub fn receive(&mut self) -> Option<PacketDataBytes> {
-        unimplemented!();
+        None
+        // unimplemented!();
     }
 }
