@@ -12,7 +12,7 @@ pub struct Transmitter {
     transit_packet_queue: RefCell<PacketQueue>,
 }
 
-pub enum Error {
+pub enum TransmitterError {
     PacketQueueIsFull,
 }
 
@@ -32,7 +32,7 @@ impl Transmitter {
         &mut self,
         data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
-    ) -> Result<(), Error> {
+    ) -> Result<(), TransmitterError> {
         let packed_data = <Packet as DataPacker>::pack(
             self.current_device_identifyer.clone(),
             destination_device_identifyer,
@@ -40,7 +40,7 @@ impl Transmitter {
         );
         match self.packet_queue.push_back(packed_data) {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::PacketQueueIsFull),
+            Err(_) => Err(TransmitterError::PacketQueueIsFull),
         }
     }
 

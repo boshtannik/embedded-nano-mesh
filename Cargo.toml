@@ -19,6 +19,7 @@ heapless = { version = "0.7.0", features = ["serde"] }
 avr-device = "0.5.1"
 serde = { version = "1.0.0", default-features = false, features = ["derive"] }
 postcard = "1.0.0"
+e-ring = "0.3.0"
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"

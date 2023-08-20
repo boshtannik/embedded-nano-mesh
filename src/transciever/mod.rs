@@ -9,14 +9,16 @@ mod types;
 pub use packet::DeviceIdentifyer;
 pub use types::TranscieverString;
 
-use self::{packet::PacketDataBytes, types::PacketQueue};
+use crate::serial_println;
+
+use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
 
 pub struct Transciever {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
 }
 
-pub enum Error {
+pub enum TranscieverError {
     TryAgainLater,
 }
 
@@ -39,10 +41,12 @@ impl Transciever {
         &mut self,
         data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
-    ) -> Result<(), Error> {
+    ) -> Result<(), TranscieverError> {
         match self.transmitter.send(data, destination_device_identifyer) {
             Ok(_) => Ok(()),
-            Err(transmitter::Error::PacketQueueIsFull) => Err(Error::TryAgainLater),
+            Err(transmitter::TransmitterError::PacketQueueIsFull) => {
+                Err(TranscieverError::TryAgainLater)
+            }
         }
     }
 
@@ -51,7 +55,14 @@ impl Transciever {
     }
 
     pub fn update(&mut self) {
-        self.receiver.update();
+        match self.receiver.update() {
+            Err(ReceiverError::MessageQueueIsFull) => serial_println!("Receiver queue is full"),
+            Err(ReceiverError::TransitPacketQueueIsFull) => {
+                serial_println!("Transit packet queue is full")
+            }
+            Err(ReceiverError::NoPacketToManage) => serial_println!("Packet was not received"),
+            Ok(_) => (),
+        };
         self.transmitter.update();
     }
 }

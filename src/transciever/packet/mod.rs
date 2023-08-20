@@ -53,6 +53,10 @@ impl Packet {
         self.calculate_packet_sum() == self.checksum
     }
 
+    pub fn match_destination_identifyer(&self, identifyer: &DeviceIdentifyer) -> bool {
+        self.destination_device_identifyer == *identifyer
+    }
+
     /// Calculates and returns checksum of whole packet.
     ///
     /// Checksum consist of next fields:
