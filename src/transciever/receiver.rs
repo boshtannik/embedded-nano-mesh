@@ -16,6 +16,7 @@ pub struct Receiver {
     received_packet: Option<Packet>,
     transit_packet_queue: RefCell<PacketQueue>,
     received_bytes: PacketBytesBuffer,
+    // packet_bytes_parser: PacketBytesParser
 }
 
 pub enum ReceiverError {
@@ -83,3 +84,35 @@ impl Receiver {
         }
     }
 }
+
+/*
+* Blacksheet for minds capturing:
+* Still to do.
+* Parse packet in the following way.
+* Parsing packet may require
+* enough time to:
+* 1 - find packet start byte.
+* 2 - parse packet
+* 3 - verify the sum of packet and validate it with received checksum.
+* These all operations will take time, during which, other bytes in ether
+* may be lost. So to void that situation, I guess it is needed to reduce
+* processor load and capture more bytes to the buffer, and try
+* to spend processing time only in the following scenario.
+*
+* Problem: high packet search time, time for parsing, and checksum verification.
+* Solution: Reduce load on the processor.
+*
+* To reduce load on the processor
+* the time to parse can be predicted in the following way:
+*
+* Three markers shall be reached:
+* 1 - Start bytes were received
+* 2 - reasonable ammount of bytes, after the start
+*       bytes was reached. (required packet bytes were received)
+*
+* So, the plan on the next step is:
+* introduce new struct / implementation that will
+* handle bytes receiving, detecting start bytes being
+* received, receiving and counting the bytes of packet,
+* telling when parsing of packet may be started.
+*/
