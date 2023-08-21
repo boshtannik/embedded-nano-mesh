@@ -116,12 +116,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6548a0ad5d2549e111e1f6a11a6c2e2d00ce6a3dafe22948d67c2b443f775e52"
 
 [[package]]
-name = "e-ring"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6609dbd3d7ec3489e983e4feac1dc7b5d5b4f07fe0426bcc4931023caa9e4510"
-
-[[package]]
 name = "embedded-hal"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -176,7 +170,6 @@ version = "0.0.0"
 dependencies = [
  "arduino-hal",
  "avr-device",
- "e-ring",
  "embedded-hal",
  "heapless",
  "nb 0.1.3",

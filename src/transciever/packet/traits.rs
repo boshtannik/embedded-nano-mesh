@@ -10,7 +10,7 @@ pub trait DataPacker {
         data: PacketDataBytes,
     ) -> Packet;
 
-    fn unpack(packet: Packet) -> PacketDataBytes;
+    fn unpack(self: Self) -> PacketDataBytes;
 }
 
 pub trait PacketSerializer {

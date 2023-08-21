@@ -7,10 +7,10 @@ use core::ops::Deref;
 pub use traits::{DataPacker, PacketSerializer};
 
 pub use config::{CONTENT_SIZE, PACKET_BYTES_SIZE};
-pub use types::PacketDataBytes;
 
-use self::types::ProtocolVersionType;
 use self::types::{AddressType, ChecksumType, FlagsType};
+
+pub use self::types::{PacketDataBytes, PacketSerializedBytes};
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DeviceIdentifyer(pub AddressType);
@@ -21,7 +21,6 @@ pub use serde::{Deserialize, Serialize};
 pub struct Packet {
     source_device_identifyer: DeviceIdentifyer,
     destination_device_identifyer: DeviceIdentifyer,
-    protocol_version: ProtocolVersionType,
     flags: FlagsType,
     data_length: usize,
     data: PacketDataBytes,
@@ -37,7 +36,6 @@ impl Packet {
         let mut new_packet = Packet {
             source_device_identifyer,
             destination_device_identifyer,
-            protocol_version: 0,
             flags: FlagsType::MIN,
             data_length: data.len(),
             data,
@@ -62,7 +60,6 @@ impl Packet {
     /// Checksum consist of next fields:
     ///      source_device_identifyer
     ///      destination_device_identifyer
-    ///      protocol_version
     ///      flags
     ///      data_length
     ///      data
@@ -73,10 +70,7 @@ impl Packet {
         let (result, _) = result.overflowing_add(self.source_device_identifyer.0);
 
         // Calculate destination_device_identifyer
-        let (result, _) = result.overflowing_add(self.destination_device_identifyer.0);
-
-        // Calculate protocol_version
-        let (mut result, _) = result.overflowing_add(self.protocol_version);
+        let (mut result, _) = result.overflowing_add(self.destination_device_identifyer.0);
 
         // Calculate flags
         for byte in self.flags.to_be_bytes() {
@@ -117,15 +111,16 @@ impl DataPacker for Packet {
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
         data: PacketDataBytes,
-    ) -> Packet {
+    ) -> Self {
         Packet::new(
             source_device_identifyer,
             destination_device_identifyer,
             data,
         )
     }
-    fn unpack(packet: Packet) -> PacketDataBytes {
-        packet.data
+
+    fn unpack(self: Self) -> PacketDataBytes {
+        self.data
     }
 }
 
