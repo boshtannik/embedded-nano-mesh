@@ -18,3 +18,10 @@ Things are left to do:
   situation is reached. Like unwrap went wrong.
   All panic situations shall be handled, in order to void any
   panic and mark LED diode to tell that, some problem occurred.
+
+* ??? May be add self-adjustable listening period.
+  It may be useful to automatically adjust listening period
+  between messages in the mesh pool. It might be working in the following
+  way. The more messages were caught in some period of time - the more delays
+  nodes will use between messaging, which should reduce possible
+  jamming of ether.
