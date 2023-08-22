@@ -52,9 +52,6 @@ impl Transmitter {
         }
     }
 
-    /// Needs to be called in the loop.
-    /// It manages queues of data to be sent, or
-    /// packets that are needed to transit to the next device.
     pub fn update(&mut self) {
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {

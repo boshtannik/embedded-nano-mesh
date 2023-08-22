@@ -1,0 +1,20 @@
+Things are left to do:
+
+* To void possible packet collision, i choosed
+  as simple as possible way - is to limit time
+  interval for the controller for speaking into the radio ether.
+  Meaning The more time controllers will be listening - the more
+  pure radio ether will be. It shall look like speak once in <TimePeriod>,
+  like once in the 1000 milliseconds, or once in 2000 milliseconds, etc..         (DONE!!)
+
+* Adjust the packet in order to:
+    * Void dead packets in the ether by producing lifetime of packet to be
+      transitted over the network. Lack of destination
+      device in the pool - will cause the radio ether being jammed
+      by lost packets that can not reach their destination point, and
+      will be copied and re-transitted by every transcievers.
+
+* Add Red LED marker which shall be lighted on critical
+  situation is reached. Like unwrap went wrong.
+  All panic situations shall be handled, in order to void any
+  panic and mark LED diode to tell that, some problem occurred.

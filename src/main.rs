@@ -1,32 +1,32 @@
 #![no_std]
 #![no_main]
+#![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
 use panic_halt as _;
 
 mod config;
+mod millis;
 mod serial;
 mod transciever;
+
+use millis::{millis_init, ms};
 
 use transciever::{DeviceIdentifyer, Transciever, TranscieverString};
 
 #[arduino_hal::entry]
 fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
+
+    millis_init(dp.TC0);
+
     let pins = arduino_hal::pins!(dp);
 
-    /* I guess to make the device constrained in time.
-     * By creating speak / listen ratio.
-     * It might be like 1 : 10 or 1 : 100
-     * meaning that in one second, the device
-     * will be speaking into the ether 100ms of time, and will be listening 900ms of it.
-     * Or will be speaking 10 ms, and 990 ms accordingly. That shall reduce packet collision.
-     * It is just the assumption, which i have not tested yet, and yet shall be tested.
-     */
+    unsafe { avr_device::interrupt::enable() };
 
     serial::init(default_serial!(dp, pins, 57600));
 
-    let mut transciever = Transciever::new(DeviceIdentifyer(1));
+    let mut transciever = Transciever::new(DeviceIdentifyer(2), 1000 as ms);
     transciever
         .send(
             TranscieverString::from("Hello world").into_bytes(),
@@ -35,8 +35,12 @@ fn main() -> ! {
         .unwrap_or_else(|_| {});
     loop {
         transciever.update();
-        if let Some(_) = transciever.receive() {
-            serial_println!("data been received");
+        if let Some(received_message) = transciever.receive() {
+            for byte in received_message.iter() {
+                serial_write_byte!(*byte).unwrap();
+            }
+            serial_write_byte!(b'\r').unwrap();
+            serial_write_byte!(b'\n').unwrap();
         }
     }
 }
