@@ -22,20 +22,28 @@ fn main() -> ! {
 
     let pins = arduino_hal::pins!(dp);
 
-    unsafe { avr_device::interrupt::enable() };
-
     serial::init(default_serial!(dp, pins, 57600));
 
-    let mut transciever = Transciever::new(DeviceIdentifyer(2), 1000 as ms);
+    unsafe { avr_device::interrupt::enable() };
+
+    let mut transciever = Transciever::new(DeviceIdentifyer(1), 1000 as ms);
+
+    let mut sending_string: TranscieverString = TranscieverString::new();
+
+    while sending_string.len() < sending_string.capacity() {
+        sending_string.push('0').unwrap();
+    }
+
+    /*
     transciever
-        .send(
-            TranscieverString::from("Hello world").into_bytes(),
-            DeviceIdentifyer(2),
-        )
+        .send(sending_string.into_bytes(), DeviceIdentifyer(2))
         .unwrap_or_else(|_| {});
+    */
+
     loop {
         transciever.update();
         if let Some(received_message) = transciever.receive() {
+            serial_println!("Message received back!");
             for byte in received_message.iter() {
                 serial_write_byte!(*byte).unwrap();
             }

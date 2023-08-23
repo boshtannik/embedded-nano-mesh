@@ -48,7 +48,8 @@ impl Transmitter {
 
     fn send_start_byte_sequence(&self) {
         for _ in 0..PACKET_START_BYTES_COUNT {
-            serial_write_byte!(PACKET_START_BYTE).unwrap();
+            serial_write_byte!(PACKET_START_BYTE)
+                .unwrap_or_else(|_| serial_println!("Could not write packet byte to serial"));
         }
     }
 

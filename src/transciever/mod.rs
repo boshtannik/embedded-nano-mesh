@@ -10,7 +10,7 @@ mod types;
 pub use packet::DeviceIdentifyer;
 pub use types::TranscieverString;
 
-use crate::{millis::ms, serial_println};
+use crate::millis::ms;
 
 use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
 
@@ -60,10 +60,8 @@ impl Transciever {
             self.timer.record_speak_time();
         }
         match self.receiver.update() {
-            Err(ReceiverError::MessageQueueIsFull) => serial_println!("Receiver queue is full"),
-            Err(ReceiverError::TransitPacketQueueIsFull) => {
-                serial_println!("Transit packet queue is full")
-            }
+            Err(ReceiverError::MessageQueueIsFull) => {}
+            Err(ReceiverError::TransitPacketQueueIsFull) => {}
             Err(ReceiverError::NoPacketToManage) => (),
             Ok(_) => (),
         };

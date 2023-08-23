@@ -22,7 +22,10 @@ impl PacketBytesParser {
     }
 
     fn try_parse_packet(&mut self) {
-        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_SIZE) {
+        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + 38) {
+            // FIXME: Should be chosen,
+            // statically sized packets or dynamically sized packets?
+            // No magical constants.
             return;
         }
 
@@ -37,8 +40,9 @@ impl PacketBytesParser {
 
         let mut parsing_buffer = PacketSerializedBytes::new();
 
-        for i in 0..=PACKET_START_BYTES_COUNT + PACKET_BYTES_SIZE {
-            if i <= PACKET_START_BYTES_COUNT {
+        for i in 0..PACKET_START_BYTES_COUNT + 38 {
+            if i < PACKET_START_BYTES_COUNT {
+                self.bytes_buffer.pop_front();
                 continue;
             }
 
@@ -56,6 +60,9 @@ impl PacketBytesParser {
 
         if got_packet.is_checksum_correct() {
             self.parsed_packet.replace(got_packet);
+            serial_println!("Packet checksum is ok");
+        } else {
+            serial_println!("Packet checksum is bad");
         }
     }
 
