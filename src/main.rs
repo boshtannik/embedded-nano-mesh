@@ -14,6 +14,13 @@ use millis::{millis_init, ms};
 
 use transciever::{DeviceIdentifyer, Transciever, TranscieverString};
 
+/*
+* Done - Problem with non working shared queue. - Done
+* 1 - Problem with variable size payload in packet.
+* 2 - Problem with unknown packet size (hardcode for now). - Need to be
+*       calculated at compilation time
+*/
+
 #[arduino_hal::entry]
 fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();

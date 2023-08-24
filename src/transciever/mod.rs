@@ -7,12 +7,16 @@ mod timer;
 mod transmitter;
 mod types;
 
+use avr_device::interrupt::Mutex;
 pub use packet::DeviceIdentifyer;
 pub use types::TranscieverString;
 
 use crate::millis::ms;
 
 use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
+
+pub static GLOBAL_MUTEXED_CELLED_QUEUE: Mutex<RefCell<PacketQueue>> =
+    Mutex::new(RefCell::new(PacketQueue::new()));
 
 pub struct Transciever {
     transmitter: transmitter::Transmitter,
@@ -26,13 +30,9 @@ pub enum TranscieverError {
 
 impl Transciever {
     pub fn new(my_address: DeviceIdentifyer, listen_period: ms) -> Transciever {
-        let transit_packet_queue: RefCell<PacketQueue> = RefCell::new(PacketQueue::new());
         Transciever {
-            transmitter: transmitter::Transmitter::new(
-                my_address.clone(),
-                RefCell::clone(&transit_packet_queue),
-            ),
-            receiver: receiver::Receiver::new(my_address, transit_packet_queue),
+            transmitter: transmitter::Transmitter::new(my_address.clone()),
+            receiver: receiver::Receiver::new(my_address),
             timer: timer::Timer::new(listen_period),
         }
     }

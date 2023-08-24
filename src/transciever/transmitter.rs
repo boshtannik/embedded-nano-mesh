@@ -1,5 +1,3 @@
-use core::cell::RefCell;
-
 use crate::transciever::config::PACKET_START_BYTE;
 use crate::{serial_println, serial_write_byte};
 
@@ -11,7 +9,6 @@ use super::types::PacketQueue;
 pub struct Transmitter {
     current_device_identifyer: DeviceIdentifyer,
     packet_queue: PacketQueue,
-    transit_packet_queue: RefCell<PacketQueue>,
 }
 
 pub enum TransmitterError {
@@ -19,14 +16,10 @@ pub enum TransmitterError {
 }
 
 impl Transmitter {
-    pub fn new(
-        current_device_identifyer: DeviceIdentifyer,
-        transit_packet_queue: RefCell<PacketQueue>,
-    ) -> Transmitter {
+    pub fn new(current_device_identifyer: DeviceIdentifyer) -> Transmitter {
         Transmitter {
             current_device_identifyer,
             packet_queue: PacketQueue::new(),
-            transit_packet_queue,
         }
     }
 
@@ -65,13 +58,20 @@ impl Transmitter {
         }
 
         // Send transit queue
-        while let Some(packet) = self.transit_packet_queue.borrow_mut().pop_front() {
-            self.send_start_byte_sequence();
-            for serialized_byte in packet.serialize() {
-                serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
-                    serial_println!("Could not write transit packet byte into serial")
-                });
+        avr_device::interrupt::free(|cs| {
+            while let Some(packet) = crate::transciever::GLOBAL_MUTEXED_CELLED_QUEUE
+                .borrow(cs)
+                .borrow_mut()
+                .pop_front()
+            {
+                serial_println!("Transit queue has packet received. Sendig it back");
+                self.send_start_byte_sequence();
+                for serialized_byte in packet.serialize() {
+                    serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
+                        serial_println!("Could not write transit packet byte into serial")
+                    });
+                }
             }
-        }
+        });
     }
 }

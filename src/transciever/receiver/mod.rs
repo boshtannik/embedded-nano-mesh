@@ -1,14 +1,14 @@
 mod packet_bytes_parser;
 
-use crate::serial_try_read_byte;
+use crate::{serial_println, serial_try_read_byte};
 use avr_device::interrupt::Mutex;
-use core::cell::{Cell, RefCell};
+use core::cell::Cell;
 
 use self::packet_bytes_parser::PacketBytesParser;
 
 use super::{
     packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes},
-    types::{PacketDataQueue, PacketQueue},
+    types::PacketDataQueue,
 };
 
 use arduino_hal::prelude::_embedded_hal_serial_Read;
@@ -16,7 +16,6 @@ use arduino_hal::prelude::_embedded_hal_serial_Read;
 pub struct Receiver {
     current_device_identifyer: DeviceIdentifyer,
     message_queue: PacketDataQueue,
-    transit_packet_queue: RefCell<PacketQueue>,
     packet_bytes_parser: PacketBytesParser,
 }
 
@@ -27,14 +26,10 @@ pub enum ReceiverError {
 }
 
 impl Receiver {
-    pub fn new(
-        current_device_identifyer: DeviceIdentifyer,
-        transit_packet_queue: RefCell<PacketQueue>,
-    ) -> Receiver {
+    pub fn new(current_device_identifyer: DeviceIdentifyer) -> Receiver {
         Receiver {
             current_device_identifyer,
             message_queue: PacketDataQueue::new(),
-            transit_packet_queue,
             packet_bytes_parser: PacketBytesParser::new(),
         }
     }
@@ -60,10 +55,17 @@ impl Receiver {
                     Err(_) => Err(ReceiverError::MessageQueueIsFull),
                 }
             } else {
-                match self.transit_packet_queue.get_mut().push_back(packet) {
-                    Ok(_) => Ok(()),
-                    Err(_) => Err(ReceiverError::TransitPacketQueueIsFull),
-                }
+                serial_println!("Foreign packet caught, sending into transit queue");
+                ::avr_device::interrupt::free(|cs| {
+                    match crate::transciever::GLOBAL_MUTEXED_CELLED_QUEUE
+                        .borrow(cs)
+                        .borrow_mut()
+                        .push_back(packet)
+                    {
+                        Ok(_) => Ok(()),
+                        Err(_) => Err(ReceiverError::TransitPacketQueueIsFull),
+                    }
+                })
             }
         } else {
             Err(ReceiverError::NoPacketToManage)
