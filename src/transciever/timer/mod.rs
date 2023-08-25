@@ -14,7 +14,7 @@ impl Timer {
     }
 
     pub fn is_time_to_speak(&self) -> bool {
-        millis() > self.last_speak_time.overflowing_add(self.listen_period).0
+        millis() > self.last_speak_time + self.listen_period
     }
 
     pub fn record_speak_time(&mut self) {

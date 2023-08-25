@@ -1,8 +1,11 @@
+use heapless::String;
+
 use crate::transciever::config::PACKET_START_BYTE;
-use crate::{serial_println, serial_write_byte};
+use crate::{serial_debug, serial_println, serial_write_byte};
 
 use super::config::PACKET_START_BYTES_COUNT;
 use super::packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes, PacketSerializer};
+use super::TranscieverString;
 
 use super::types::PacketQueue;
 
@@ -41,8 +44,7 @@ impl Transmitter {
 
     fn send_start_byte_sequence(&self) {
         for _ in 0..PACKET_START_BYTES_COUNT {
-            serial_write_byte!(PACKET_START_BYTE)
-                .unwrap_or_else(|_| serial_println!("Could not write packet byte to serial"));
+            serial_write_byte!(PACKET_START_BYTE).unwrap_or_else(|_| {});
         }
     }
 
@@ -51,10 +53,9 @@ impl Transmitter {
         while let Some(packet) = self.packet_queue.pop_front() {
             self.send_start_byte_sequence();
             for serialized_byte in packet.serialize() {
-                serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
-                    serial_println!("Could not write own packet byte into serial")
-                });
+                serial_write_byte!(serialized_byte).unwrap_or_else(|_| {});
             }
+            return;
         }
 
         // Send transit queue
@@ -64,13 +65,11 @@ impl Transmitter {
                 .borrow_mut()
                 .pop_front()
             {
-                serial_println!("Transit queue has packet received. Sendig it back");
                 self.send_start_byte_sequence();
                 for serialized_byte in packet.serialize() {
-                    serial_write_byte!(serialized_byte).unwrap_or_else(|_| {
-                        serial_println!("Could not write transit packet byte into serial")
-                    });
+                    serial_write_byte!(serialized_byte).unwrap_or_else(|_| {});
                 }
+                return;
             }
         });
     }

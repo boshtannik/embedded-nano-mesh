@@ -63,3 +63,23 @@ macro_rules! serial_try_read_byte {
         })
     };
 }
+
+#[macro_export]
+#[cfg(feature = "serial_debug")]
+macro_rules! serial_debug {
+    ($($arg:tt)*) => {
+            ::avr_device::interrupt::free(|cs| {
+            if let Some(serial) = &mut *crate::serial::GLOBAL_SERIAL.borrow(cs).borrow_mut() {
+                ::ufmt::uwriteln!(serial, $($arg)*).unwrap()  // TODO: Review this unwrap
+            }
+        })
+    }
+}
+
+#[macro_export]
+#[cfg(not(feature = "serial_debug"))]
+macro_rules! serial_debug {
+    ($($arg:tt)*) => {
+        ()
+    };
+}

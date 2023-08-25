@@ -1,7 +1,8 @@
 use crate::{
     serial_println,
     transciever::{
-        packet::{Packet, PacketSerializedBytes, PacketSerializer, PACKET_BYTES_SIZE},
+        config::MANUAL_DETERMINED_SERIALIZED_PACKET_BYTES_COUNT,
+        packet::{Packet, PacketSerializedBytes, PacketSerializer},
         types::PacketBytesBuffer,
     },
 };
@@ -22,7 +23,10 @@ impl PacketBytesParser {
     }
 
     fn try_parse_packet(&mut self) {
-        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + 38) {
+        // TODO: Mke parsing algorithm more stable!!!
+        if self.bytes_buffer.len()
+            < (PACKET_START_BYTES_COUNT + MANUAL_DETERMINED_SERIALIZED_PACKET_BYTES_COUNT)
+        {
             // FIXME: Should be chosen,
             // statically sized packets or dynamically sized packets?
             // No magical constants.
@@ -38,31 +42,24 @@ impl PacketBytesParser {
             return;
         }
 
-        let mut parsing_buffer = PacketSerializedBytes::new();
-
-        for i in 0..PACKET_START_BYTES_COUNT + 38 {
-            if i < PACKET_START_BYTES_COUNT {
-                self.bytes_buffer.pop_front();
-                continue;
-            }
-
-            let popped_element = self.bytes_buffer.pop_front().unwrap_or_else(|| {
-                serial_println!("Error. Could not pop from bytes_buffer");
-                0u8
-            });
-
-            parsing_buffer.push(popped_element).unwrap_or_else(|_| {
-                serial_println!("Error. Could not push byte into the parsing_buffer")
-            });
+        for _ in 0..PACKET_START_BYTES_COUNT {
+            self.bytes_buffer.pop_front().unwrap_or_else(|| 0u8);
         }
+
+        let parsing_buffer = PacketSerializedBytes::from(
+            self.bytes_buffer
+                .iter()
+                .map(|el_ref| *el_ref)
+                .collect::<PacketSerializedBytes>(),
+        );
 
         let got_packet = <Packet as PacketSerializer>::deserialize(parsing_buffer);
 
         if got_packet.is_checksum_correct() {
+            serial_println!("checksum is ok");
             self.parsed_packet.replace(got_packet);
-            serial_println!("Packet checksum is ok");
         } else {
-            serial_println!("Packet checksum is bad");
+            serial_println!("checksum is bad")
         }
     }
 
@@ -70,9 +67,7 @@ impl PacketBytesParser {
         if self.bytes_buffer.is_full() {
             self.bytes_buffer.pop_front();
         }
-        self.bytes_buffer
-            .push_back(byte)
-            .unwrap_or_else(|_| serial_println!("ERROR: Could not push received byte into buffer"));
+        self.bytes_buffer.push_back(byte).unwrap_or_else(|_| {});
         self.try_parse_packet();
     }
 

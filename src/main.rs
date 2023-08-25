@@ -10,7 +10,7 @@ mod millis;
 mod serial;
 mod transciever;
 
-use millis::{millis_init, ms};
+use millis::{millis, millis_init, ms};
 
 use transciever::{DeviceIdentifyer, Transciever, TranscieverString};
 
@@ -33,29 +33,40 @@ fn main() -> ! {
 
     let pins = arduino_hal::pins!(dp);
 
+    let mut led_pin = pins.d13.into_output();
+    let mut last_blink_time = millis();
+
     serial::init(default_serial!(dp, pins, 57600));
 
     unsafe { avr_device::interrupt::enable() };
 
-    let mut transciever = Transciever::new(DeviceIdentifyer(1), 1000 as ms);
-
-    let mut sending_string: TranscieverString = TranscieverString::new();
+    let mut transciever = Transciever::new(DeviceIdentifyer(1), 100 as ms);
 
     /*
+    let mut message = TranscieverString::from("Hl wrld");
+    while message.len() != message.capacity() {
+        message.push('\0').unwrap_or_else(|_| {});
+    }
     transciever
-        .send(sending_string.into_bytes(), DeviceIdentifyer(2))
+        .send(message.into_bytes(), DeviceIdentifyer(2))
         .unwrap_or_else(|_| {});
     */
 
     loop {
         transciever.update();
         if let Some(received_message) = transciever.receive() {
-            serial_println!("Message received back!");
+            serial_println!("Message has reached it's destination!");
             for byte in received_message.iter() {
                 serial_write_byte!(*byte).unwrap();
             }
             serial_write_byte!(b'\r').unwrap();
             serial_write_byte!(b'\n').unwrap();
+        }
+
+        let now_time = millis();
+        if (last_blink_time + 1000 as ms) < now_time {
+            led_pin.toggle();
+            last_blink_time = now_time;
         }
     }
 }
