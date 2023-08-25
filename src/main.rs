@@ -40,17 +40,17 @@ fn main() -> ! {
 
     unsafe { avr_device::interrupt::enable() };
 
-    let mut transciever = Transciever::new(DeviceIdentifyer(1), 100 as ms);
+    let mut transciever = Transciever::new(DeviceIdentifyer(2), 1000 as ms);
 
-    /*
-    let mut message = TranscieverString::from("Hl wrld");
-    while message.len() != message.capacity() {
-        message.push('\0').unwrap_or_else(|_| {});
+    for _ in 0..4 {
+        let mut message = TranscieverString::from("Hl wrld");
+        while message.len() != message.capacity() {
+            message.push('\0').unwrap_or_else(|_| {});
+        }
+        transciever
+            .send(message.into_bytes(), DeviceIdentifyer(2))
+            .unwrap_or_else(|_| {});
     }
-    transciever
-        .send(message.into_bytes(), DeviceIdentifyer(2))
-        .unwrap_or_else(|_| {});
-    */
 
     loop {
         transciever.update();

@@ -1,8 +1,7 @@
 use crate::{
     serial_println,
     transciever::{
-        config::MANUAL_DETERMINED_SERIALIZED_PACKET_BYTES_COUNT,
-        packet::{Packet, PacketSerializedBytes, PacketSerializer},
+        packet::{Packet, PacketSerializedBytes, PacketSerializer, PACKET_BYTES_SIZE},
         types::PacketBytesBuffer,
     },
 };
@@ -24,9 +23,7 @@ impl PacketBytesParser {
 
     fn try_parse_packet(&mut self) {
         // TODO: Mke parsing algorithm more stable!!!
-        if self.bytes_buffer.len()
-            < (PACKET_START_BYTES_COUNT + MANUAL_DETERMINED_SERIALIZED_PACKET_BYTES_COUNT)
-        {
+        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_SIZE) {
             // FIXME: Should be chosen,
             // statically sized packets or dynamically sized packets?
             // No magical constants.
