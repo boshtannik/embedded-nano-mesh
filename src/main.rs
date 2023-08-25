@@ -17,8 +17,12 @@ use transciever::{DeviceIdentifyer, Transciever, TranscieverString};
 /*
 * Done - Problem with non working shared queue. - Done
 * 1 - Problem with variable size payload in packet.
+*       (Temporary solve) - Fill the rest of free space by 0 bytes.
+*       This place will be marked as ===Place of temporary solve 1===
 * 2 - Problem with unknown packet size (hardcode for now). - Need to be
 *       calculated at compilation time
+* 3 - Packet is living forever. Lifetime shall be added. Think about
+*       reduce packet jamming over the ether
 */
 
 #[arduino_hal::entry]
@@ -36,10 +40,6 @@ fn main() -> ! {
     let mut transciever = Transciever::new(DeviceIdentifyer(1), 1000 as ms);
 
     let mut sending_string: TranscieverString = TranscieverString::new();
-
-    while sending_string.len() < sending_string.capacity() {
-        sending_string.push('0').unwrap();
-    }
 
     /*
     transciever

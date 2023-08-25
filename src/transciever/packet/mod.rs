@@ -8,6 +8,8 @@ pub use traits::{DataPacker, PacketSerializer};
 
 pub use config::{CONTENT_SIZE, PACKET_BYTES_SIZE};
 
+use crate::serial_println;
+
 use self::types::{AddressType, ChecksumType, FlagsType};
 
 pub use self::types::{PacketDataBytes, PacketSerializedBytes};
@@ -110,8 +112,14 @@ impl DataPacker for Packet {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
-        data: PacketDataBytes,
+        mut data: PacketDataBytes,
     ) -> Self {
+        while !data.is_full() {
+            // === Temporary solve 1 === Look into the main.rs for the reason description.
+            data.push(0x00)
+                .unwrap_or_else(|_| serial_println!("Error during fill data with zero bytes"));
+        }
+
         Packet::new(
             source_device_identifyer,
             destination_device_identifyer,

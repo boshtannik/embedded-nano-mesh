@@ -58,7 +58,8 @@ fn TIMER0_COMPA() {
     avr_device::interrupt::free(|cs| {
         let counter_cell = MILLIS_COUNTER.borrow(cs);
         let counter = counter_cell.get();
-        counter_cell.set(counter + MILLIS_INCREMENT);
+        let new_value = counter.overflowing_add(MILLIS_INCREMENT).0;
+        counter_cell.set(new_value);
     })
 }
 
