@@ -3,6 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
+use heapless::String;
 use panic_halt as _;
 
 mod config;
@@ -16,12 +17,7 @@ use transciever::{DeviceIdentifyer, Transciever, TranscieverString};
 
 /*
 * Done - Problem with non working shared queue. - Done
-* 1 - Problem with variable size payload in packet.
-*       (Temporary solve) - Fill the rest of free space by 0 bytes.
-*       This place will be marked as ===Place of temporary solve 1===
-* 2 - Problem with unknown packet size (hardcode for now). - Need to be
-*       calculated at compilation time
-* 3 - Packet is living forever. Lifetime shall be added. Think about
+* 1 - Packet is living forever. Lifetime shall be added. Think about
 *       reduce packet jamming over the ether
 */
 
@@ -40,17 +36,9 @@ fn main() -> ! {
 
     unsafe { avr_device::interrupt::enable() };
 
-    let mut transciever = Transciever::new(DeviceIdentifyer(2), 1000 as ms);
+    let mut transciever = Transciever::new(DeviceIdentifyer(2), 200 as ms);
 
-    for _ in 0..4 {
-        let mut message = TranscieverString::from("Hl wrld");
-        while message.len() != message.capacity() {
-            message.push('\0').unwrap_or_else(|_| {});
-        }
-        transciever
-            .send(message.into_bytes(), DeviceIdentifyer(2))
-            .unwrap_or_else(|_| {});
-    }
+    let mut packet_counter: u32 = 0;
 
     loop {
         transciever.update();
@@ -64,9 +52,27 @@ fn main() -> ! {
         }
 
         let now_time = millis();
-        if (last_blink_time + 1000 as ms) < now_time {
+        if now_time > (last_blink_time + 250 as ms) {
             led_pin.toggle();
             last_blink_time = now_time;
+
+            let packet_num: String<20> = String::from(packet_counter);
+
+            let mut message = TranscieverString::from("Packet #: ");
+
+            message.push_str(&packet_num).unwrap();
+
+            while message.len() != message.capacity() {
+                message.push('\0').unwrap_or_else(|_| {});
+            }
+            match transciever.send(message.into_bytes(), DeviceIdentifyer(2)) {
+                Ok(_) => {}
+                Err(transciever::TranscieverError::TryAgainLater) => {
+                    serial_println!("Too much packets, Transciever says try later");
+                }
+            };
+
+            packet_counter = packet_counter.overflowing_add(1).0;
         }
     }
 }

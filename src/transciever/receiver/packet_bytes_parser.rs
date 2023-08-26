@@ -1,9 +1,6 @@
-use crate::{
-    serial_println,
-    transciever::{
-        packet::{Packet, PacketSerializedBytes, PacketSerializer, PACKET_BYTES_SIZE},
-        types::PacketBytesBuffer,
-    },
+use crate::transciever::{
+    packet::{Packet, PacketSerializedBytes, PacketSerializer, PACKET_BYTES_SIZE},
+    types::PacketBytesBuffer,
 };
 
 use super::super::config::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
@@ -22,11 +19,7 @@ impl PacketBytesParser {
     }
 
     fn try_parse_packet(&mut self) {
-        // TODO: Mke parsing algorithm more stable!!!
         if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_SIZE) {
-            // FIXME: Should be chosen,
-            // statically sized packets or dynamically sized packets?
-            // No magical constants.
             return;
         }
 
@@ -53,10 +46,7 @@ impl PacketBytesParser {
         let got_packet = <Packet as PacketSerializer>::deserialize(parsing_buffer);
 
         if got_packet.is_checksum_correct() {
-            serial_println!("checksum is ok");
             self.parsed_packet.replace(got_packet);
-        } else {
-            serial_println!("checksum is bad")
         }
     }
 

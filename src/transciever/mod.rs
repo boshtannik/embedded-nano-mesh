@@ -11,7 +11,7 @@ use avr_device::interrupt::Mutex;
 pub use packet::DeviceIdentifyer;
 pub use types::TranscieverString;
 
-use crate::{millis::ms, serial_debug};
+use crate::millis::ms;
 
 use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
 

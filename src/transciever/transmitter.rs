@@ -1,11 +1,8 @@
-use heapless::String;
-
+use crate::serial_write_byte;
 use crate::transciever::config::PACKET_START_BYTE;
-use crate::{serial_debug, serial_println, serial_write_byte};
 
 use super::config::PACKET_START_BYTES_COUNT;
 use super::packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes, PacketSerializer};
-use super::TranscieverString;
 
 use super::types::PacketQueue;
 
