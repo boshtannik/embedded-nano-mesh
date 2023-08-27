@@ -13,6 +13,8 @@ pub use types::TranscieverString;
 
 use crate::millis::ms;
 
+pub use packet::LifeTimeType;
+
 use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
 
 pub static GLOBAL_MUTEXED_CELLED_QUEUE: Mutex<RefCell<PacketQueue>> =
@@ -41,8 +43,12 @@ impl Transciever {
         &mut self,
         data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
+        lifetime: LifeTimeType,
     ) -> Result<(), TranscieverError> {
-        match self.transmitter.send(data, destination_device_identifyer) {
+        match self
+            .transmitter
+            .send(data, destination_device_identifyer, lifetime)
+        {
             Ok(_) => Ok(()),
             Err(transmitter::TransmitterError::PacketQueueIsFull) => {
                 Err(TranscieverError::TryAgainLater)
@@ -62,6 +68,7 @@ impl Transciever {
         match self.receiver.update() {
             Err(ReceiverError::MessageQueueIsFull) => {}
             Err(ReceiverError::TransitPacketQueueIsFull) => {}
+            Err(ReceiverError::TransitPacketLifetimeEnded) => {}
             Err(ReceiverError::NoPacketToManage) => (),
             Ok(_) => (),
         };

@@ -7,7 +7,7 @@ use core::cell::Cell;
 use self::packet_bytes_parser::PacketBytesParser;
 
 use super::{
-    packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes},
+    packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes, PacketError},
     types::PacketDataQueue,
 };
 
@@ -21,6 +21,7 @@ pub struct Receiver {
 
 pub enum ReceiverError {
     TransitPacketQueueIsFull,
+    TransitPacketLifetimeEnded,
     MessageQueueIsFull,
     NoPacketToManage,
 }
@@ -45,7 +46,7 @@ impl Receiver {
     }
 
     fn manage_received_packet(&mut self, packet: Option<Packet>) -> Result<(), ReceiverError> {
-        if let Some(packet) = packet {
+        if let Some(mut packet) = packet {
             if packet.match_destination_identifyer(&self.current_device_identifyer) {
                 match self
                     .message_queue
@@ -55,16 +56,21 @@ impl Receiver {
                     Err(_) => Err(ReceiverError::MessageQueueIsFull),
                 }
             } else {
-                ::avr_device::interrupt::free(|cs| {
-                    match crate::transciever::GLOBAL_MUTEXED_CELLED_QUEUE
-                        .borrow(cs)
-                        .borrow_mut()
-                        .push_back(packet)
-                    {
-                        Ok(_) => Ok(()),
-                        Err(_) => Err(ReceiverError::TransitPacketQueueIsFull),
+                match packet.deacrease_lifetime() {
+                    Ok(()) => ::avr_device::interrupt::free(|cs| {
+                        match crate::transciever::GLOBAL_MUTEXED_CELLED_QUEUE
+                            .borrow(cs)
+                            .borrow_mut()
+                            .push_back(packet)
+                        {
+                            Ok(_) => Ok(()),
+                            Err(_) => Err(ReceiverError::TransitPacketQueueIsFull),
+                        }
+                    }),
+                    Err(PacketError::PacketLifetimeEnded) => {
+                        Err(ReceiverError::TransitPacketLifetimeEnded)
                     }
-                })
+                }
             }
         } else {
             Err(ReceiverError::NoPacketToManage)

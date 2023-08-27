@@ -13,13 +13,7 @@ mod transciever;
 
 use millis::{millis, millis_init, ms};
 
-use transciever::{DeviceIdentifyer, Transciever, TranscieverString};
-
-/*
-* Done - Problem with non working shared queue. - Done
-* 1 - Packet is living forever. Lifetime shall be added. Think about
-*       reduce packet jamming over the ether
-*/
+use transciever::{DeviceIdentifyer, LifeTimeType, Transciever, TranscieverString};
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -36,7 +30,7 @@ fn main() -> ! {
 
     unsafe { avr_device::interrupt::enable() };
 
-    let mut transciever = Transciever::new(DeviceIdentifyer(2), 200 as ms);
+    let mut transciever = Transciever::new(DeviceIdentifyer(2), 230 as ms);
 
     let mut packet_counter: u32 = 0;
 
@@ -65,7 +59,11 @@ fn main() -> ! {
             while message.len() != message.capacity() {
                 message.push('\0').unwrap_or_else(|_| {});
             }
-            match transciever.send(message.into_bytes(), DeviceIdentifyer(2)) {
+            match transciever.send(
+                message.into_bytes(),
+                DeviceIdentifyer(2),
+                LifeTimeType::from(3),
+            ) {
                 Ok(_) => {}
                 Err(transciever::TranscieverError::TryAgainLater) => {
                     serial_println!("Too much packets, Transciever says try later");

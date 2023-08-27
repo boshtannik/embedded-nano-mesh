@@ -2,7 +2,9 @@ use crate::serial_write_byte;
 use crate::transciever::config::PACKET_START_BYTE;
 
 use super::config::PACKET_START_BYTES_COUNT;
-use super::packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes, PacketSerializer};
+use super::packet::{
+    DataPacker, DeviceIdentifyer, LifeTimeType, Packet, PacketDataBytes, PacketSerializer,
+};
 
 use super::types::PacketQueue;
 
@@ -27,10 +29,12 @@ impl Transmitter {
         &mut self,
         data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
+        lifetime: LifeTimeType,
     ) -> Result<(), TransmitterError> {
         let packed_data = <Packet as DataPacker>::pack(
             self.current_device_identifyer.clone(),
             destination_device_identifyer,
+            lifetime,
             data,
         );
         match self.packet_queue.push_back(packed_data) {
