@@ -39,6 +39,9 @@ The `send` method require next arguments to be provided:
    reduces lifetime of packet by 1. The purpose of it - is to void the ether being
    jammed by lost packets, which might be re-transmitted inifinite number of times.
 
+The `receive` mothod optionally returns `PacketDataBytes`, in case, if transceiver
+has data, which was sent exactly to that instance of `Transciever`, received.
+
 ## Note
 Under the hood, the data is packed into `Packet` instance. The `Packet`
 data fields can be configured via `src/transciever/packet/config.rs` and via
