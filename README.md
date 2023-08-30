@@ -8,7 +8,7 @@ using cheap, and simple parts, which has to cost less then 3$ per node.
 Was designed to use with mostly spreaded Atmega328p chips, but not only.
 
 ## Warning
-This protocol does not ssume data cryption.
+This protocol does not provide data cryption.
 
 ## Main parts
 Main part of this protocol - is the `Transciever` structure.
