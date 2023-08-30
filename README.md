@@ -45,7 +45,7 @@ has data, which was sent exactly to that instance of `Transciever`, received.
 ## Note
 Under the hood, the data is packed into `Packet` instance. The `Packet`
 data fields can be configured via `src/transciever/packet/config.rs` and via
-`src/transciever/packet/config.rs`. Modification of these files, can help
+`src/transciever/packet/types.rs`. Modification of these files, can help
 adjust packet structure on the fly, and the rest of program will keep up
 with that changes.
 
