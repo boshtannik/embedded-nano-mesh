@@ -29,6 +29,16 @@ The `Transciever` instance shall be periodically updated via
    and then extract packets payload, in case of packet has reached it's
    destination.
 
+The `send` method require next arguments to be provided:
+1. `data` - type of `PacketDataBytes` - which is the alias of heapless::Vec - vector
+   of data bytes of specific size, defined in `src/transciever/packet/config.rs`
+2. `destication_device_identifyer`: `DeviceIdentifyer` instance. which presents
+   the identifyer of receiving device.
+3. `lifetime` - The number of intermediate nodes (`Transcievers`) - the packet
+   will be able to pass. Each hop between (nodes / devices / 'Transceivers`)
+   reduces lifetime of packet by 1. The purpose of it - is to void the ether being
+   jammed by lost packets, which might be re-transmitted inifinite number of times.
+
 ## Note
 Under the hood, the data is packed into `Packet` instance. The `Packet`
 data fields can be configured via `src/transciever/packet/config.rs` and via
