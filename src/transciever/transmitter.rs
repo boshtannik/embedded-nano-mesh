@@ -50,15 +50,6 @@ impl Transmitter {
     }
 
     pub fn update(&mut self) {
-        // Send packet queue.
-        while let Some(packet) = self.packet_queue.pop_front() {
-            self.send_start_byte_sequence();
-            for serialized_byte in packet.serialize() {
-                serial_write_byte!(serialized_byte).unwrap_or_else(|_| {});
-            }
-            return;
-        }
-
         // Send transit queue
         avr_device::interrupt::free(|cs| {
             while let Some(packet) = crate::transciever::GLOBAL_MUTEXED_CELLED_QUEUE
@@ -73,5 +64,14 @@ impl Transmitter {
                 return;
             }
         });
+
+        // Send packet queue.
+        while let Some(packet) = self.packet_queue.pop_front() {
+            self.send_start_byte_sequence();
+            for serialized_byte in packet.serialize() {
+                serial_write_byte!(serialized_byte).unwrap_or_else(|_| {});
+            }
+            return;
+        }
     }
 }
