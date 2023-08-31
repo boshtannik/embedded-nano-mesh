@@ -7,6 +7,18 @@ using cheap, and simple parts, which has to cost less then 3$ per node.
 
 Was designed to use with mostly spreaded Atmega328p chips, but not only.
 
+## Status
+Currently was tested by directly wiring TX pin of sender to RX pin of
+receiver, and RX pin of sender to TX pin of receiver.
+Sending, Receiving, and Transition of packets were working correctly.
+
+Using of 433 Mhz instead of wires - Not done.
+
+## Idea
+Write driver interface to be able to implement inter-changable connection
+layers, like 433 mhz modules, or 2.4 Ghz modules, with their drivers
+providing.
+
 ## Warning
 This protocol does not provide data cryption.
 
@@ -56,6 +68,13 @@ node expects specific structure of `Packet`, in order to be able
 to parse it, check sum, verify destination address, etc..
 So if different devices has different presentation of `Packet` structure,
 thay may not be able to communicate.
+
+## Note
+Changing `Packet` structure - will require also modification of `serialization` part, `deserialization` part,
+and part, which calculates the `size of packet` by calculating sizes of all packet fields (this number of
+bytes is needed for the device to know, how many bytes to receive, and start deserialization process
+right after it).
+
 
 Written entirely in rust.
 
