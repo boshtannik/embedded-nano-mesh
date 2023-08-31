@@ -6,7 +6,7 @@ use core::mem::size_of;
 
 pub use traits::{DataPacker, PacketSerializer};
 
-pub use config::{CONTENT_SIZE, PACKET_BYTES_SIZE};
+pub use config::{CONTENT_SIZE, PACKET_BYTES_COUNT};
 
 use crate::serial_debug;
 

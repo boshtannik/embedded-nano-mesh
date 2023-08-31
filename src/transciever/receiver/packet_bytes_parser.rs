@@ -1,5 +1,5 @@
 use crate::transciever::{
-    packet::{Packet, PacketSerializedBytes, PacketSerializer, PACKET_BYTES_SIZE},
+    packet::{Packet, PacketSerializedBytes, PacketSerializer, PACKET_BYTES_COUNT},
     types::PacketBytesBuffer,
 };
 
@@ -19,7 +19,7 @@ impl PacketBytesParser {
     }
 
     fn try_parse_packet(&mut self) {
-        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_SIZE) {
+        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_COUNT) {
             return;
         }
 
