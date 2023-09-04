@@ -1,6 +1,6 @@
 Things are left to do:
 
-* Modify the packet in order to:
+* (DONE) Modify the packet in order to:
     * Void dead packets in the ether by producing lifetime of packet to be
       transitted over the network. The lack of destination
       device in the pool - will cause the radio ether being jammed
@@ -18,3 +18,10 @@ Things are left to do:
   way. The more messages were caught in some period of time - the more delays
   nodes will use between messaging, which should reduce possible
   jamming of ether.
+
+* !!! Seeoms only reasonable modules to establish radio connection are
+  wireless USART extender modules, such as djy-40, djy-41, sv-610. or
+  maybe other, that allow to transmit byte to multiple receiving devices
+  at once.
+  The cheapest and expected way to send / receive data - is via
+  rx / tx pins of MCU, which this code is working on.
