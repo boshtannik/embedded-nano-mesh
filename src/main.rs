@@ -3,7 +3,6 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use heapless::String;
 use panic_halt as _;
 
 mod config;
@@ -11,6 +10,7 @@ mod millis;
 mod serial;
 mod transciever;
 
+use heapless::String;
 use millis::{millis, millis_init, ms};
 
 use transciever::{DeviceIdentifyer, LifeTimeType, Transciever, TranscieverString};
@@ -26,7 +26,7 @@ fn main() -> ! {
     let mut led_pin = pins.d13.into_output();
     let mut last_blink_time = millis();
 
-    serial::init(default_serial!(dp, pins, 57600));
+    serial::init(default_serial!(dp, pins, 9600));
 
     unsafe { avr_device::interrupt::enable() };
 
