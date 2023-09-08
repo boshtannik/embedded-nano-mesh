@@ -5,7 +5,6 @@
 use arduino_hal::default_serial;
 use panic_halt as _;
 
-mod config;
 mod millis;
 mod serial;
 mod transciever;

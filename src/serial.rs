@@ -1,5 +1,3 @@
-#![feature(abi_avr_interrupt)]
-
 use avr_device::interrupt::Mutex;
 use core::cell::RefCell;
 
