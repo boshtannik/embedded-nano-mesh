@@ -20,8 +20,8 @@ Things are left to do:
   jamming of ether.
 
 * !!! Seeoms only reasonable modules to establish radio connection are
-  wireless USART extender modules, such as djy-40, djy-41, sv-610, hc-11, hc-12. or
-  maybe other, that allow to transmit byte to multiple receiving devices
+  wireless USART extender modules, such as djy-40, djy-41, sv-610, hc-11, hc-12, lc12s, GT-38. or
+  other radio-uart module, that allow to transmit byte to multiple receiving devices
   at once.
   The cheapest and expected way to send / receive data - is via
   rx / tx pins of MCU, which this code is working on.
