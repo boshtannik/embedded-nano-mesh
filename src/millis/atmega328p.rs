@@ -11,8 +11,7 @@
 use core::cell;
 use panic_halt as _;
 
-#[allow(non_camel_case_types)]
-pub type ms = u32;
+use super::ms;
 
 // Possible Values:
 //
