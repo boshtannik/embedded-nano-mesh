@@ -1,8 +1,4 @@
-use avr_device::interrupt::Mutex;
-use core::cell::RefCell;
-
-pub type Usart = arduino_hal::hal::usart::Usart0<arduino_hal::DefaultClock>;
-pub static GLOBAL_SERIAL: Mutex<RefCell<Option<Usart>>> = Mutex::new(RefCell::new(None));
+use super::{Usart, GLOBAL_SERIAL};
 
 pub fn init(serial: Usart) {
     avr_device::interrupt::free(|cs| {

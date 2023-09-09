@@ -24,8 +24,8 @@ use super::ms;
 // ║      1024 ║          125 ║              8 ms ║
 // ║      1024 ║          250 ║             16 ms ║
 // ╚═══════════╩══════════════╩═══════════════════╝
-const PRESCALER: u32 = 1024;
-const TIMER_COUNTS: u32 = 125;
+const PRESCALER: ms = 1024;
+const TIMER_COUNTS: ms = 125;
 
 const MILLIS_INCREMENT: ms = PRESCALER * TIMER_COUNTS / 16000;
 
