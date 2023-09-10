@@ -9,6 +9,7 @@ use self::packet_bytes_parser::PacketBytesParser;
 use super::{
     packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes, PacketError},
     types::PacketDataQueue,
+    GLOBAL_MUTEXED_CELLED_QUEUE,
 };
 
 use arduino_hal::prelude::_embedded_hal_serial_Read;
@@ -57,15 +58,13 @@ impl Receiver {
                 }
             } else {
                 match packet.deacrease_lifetime() {
-                    Ok(()) => ::avr_device::interrupt::free(|cs| {
-                        match crate::transciever::GLOBAL_MUTEXED_CELLED_QUEUE
-                            .borrow(cs)
-                            .borrow_mut()
-                            .push_back(packet)
-                        {
-                            Ok(_) => Ok(()),
-                            Err(_) => Err(ReceiverError::TransitPacketQueueIsFull),
-                        }
+                    Ok(()) => ::avr_device::interrupt::free(|cs| match GLOBAL_MUTEXED_CELLED_QUEUE
+                        .borrow(cs)
+                        .borrow_mut()
+                        .push_back(packet)
+                    {
+                        Ok(_) => Ok(()),
+                        Err(_) => Err(ReceiverError::TransitPacketQueueIsFull),
                     }),
                     Err(PacketError::PacketLifetimeEnded) => {
                         Err(ReceiverError::TransitPacketLifetimeEnded)

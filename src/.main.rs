@@ -5,14 +5,12 @@
 use arduino_hal::default_serial;
 use panic_halt as _;
 
-mod millis;
-mod serial;
-mod transciever;
+mod mesh_lib;
 
 use heapless::String;
-use millis::{millis, millis_init, ms};
+use mesh_lib::millis::{millis, millis_init, ms};
 
-use transciever::{DeviceIdentifyer, LifeTimeType, Transciever, TranscieverString};
+use mesh_lib::transciever::{DeviceIdentifyer, LifeTimeType, Transciever, TranscieverString};
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -25,7 +23,7 @@ fn main() -> ! {
     let mut led_pin = pins.d13.into_output();
     let mut last_blink_time = millis();
 
-    serial::init(default_serial!(dp, pins, 9600));
+    mesh_lib::serial::init(default_serial!(dp, pins, 9600));
 
     unsafe { avr_device::interrupt::enable() };
 

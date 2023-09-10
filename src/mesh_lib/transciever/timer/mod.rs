@@ -1,4 +1,4 @@
-use crate::millis::{millis, ms};
+use crate::mesh_lib::millis::{millis, ms};
 
 pub struct Timer {
     listen_period: ms,

@@ -1,12 +1,12 @@
 [package]
-name = "nano-proj"
-version = "0.0.0"
+name = "nano-mesh"
+version = "0.0.1"
 authors = ["Yevhen Shevchenko (boshtannik) <boshtannik@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
-[[bin]]
-name = "nano-proj"
+[lib]
+name = "nano_mesh"
 test = false
 bench = false
 

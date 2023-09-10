@@ -1,10 +1,10 @@
 use crate::serial_write_byte;
-use crate::transciever::config::PACKET_START_BYTE;
 
-use super::config::PACKET_START_BYTES_COUNT;
+use super::config::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{
     DataPacker, DeviceIdentifyer, LifeTimeType, Packet, PacketDataBytes, PacketSerializer,
 };
+use super::GLOBAL_MUTEXED_CELLED_QUEUE;
 
 use super::types::PacketQueue;
 
@@ -52,7 +52,7 @@ impl Transmitter {
     pub fn update(&mut self) {
         // Send transit queue
         avr_device::interrupt::free(|cs| {
-            while let Some(packet) = crate::transciever::GLOBAL_MUTEXED_CELLED_QUEUE
+            while let Some(packet) = GLOBAL_MUTEXED_CELLED_QUEUE
                 .borrow(cs)
                 .borrow_mut()
                 .pop_front()

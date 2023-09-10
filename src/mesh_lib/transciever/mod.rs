@@ -11,11 +11,11 @@ use avr_device::interrupt::Mutex;
 pub use packet::DeviceIdentifyer;
 pub use types::TranscieverString;
 
-use crate::millis::ms;
-
 pub use packet::LifeTimeType;
 
 use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
+
+use super::millis::ms;
 
 pub static GLOBAL_MUTEXED_CELLED_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
