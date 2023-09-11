@@ -7,13 +7,15 @@ use avr_device::atmega328p::TC0;
 
 pub use mesh_lib::millis::{millis, millis_init, ms};
 pub use mesh_lib::serial::Usart;
-pub use mesh_lib::transciever::{DeviceIdentifyer, LifeTimeType, Transciever, TranscieverString};
+pub use mesh_lib::transciever::{
+    DeviceIdentifyer, LifeTimeType, Transciever, TranscieverError, TranscieverString,
+};
 
 pub struct TranscieverConfig {
-    device_identifyer: DeviceIdentifyer,
-    listen_period: ms,
-    usart: Usart,
-    millis_timer: TC0,
+    pub device_identifyer: DeviceIdentifyer,
+    pub listen_period: ms,
+    pub usart: Usart,
+    pub millis_timer: TC0,
 }
 
 pub fn init_transciever(config: TranscieverConfig) -> Transciever {
