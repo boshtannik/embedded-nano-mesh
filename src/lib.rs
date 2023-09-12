@@ -3,6 +3,7 @@
 
 mod mesh_lib;
 
+// TODO: Allow set dynamically, or conditionally depending on target architecture.
 use avr_device::atmega328p::TC0;
 
 pub use mesh_lib::millis::{millis, millis_init, ms};
