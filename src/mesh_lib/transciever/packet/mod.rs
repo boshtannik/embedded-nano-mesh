@@ -4,7 +4,7 @@ mod types;
 
 use core::mem::size_of;
 
-pub use traits::{DataPacker, PacketSerializer};
+pub use traits::{DataPacker, Serializer, UniqueId, UniqueIdExtractor};
 
 pub use config::{CONTENT_SIZE, PACKET_BYTES_COUNT};
 
@@ -12,7 +12,7 @@ use crate::serial_debug;
 
 use self::types::{AddressType, ChecksumType, FlagsType};
 
-pub use self::types::{LifeTimeType, PacketDataBytes, PacketSerializedBytes};
+pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct DeviceIdentifyer(pub AddressType);
@@ -21,6 +21,7 @@ pub struct DeviceIdentifyer(pub AddressType);
 pub struct Packet {
     source_device_identifyer: DeviceIdentifyer,
     destination_device_identifyer: DeviceIdentifyer,
+    id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
     data_length: usize,
@@ -29,10 +30,11 @@ pub struct Packet {
 }
 
 const DEVICE_IDENTIFYER_TYPE_SIZE: usize = size_of::<DeviceIdentifyer>();
+const ID_TYPE_SIZE: usize = size_of::<IdType>();
 const LIFETIME_TYPE_SIZE: usize = size_of::<LifeTimeType>();
 const FLAGS_TYPE_SIZE: usize = size_of::<FlagsType>();
 const DATA_LENGTH_TYPE_SIZE: usize = size_of::<usize>();
-// data_type_size: CONTENT_SIZE
+const DATA_TYPE_SIZE: usize = CONTENT_SIZE;
 const CHECKSUM_TYPE_SIZE: usize = size_of::<ChecksumType>();
 
 pub enum PacketError {
@@ -43,12 +45,14 @@ impl Packet {
     fn new(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
+        id: IdType,
         lifetime: LifeTimeType,
         data: PacketDataBytes,
     ) -> Packet {
         let mut new_packet = Packet {
             source_device_identifyer,
             destination_device_identifyer,
+            id,
             lifetime,
             flags: FlagsType::MIN,
             data_length: data.len(),
@@ -62,6 +66,7 @@ impl Packet {
     pub const fn size_of_bytes() -> usize {
         DEVICE_IDENTIFYER_TYPE_SIZE  // source_device_identifyer
             + DEVICE_IDENTIFYER_TYPE_SIZE  // destination_device_identifyer
+        + ID_TYPE_SIZE
             + LIFETIME_TYPE_SIZE
             + FLAGS_TYPE_SIZE
             + DATA_LENGTH_TYPE_SIZE
@@ -69,12 +74,12 @@ impl Packet {
             + CHECKSUM_TYPE_SIZE
     }
 
-    pub fn deacrease_lifetime(&mut self) -> Result<(), PacketError> {
+    pub fn deacrease_lifetime(mut self) -> Result<Self, PacketError> {
         match self.lifetime.cmp(&1) {
             core::cmp::Ordering::Greater => {
                 self.lifetime -= 1;
                 self.summarize();
-                Ok(())
+                Ok(self)
             }
             _ => Err(PacketError::PacketLifetimeEnded),
         }
@@ -86,7 +91,7 @@ impl Packet {
         self.calculate_packet_sum() == self.checksum
     }
 
-    pub fn match_destination_identifyer(&self, identifyer: &DeviceIdentifyer) -> bool {
+    pub fn is_destination_identifyer_reached(&self, identifyer: &DeviceIdentifyer) -> bool {
         self.destination_device_identifyer == *identifyer
     }
 
@@ -108,6 +113,11 @@ impl Packet {
         let mut result = result
             .overflowing_add(self.destination_device_identifyer.0)
             .0;
+
+        // Calculate id
+        for byte in self.id.to_be_bytes() {
+            result = result.overflowing_add(byte).0;
+        }
 
         // Calculate lifetime
         for byte in self.lifetime.to_be_bytes() {
@@ -143,12 +153,14 @@ impl DataPacker for Packet {
     fn pack(
         source_device_identifyer: DeviceIdentifyer,
         destination_device_identifyer: DeviceIdentifyer,
+        id: IdType,
         lifetime: LifeTimeType,
         data: PacketDataBytes,
     ) -> Self {
         Packet::new(
             source_device_identifyer,
             destination_device_identifyer,
+            id,
             lifetime,
             data,
         )
@@ -159,7 +171,7 @@ impl DataPacker for Packet {
     }
 }
 
-impl PacketSerializer for Packet {
+impl Serializer for Packet {
     fn serialize(self) -> types::PacketSerializedBytes {
         let mut result = PacketSerializedBytes::new();
         // source_device_identifyer: DeviceIdentifyer,
@@ -174,6 +186,13 @@ impl PacketSerializer for Packet {
             result.push(b).unwrap_or_else(|_| {
                 serial_debug!("Could not serialize byte of destination_device_identifyer field")
             });
+        }
+
+        // id: IdType
+        for b in self.id.to_be_bytes() {
+            result
+                .push(b)
+                .unwrap_or_else(|_| serial_debug!("Could not serialize byte of id field"));
         }
 
         // lifetime: LifeTimeType
@@ -240,6 +259,16 @@ impl PacketSerializer for Packet {
         let destination_device_identifyer =
             DeviceIdentifyer(AddressType::from_be_bytes(destination_device_identifyer));
 
+        // id: IdType,
+        let mut id: [u8; ID_TYPE_SIZE] = [0; ID_TYPE_SIZE];
+        for entry in id.iter_mut() {
+            *entry = *bytes_iterator.next().unwrap_or_else(|| {
+                serial_debug!("Could not deserialize byte of id");
+                &0u8
+            })
+        }
+        let id = IdType::from_be_bytes(id);
+
         // lifetime: LifeTimeType,
         let mut lifetime: [u8; LIFETIME_TYPE_SIZE] = [0; LIFETIME_TYPE_SIZE];
         for entry in lifetime.iter_mut() {
@@ -248,7 +277,7 @@ impl PacketSerializer for Packet {
                 &0u8
             })
         }
-        let lifetime = FlagsType::from_be_bytes(lifetime);
+        let lifetime = LifeTimeType::from_be_bytes(lifetime);
 
         // flags: FlagsType,
         let mut flags: [u8; FLAGS_TYPE_SIZE] = [0; FLAGS_TYPE_SIZE];
@@ -272,7 +301,7 @@ impl PacketSerializer for Packet {
 
         // data: PacketDataBytes,
         let mut data: PacketDataBytes = PacketDataBytes::new();
-        for _ in 0..CONTENT_SIZE {
+        for _ in 0..DATA_TYPE_SIZE {
             data.push(*bytes_iterator.next().unwrap_or_else(|| {
                 serial_debug!("Could not take byte for deserialization of data");
                 &0u8
@@ -295,11 +324,18 @@ impl PacketSerializer for Packet {
         Packet {
             source_device_identifyer,
             destination_device_identifyer,
+            id,
             lifetime,
             flags,
             data_length,
             data,
             checksum,
         }
+    }
+}
+
+impl UniqueIdExtractor for Packet {
+    fn get_unique_id(&self) -> UniqueId {
+        UniqueId::new(self.source_device_identifyer.clone(), self.id)
     }
 }

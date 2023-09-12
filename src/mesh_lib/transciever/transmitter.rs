@@ -2,7 +2,7 @@ use crate::serial_write_byte;
 
 use super::config::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{
-    DataPacker, DeviceIdentifyer, LifeTimeType, Packet, PacketDataBytes, PacketSerializer,
+    DataPacker, DeviceIdentifyer, IdType, LifeTimeType, Packet, PacketDataBytes, Serializer,
 };
 use super::GLOBAL_MUTEXED_CELLED_QUEUE;
 
@@ -11,6 +11,7 @@ use super::types::PacketQueue;
 pub struct Transmitter {
     current_device_identifyer: DeviceIdentifyer,
     packet_queue: PacketQueue,
+    id_counter: IdType,
 }
 
 pub enum TransmitterError {
@@ -22,6 +23,7 @@ impl Transmitter {
         Transmitter {
             current_device_identifyer,
             packet_queue: PacketQueue::new(),
+            id_counter: IdType::default(),
         }
     }
 
@@ -31,9 +33,13 @@ impl Transmitter {
         destination_device_identifyer: DeviceIdentifyer,
         lifetime: LifeTimeType,
     ) -> Result<(), TransmitterError> {
+        let (new_val, _) = self.id_counter.overflowing_add(1);
+        self.id_counter = new_val;
+
         let packed_data = <Packet as DataPacker>::pack(
             self.current_device_identifyer.clone(),
             destination_device_identifyer,
+            self.id_counter,
             lifetime,
             data,
         );

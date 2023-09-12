@@ -13,7 +13,11 @@ pub use types::TranscieverString;
 
 pub use packet::LifeTimeType;
 
-use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
+use self::{
+    packet::{IdType, PacketDataBytes},
+    receiver::ReceiverError,
+    types::PacketQueue,
+};
 
 use super::millis::ms;
 
@@ -70,6 +74,7 @@ impl Transciever {
             Err(ReceiverError::TransitPacketQueueIsFull) => {}
             Err(ReceiverError::TransitPacketLifetimeEnded) => {}
             Err(ReceiverError::NoPacketToManage) => (),
+            Err(ReceiverError::PacketDuplication) => (),
             Ok(_) => (),
         };
     }

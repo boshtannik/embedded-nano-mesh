@@ -1,5 +1,5 @@
 use crate::mesh_lib::transciever::{
-    packet::{Packet, PacketSerializedBytes, PacketSerializer, PACKET_BYTES_COUNT},
+    packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
     types::PacketBytesBuffer,
 };
 
@@ -43,7 +43,7 @@ impl PacketBytesParser {
                 .collect::<PacketSerializedBytes>(),
         );
 
-        let got_packet = <Packet as PacketSerializer>::deserialize(parsing_buffer);
+        let got_packet = <Packet as Serializer>::deserialize(parsing_buffer);
 
         if got_packet.is_checksum_correct() {
             self.parsed_packet.replace(got_packet);

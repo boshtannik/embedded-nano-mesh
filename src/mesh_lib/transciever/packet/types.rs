@@ -10,3 +10,4 @@ pub type AddressType = u8;
 pub type ChecksumType = u8;
 pub type FlagsType = u8;
 pub type LifeTimeType = u8;
+pub type IdType = u8;
