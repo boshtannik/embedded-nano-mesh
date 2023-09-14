@@ -20,17 +20,12 @@ pub trait Serializer {
     fn deserialize(bytes: PacketSerializedBytes) -> Self;
 }
 
-pub struct UniqueId {
-    source_device_identifyer: DeviceIdentifyer,
-    id: IdType,
-}
+#[derive(PartialEq, Eq)]
+pub struct UniqueId(DeviceIdentifyer, IdType);
 
 impl UniqueId {
     pub fn new(source_device_identifyer: DeviceIdentifyer, id: IdType) -> UniqueId {
-        UniqueId {
-            source_device_identifyer,
-            id,
-        }
+        UniqueId(source_device_identifyer, id)
     }
 }
 
@@ -41,4 +36,8 @@ impl UniqueId {
 pub trait UniqueIdExtractor {
     /// builds and returns UniquePacketId of packet.
     fn get_unique_id(&self) -> UniqueId;
+}
+
+pub trait FromBytes<const TYPE_SIZE: usize> {
+    fn from_be_bytes(bytes: [u8; TYPE_SIZE]) -> Self;
 }

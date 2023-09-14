@@ -2,15 +2,18 @@ mod config;
 mod traits;
 mod types;
 
-use core::mem::size_of;
+use core::slice::Iter;
 
-pub use traits::{DataPacker, Serializer, UniqueId, UniqueIdExtractor};
+pub use traits::{DataPacker, FromBytes, Serializer, UniqueId, UniqueIdExtractor};
 
 pub use config::{CONTENT_SIZE, PACKET_BYTES_COUNT};
 
 use crate::serial_debug;
 
-use self::types::{AddressType, ChecksumType, FlagsType};
+use self::types::{
+    AddressType, ChecksumType, FlagsType, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE,
+    DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
+};
 
 pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
@@ -28,14 +31,6 @@ pub struct Packet {
     data: PacketDataBytes,
     checksum: ChecksumType,
 }
-
-const DEVICE_IDENTIFYER_TYPE_SIZE: usize = size_of::<DeviceIdentifyer>();
-const ID_TYPE_SIZE: usize = size_of::<IdType>();
-const LIFETIME_TYPE_SIZE: usize = size_of::<LifeTimeType>();
-const FLAGS_TYPE_SIZE: usize = size_of::<FlagsType>();
-const DATA_LENGTH_TYPE_SIZE: usize = size_of::<usize>();
-const DATA_TYPE_SIZE: usize = CONTENT_SIZE;
-const CHECKSUM_TYPE_SIZE: usize = size_of::<ChecksumType>();
 
 pub enum PacketError {
     PacketLifetimeEnded,
@@ -66,7 +61,7 @@ impl Packet {
     pub const fn size_of_bytes() -> usize {
         DEVICE_IDENTIFYER_TYPE_SIZE  // source_device_identifyer
             + DEVICE_IDENTIFYER_TYPE_SIZE  // destination_device_identifyer
-        + ID_TYPE_SIZE
+            + ID_TYPE_SIZE
             + LIFETIME_TYPE_SIZE
             + FLAGS_TYPE_SIZE
             + DATA_LENGTH_TYPE_SIZE
@@ -171,6 +166,20 @@ impl DataPacker for Packet {
     }
 }
 
+fn deserialize_field<T, const GENERIC_TYPE_SIZE: usize>(bytes_iterator: &mut Iter<'_, u8>) -> T
+where
+    T: From<u8> + Default + FromBytes<GENERIC_TYPE_SIZE>,
+{
+    let mut field: [u8; GENERIC_TYPE_SIZE] = [0; GENERIC_TYPE_SIZE];
+    for entry in field.iter_mut() {
+        *entry = *bytes_iterator.next().unwrap_or_else(|| {
+            serial_debug!("Could not deserialize byte of field");
+            &0u8
+        });
+    }
+    T::from_be_bytes(field)
+}
+
 impl Serializer for Packet {
     fn serialize(self) -> types::PacketSerializedBytes {
         let mut result = PacketSerializedBytes::new();
@@ -235,71 +244,18 @@ impl Serializer for Packet {
     fn deserialize(bytes: types::PacketSerializedBytes) -> Self {
         let mut bytes_iterator = bytes.iter();
 
-        // source_device_identifyer: DeviceIdentifyer,
-        let mut source_device_identifyer: [u8; DEVICE_IDENTIFYER_TYPE_SIZE] =
-            [0; DEVICE_IDENTIFYER_TYPE_SIZE];
-        for entry in source_device_identifyer.iter_mut() {
-            *entry = *bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not deserialize byte of source_device_identifyer");
-                &0u8
-            })
-        }
         let source_device_identifyer =
-            DeviceIdentifyer(AddressType::from_be_bytes(source_device_identifyer));
+            deserialize_field::<AddressType, DEVICE_IDENTIFYER_TYPE_SIZE>(&mut bytes_iterator);
 
-        // destination_device_identifyer: DeviceIdentifyer,
-        let mut destination_device_identifyer: [u8; DEVICE_IDENTIFYER_TYPE_SIZE] =
-            [0; DEVICE_IDENTIFYER_TYPE_SIZE];
-        for entry in destination_device_identifyer.iter_mut() {
-            *entry = *bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not deserialize byte of destination_device_identifyer");
-                &0u8
-            })
-        }
         let destination_device_identifyer =
-            DeviceIdentifyer(AddressType::from_be_bytes(destination_device_identifyer));
+            deserialize_field::<AddressType, DEVICE_IDENTIFYER_TYPE_SIZE>(&mut bytes_iterator);
 
-        // id: IdType,
-        let mut id: [u8; ID_TYPE_SIZE] = [0; ID_TYPE_SIZE];
-        for entry in id.iter_mut() {
-            *entry = *bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not deserialize byte of id");
-                &0u8
-            })
-        }
-        let id = IdType::from_be_bytes(id);
+        let id = deserialize_field::<IdType, ID_TYPE_SIZE>(&mut bytes_iterator);
+        let lifetime = deserialize_field::<LifeTimeType, LIFETIME_TYPE_SIZE>(&mut bytes_iterator);
+        let flags = deserialize_field::<FlagsType, FLAGS_TYPE_SIZE>(&mut bytes_iterator);
+        let data_length = deserialize_field::<usize, DATA_LENGTH_TYPE_SIZE>(&mut bytes_iterator);
 
-        // lifetime: LifeTimeType,
-        let mut lifetime: [u8; LIFETIME_TYPE_SIZE] = [0; LIFETIME_TYPE_SIZE];
-        for entry in lifetime.iter_mut() {
-            *entry = *bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not deserialize byte of lifetime");
-                &0u8
-            })
-        }
-        let lifetime = LifeTimeType::from_be_bytes(lifetime);
-
-        // flags: FlagsType,
-        let mut flags: [u8; FLAGS_TYPE_SIZE] = [0; FLAGS_TYPE_SIZE];
-        for entry in flags.iter_mut() {
-            *entry = *bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not deserialize byte of flags");
-                &0u8
-            })
-        }
-        let flags = FlagsType::from_be_bytes(flags);
-
-        // data_length: usize,
-        let mut data_length: [u8; DATA_LENGTH_TYPE_SIZE] = [0; DATA_LENGTH_TYPE_SIZE];
-        for entry in data_length.iter_mut() {
-            *entry = *bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not deserialize byte of data_length");
-                &0u8
-            })
-        }
-        let data_length = usize::from_be_bytes(data_length);
-
-        // data: PacketDataBytes,
+        // data: PacketDataBytes, // Is vector of bytes.
         let mut data: PacketDataBytes = PacketDataBytes::new();
         for _ in 0..DATA_TYPE_SIZE {
             data.push(*bytes_iterator.next().unwrap_or_else(|| {
@@ -310,20 +266,10 @@ impl Serializer for Packet {
                 serial_debug!("Could not push byte of serialized data");
             });
         }
-
-        // checksum: ChecksumType,
-        let mut checksum: [u8; CHECKSUM_TYPE_SIZE] = [0; CHECKSUM_TYPE_SIZE];
-        for entry in checksum.iter_mut() {
-            *entry = *bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not deserialize byte of checksum");
-                &0u8
-            })
-        }
-        let checksum = ChecksumType::from_be_bytes(checksum);
-
+        let checksum = deserialize_field::<ChecksumType, CHECKSUM_TYPE_SIZE>(&mut bytes_iterator);
         Packet {
-            source_device_identifyer,
-            destination_device_identifyer,
+            source_device_identifyer: DeviceIdentifyer(source_device_identifyer),
+            destination_device_identifyer: DeviceIdentifyer(destination_device_identifyer),
             id,
             lifetime,
             flags,

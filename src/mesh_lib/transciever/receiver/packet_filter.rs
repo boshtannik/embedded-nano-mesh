@@ -1,55 +1,73 @@
+use heapless::Vec;
+
 use crate::mesh_lib::{
     millis::{millis, ms},
-    transciever::packet::{Packet, PacketError, UniqueId, UniqueIdExtractor},
+    transciever::{
+        config::PACKET_FILTER_REGISTRATION_SIZE,
+        packet::{Packet, PacketError, UniqueId, UniqueIdExtractor},
+    },
 };
 
-use heapless::FnvIndexMap;
+pub struct PacketLifetimeEndedError;
+pub struct PacketEntryDuplicationError;
 
-pub struct PacketManager {
-    hashmap: FnvIndexMap<UniqueId, ms, 20>,
+struct PacketRegistrationEntry {
+    pub packet_id: UniqueId,
+    pub entry_time_end: ms,
 }
 
-pub enum PacketManagerError {
-    Error,
+type PacketRegistrationEntryVec = Vec<PacketRegistrationEntry, PACKET_FILTER_REGISTRATION_SIZE>;
+
+pub struct PacketManager {
+    entry_registration_vec: PacketRegistrationEntryVec,
 }
 
 impl PacketManager {
     pub fn new() -> PacketManager {
         PacketManager {
-            hashmap: FnvIndexMap::new(),
+            entry_registration_vec: PacketRegistrationEntryVec::new(),
         }
     }
 
-    pub fn decrease_lifetime(&self, packet: Packet) -> Result<Packet, PacketManagerError> {
+    pub fn decrease_lifetime(&self, packet: Packet) -> Result<Packet, PacketLifetimeEndedError> {
         match packet.deacrease_lifetime() {
             Ok(packet) => Ok(packet),
-            Err(PacketError::PacketLifetimeEnded) => Err(PacketManagerError::Error),
+            Err(PacketError::PacketLifetimeEnded) => Err(PacketLifetimeEndedError),
         }
     }
 
-    pub fn filter_out_duplication(&self, packet: Packet) -> Result<Packet, PacketManagerError> {
-        let packet_id = <Packet as UniqueIdExtractor>::get_unique_id(&packet);
-
-        match self.register_packet_entry(packet_id) {
+    pub fn filter_out_duplication(
+        &self,
+        packet: Packet,
+    ) -> Result<Packet, PacketEntryDuplicationError> {
+        match self.register_packet_entry(<Packet as UniqueIdExtractor>::get_unique_id(&packet)) {
             Ok(()) => Ok(packet),
             Err(error) => Err(error),
         }
     }
 
-    fn register_packet_entry(&self, packet_id: UniqueId) -> Result<(), PacketManagerError> {
-        // TODO: To be done. Hashmap with Key : Value => UniqueId : registration wipeout millis.
-        Err(PacketManagerError::Error)
-
-        // In case if UniqueId is in HashMap -> return Duplication error.
-        // In case if packet is newly registered. ->    * Calculate packet ignorance timeout.
-        //                                              * Insert values with
-        //                                              UniqueId : ignorance timeout
+    fn is_entry_present(&self, packet_id: UniqueId) -> bool {
+        self.entry_registration_vec
+            .iter()
+            .any(|entry| entry.packet_id == packet_id)
     }
 
-    pub fn update() {
-        // TODO: Update HashMap.
-        // Wipe out HashMap old time recordings.
+    fn register_packet_entry(
+        &self,
+        packet_id: UniqueId,
+    ) -> Result<(), PacketEntryDuplicationError> {
+        if self.is_entry_present(packet_id) {
+            return Err(PacketEntryDuplicationError);
+        }
+        Ok(())
+    }
 
-        let current_time = millis();
+    pub fn update(&mut self) {
+        let current_timme = millis();
+        for entry in self.entry_registration_vec.iter_mut() {
+            if entry.entry_time_end > current_timme {
+                drop(entry);
+            }
+        }
     }
 }

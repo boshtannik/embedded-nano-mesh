@@ -66,4 +66,4 @@ pub fn millis() -> ms {
 }
 
 // ----------------------------------------------------------------------------
-// This file was got from https://github.com/Rahix/avr-hal/blob/main/examples/arduino-uno/src/bin/uno-millis.rs
+// This file was got and modified from https://github.com/Rahix/avr-hal/blob/main/examples/arduino-uno/src/bin/uno-millis.rs
