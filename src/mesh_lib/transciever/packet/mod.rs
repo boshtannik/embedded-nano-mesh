@@ -246,9 +246,11 @@ impl Serializer for Packet {
 
         let source_device_identifyer =
             deserialize_field::<AddressType, DEVICE_IDENTIFYER_TYPE_SIZE>(&mut bytes_iterator);
+        let source_device_identifyer = DeviceIdentifyer(source_device_identifyer);
 
         let destination_device_identifyer =
             deserialize_field::<AddressType, DEVICE_IDENTIFYER_TYPE_SIZE>(&mut bytes_iterator);
+        let destination_device_identifyer = DeviceIdentifyer(destination_device_identifyer);
 
         let id = deserialize_field::<IdType, ID_TYPE_SIZE>(&mut bytes_iterator);
         let lifetime = deserialize_field::<LifeTimeType, LIFETIME_TYPE_SIZE>(&mut bytes_iterator);
@@ -268,8 +270,8 @@ impl Serializer for Packet {
         }
         let checksum = deserialize_field::<ChecksumType, CHECKSUM_TYPE_SIZE>(&mut bytes_iterator);
         Packet {
-            source_device_identifyer: DeviceIdentifyer(source_device_identifyer),
-            destination_device_identifyer: DeviceIdentifyer(destination_device_identifyer),
+            source_device_identifyer,
+            destination_device_identifyer,
             id,
             lifetime,
             flags,

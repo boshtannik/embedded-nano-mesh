@@ -13,11 +13,7 @@ pub use types::TranscieverString;
 
 pub use packet::LifeTimeType;
 
-use self::{
-    packet::{IdType, PacketDataBytes},
-    receiver::ReceiverError,
-    types::PacketQueue,
-};
+use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
 
 use super::millis::ms;
 
