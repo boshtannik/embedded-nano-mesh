@@ -52,7 +52,7 @@ The `send` method require next arguments to be provided:
    jammed by lost packets, which might be re-transmitted inifinite number of times.
 
 The `receive` mothod optionally returns `PacketDataBytes`, in case, if transceiver
-has data, which was sent exactly to that instance of `Transciever`, received.
+has data successfully received.
 
 ## Note
 Under the hood, the data is packed into `Packet` instance. The `Packet`
