@@ -39,6 +39,25 @@ impl Transciever {
         }
     }
 
+    /// Sends message to all devices. They will be able to react on it,
+    /// as if the message was sent exactly to the device.
+    /// The broadcast only sets `destination_device_identifyer` address to special reserved address
+    /// during the sending.
+    /// So for broadcasting, the special reserved address value will be used as `destination_device_identifyer`,
+    /// that special address is defined in transciever/config.rs as `RESERVED_BROADCAST_IDENTIFYER`.
+    /// The duplication of that kind of message can be configured to be limited only by `LifeTimeType`
+    /// value only, or by `LifeTimeType` value and additionally by voiding duplications within the network by the nodes.
+    /*
+    pub fn broadcast(
+        &mut self,
+        data: PacketDataBytes,
+        lifetime: LifeTimeType,
+        void_duplications: bool,
+    ) -> Result<(), TranscieverError> {
+        Err(TranscieverError::TryAgainLater)
+    }
+    */
+
     pub fn send(
         &mut self,
         data: PacketDataBytes,
