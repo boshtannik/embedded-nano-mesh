@@ -1,6 +1,6 @@
 [package]
 name = "nano-mesh"
-version = "0.0.1"
+version = "0.0.0"
 authors = ["Yevhen Shevchenko (boshtannik) <boshtannik@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
