@@ -5,7 +5,10 @@ use crate::serial_try_read_byte;
 use avr_device::interrupt::Mutex;
 use core::cell::Cell;
 
-use self::{packet_bytes_parser::PacketBytesParser, packet_filter::PacketManager};
+use self::{
+    packet_bytes_parser::PacketBytesParser,
+    packet_filter::{Filter, PacketLifetimeEndedError, RegistrationError},
+};
 
 use super::{
     packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes},
@@ -18,7 +21,7 @@ use arduino_hal::prelude::_embedded_hal_serial_Read;
 pub struct Receiver {
     current_device_identifyer: DeviceIdentifyer,
     message_queue: PacketDataQueue,
-    packet_manager: PacketManager,
+    packet_filter: Filter,
     packet_bytes_parser: PacketBytesParser,
 }
 
@@ -28,6 +31,7 @@ pub enum ReceiverError {
     PacketDuplication,
     MessageQueueIsFull,
     NoPacketToManage,
+    FilterOverloaded,
 }
 
 impl Receiver {
@@ -35,7 +39,7 @@ impl Receiver {
         Receiver {
             current_device_identifyer,
             message_queue: PacketDataQueue::new(),
-            packet_manager: PacketManager::new(),
+            packet_filter: Filter::new(),
             packet_bytes_parser: PacketBytesParser::new(),
         }
     }
@@ -43,13 +47,20 @@ impl Receiver {
     pub fn update(&mut self) -> Result<(), ReceiverError> {
         self.receive_byte();
 
+        self.packet_filter.update();
+
         let packet = match self.packet_bytes_parser.get_packet() {
             None => return Err(ReceiverError::NoPacketToManage),
             Some(packet) => packet,
         };
 
-        let packet = match self.packet_manager.filter_out_duplication(packet) {
-            Err(_) => return Err(ReceiverError::PacketDuplication),
+        let packet = match self.packet_filter.filter_out_duplicated(packet) {
+            Err(RegistrationError::DuplicationFound) => {
+                return Err(ReceiverError::PacketDuplication)
+            }
+            Err(RegistrationError::RegistrationLimitExceeded) => {
+                return Err(ReceiverError::FilterOverloaded)
+            }
             Ok(packet) => packet,
         };
 
@@ -63,8 +74,8 @@ impl Receiver {
             };
         }
 
-        let packet = match self.packet_manager.decrease_lifetime(packet) {
-            Err(_) => return Err(ReceiverError::TransitPacketLifetimeEnded),
+        let packet = match self.packet_filter.filter_out_lifetime(packet) {
+            Err(PacketLifetimeEndedError) => return Err(ReceiverError::TransitPacketLifetimeEnded),
             Ok(packet) => packet,
         };
 

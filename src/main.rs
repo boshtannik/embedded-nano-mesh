@@ -3,7 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use nano_mesh::{DeviceIdentifyer, TranscieverConfig, TranscieverError};
+use mesh_lib::{DeviceIdentifyer, TranscieverConfig, TranscieverError};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -11,16 +11,16 @@ mod mesh_lib;
 use heapless::String;
 use mesh_lib::millis::{millis, ms};
 
-use nano_mesh::{LifeTimeType, TranscieverString};
+use mesh_lib::{LifeTimeType, TranscieverString};
 
 #[arduino_hal::entry]
 fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
-    let mut transciever = nano_mesh::init_transciever(TranscieverConfig {
+    let mut transciever = mesh_lib::init_transciever(TranscieverConfig {
         device_identifyer: DeviceIdentifyer(2),
-        listen_period: 50 as ms,
+        listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
     });
@@ -41,7 +41,7 @@ fn main() -> ! {
         }
 
         let now_time = millis();
-        if now_time > (last_blink_time + 150 as ms) {
+        if now_time > (last_blink_time + 360 as ms) {
             last_blink_time = now_time;
 
             let packet_num: String<20> = String::from(packet_counter);

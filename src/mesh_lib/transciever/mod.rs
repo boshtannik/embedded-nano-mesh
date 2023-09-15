@@ -71,6 +71,7 @@ impl Transciever {
             Err(ReceiverError::TransitPacketLifetimeEnded) => {}
             Err(ReceiverError::NoPacketToManage) => (),
             Err(ReceiverError::PacketDuplication) => (),
+            Err(ReceiverError::FilterOverloaded) => (),
             Ok(_) => (),
         };
     }

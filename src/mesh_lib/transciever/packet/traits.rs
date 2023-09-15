@@ -20,7 +20,7 @@ pub trait Serializer {
     fn deserialize(bytes: PacketSerializedBytes) -> Self;
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct UniqueId(DeviceIdentifyer, IdType);
 
 impl UniqueId {

@@ -5,10 +5,11 @@ authors = ["Yevhen Shevchenko (boshtannik) <boshtannik@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
-[lib]
+[[bin]]
 name = "nano_mesh"
 test = false
 bench = false
+path = "src/main.rs"
 
 [dependencies]
 panic-halt = "0.2.0"
