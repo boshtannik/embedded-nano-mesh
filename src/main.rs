@@ -26,13 +26,12 @@ fn main() -> ! {
     });
 
     let mut last_send_time: ms = millis();
-
     let mut packet_counter: u32 = 0;
 
     loop {
         transciever.update();
         if let Some(received_message) = transciever.receive() {
-            serial_println!("Message has reached it's destination!");
+            serial_println!("Caught packet back: ");
             for byte in received_message.iter() {
                 serial_write_byte!(*byte).unwrap();
             }
@@ -40,7 +39,7 @@ fn main() -> ! {
         }
 
         let now_time = millis();
-        if now_time > (last_send_time + 360 as ms) {
+        if now_time > (last_send_time + 1000 as ms) {
             last_send_time = now_time;
 
             let packet_num: String<20> = String::from(packet_counter);
@@ -57,6 +56,7 @@ fn main() -> ! {
                 message.into_bytes(),
                 DeviceIdentifyer(2),
                 LifeTimeType::from(3),
+                true,
             ) {
                 Ok(_) => {}
                 Err(TranscieverError::TryAgainLater) => {
@@ -70,21 +70,6 @@ fn main() -> ! {
 }
 
 /*
-// On broadcasting, all devices will receive that message, and will be able to react on it,
-// as if the message was sent exactly to the device.
-// The broadcast only sets destination_device_identifyer address to special reserved address
-// during the sending.
-// So for broadcasting, the special reserved address value will be used as destination_device_identifyer,
-// that special address is defined in transciever/config.rs as RESERVED_BROADCAST_IDENTIFYER.
-// The duplication of that kind of message can be configured to be limited only by LifeTimeType
-// value only, or by LifeTimeType value and additionally by voiding duplications within the network by the nodes.
-transciever.broadcast("message", LifeTimeType(5), void_duplications=true);
-
-// On sending the message to exact device, void_duplications parameter can be set.
-// Setting of void_duplications to true - tells if the duplications are need to be voided
-// by the nodes (receiving nodes or re-transmitting nodes).
-transciever.send("message", DeviceIdentifyer(target_device_id), LifeTimeType(5), void_duplications=true);
-
 // Sends the message to exact device (broadcast address is forbidden), and waits the `timeout`
 // time for the message back from that device with acknowledge flag being set.
 // In case, if the `acknowledge` message has been received successfully - Good result of calling of

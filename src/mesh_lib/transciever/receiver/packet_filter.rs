@@ -1,14 +1,11 @@
 use heapless::Vec;
 
-use crate::{
-    mesh_lib::{
-        millis::{millis, ms},
-        transciever::{
-            config::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
-            packet::{Packet, PacketError, UniqueId, UniqueIdExtractor},
-        },
+use crate::mesh_lib::{
+    millis::{millis, ms},
+    transciever::{
+        config::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
+        packet::{Packet, PacketError, UniqueId, UniqueIdExtractor},
     },
-    serial_println,
 };
 
 pub struct PacketLifetimeEndedError;
@@ -65,7 +62,6 @@ impl Filter {
         }
 
         if let Some(index_to_remove) = index_to_remove {
-            serial_println!("Found item to be cleaned up");
             self.entry_registration_vec.swap_remove(index_to_remove);
         }
     }

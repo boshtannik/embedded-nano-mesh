@@ -2,7 +2,8 @@ use crate::serial_write_byte;
 
 use super::config::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{
-    DataPacker, DeviceIdentifyer, IdType, LifeTimeType, Packet, PacketDataBytes, Serializer,
+    DataPacker, DeviceIdentifyer, IdType, LifeTimeType, Packet, PacketDataBytes, PacketFlagOps,
+    Serializer,
 };
 use super::GLOBAL_MUTEXED_CELLED_QUEUE;
 
@@ -32,17 +33,21 @@ impl Transmitter {
         data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
         lifetime: LifeTimeType,
+        filter_out_duplications: bool,
     ) -> Result<(), TransmitterError> {
         let (new_val, _) = self.id_counter.overflowing_add(1);
         self.id_counter = new_val;
 
-        let packed_data = <Packet as DataPacker>::pack(
+        let mut packed_data = <Packet as DataPacker>::pack(
             self.current_device_identifyer.clone(),
             destination_device_identifyer,
             self.id_counter,
             lifetime,
             data,
         );
+
+        packed_data.set_ignore_duplication_flag(filter_out_duplications);
+
         match self.packet_queue.push_back(packed_data) {
             Ok(_) => Ok(()),
             Err(_) => Err(TransmitterError::PacketQueueIsFull),

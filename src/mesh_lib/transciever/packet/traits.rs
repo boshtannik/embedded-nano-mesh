@@ -15,6 +15,11 @@ pub trait DataPacker {
     fn unpack(self: Self) -> PacketDataBytes;
 }
 
+pub trait PacketFlagOps {
+    fn set_ignore_duplication_flag(&mut self, new_state: bool);
+    fn is_ignore_duplication_flag_set(&self) -> bool;
+}
+
 pub trait Serializer {
     fn serialize(self) -> PacketSerializedBytes;
     fn deserialize(bytes: PacketSerializedBytes) -> Self;

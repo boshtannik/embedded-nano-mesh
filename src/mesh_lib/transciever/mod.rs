@@ -30,6 +30,9 @@ pub enum TranscieverError {
     TryAgainLater,
 }
 
+// pub struct WaitingForAnswerTimeOut;
+// pub struct TransactionFailed;
+
 impl Transciever {
     pub fn new(my_address: DeviceIdentifyer, listen_period: ms) -> Transciever {
         Transciever {
@@ -77,17 +80,23 @@ impl Transciever {
         data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
         lifetime: LifeTimeType,
+        filter_out_duplications: bool,
     ) -> Result<(), TranscieverError> {
-        match self
-            .transmitter
-            .send(data, destination_device_identifyer, lifetime)
-        {
+        match self.transmitter.send(
+            data,
+            destination_device_identifyer,
+            lifetime,
+            filter_out_duplications,
+        ) {
             Ok(_) => Ok(()),
             Err(transmitter::TransmitterError::PacketQueueIsFull) => {
                 Err(TranscieverError::TryAgainLater)
             }
         }
     }
+
+    // pub fn send_with_answer(&mut self, data: PacketDataBytes, destination_device_identifyer: DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType) -> Result<(), WaitingForAnswerTimeOut>
+    // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifyer: DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType) -> Result<(), TransactionFailed>
 
     /// Optionally returns `PacketDataBytes` instance with data,
     /// which has been send exactly to this device, or has been

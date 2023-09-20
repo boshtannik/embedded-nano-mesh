@@ -1,18 +1,23 @@
+mod bitpos;
 mod config;
 mod traits;
 mod types;
 
 use core::slice::Iter;
 
-pub use traits::{DataPacker, FromBytes, Serializer, UniqueId, UniqueIdExtractor};
+pub use traits::{DataPacker, FromBytes, PacketFlagOps, Serializer, UniqueId, UniqueIdExtractor};
 
 pub use config::{CONTENT_SIZE, PACKET_BYTES_COUNT};
 
-use crate::serial_debug;
+use crate::{mesh_lib::transciever::packet::bitpos::set_flag, serial_debug};
 
-use self::types::{
-    AddressType, ChecksumType, FlagsType, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE,
-    DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
+use self::{
+    bitpos::is_flag_set,
+    types::{
+        AddressType, ChecksumType, FlagsType, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE,
+        DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE,
+        IGNORE_DUPLICATIONS_FLAG, LIFETIME_TYPE_SIZE,
+    },
 };
 
 pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
@@ -60,13 +65,13 @@ impl Packet {
 
     pub const fn size_of_bytes() -> usize {
         DEVICE_IDENTIFYER_TYPE_SIZE  // source_device_identifyer
-            + DEVICE_IDENTIFYER_TYPE_SIZE  // destination_device_identifyer
-            + ID_TYPE_SIZE
-            + LIFETIME_TYPE_SIZE
-            + FLAGS_TYPE_SIZE
-            + DATA_LENGTH_TYPE_SIZE
-            + CONTENT_SIZE
-            + CHECKSUM_TYPE_SIZE
+        + DEVICE_IDENTIFYER_TYPE_SIZE  // destination_device_identifyer
+        + ID_TYPE_SIZE
+        + LIFETIME_TYPE_SIZE
+        + FLAGS_TYPE_SIZE
+        + DATA_LENGTH_TYPE_SIZE
+        + CONTENT_SIZE
+        + CHECKSUM_TYPE_SIZE
     }
 
     pub fn deacrease_lifetime(mut self) -> Result<Self, PacketError> {
@@ -285,5 +290,15 @@ impl Serializer for Packet {
 impl UniqueIdExtractor for Packet {
     fn get_unique_id(&self) -> UniqueId {
         UniqueId::new(self.source_device_identifyer.clone(), self.id)
+    }
+}
+
+impl PacketFlagOps for Packet {
+    fn set_ignore_duplication_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, IGNORE_DUPLICATIONS_FLAG, new_state);
+    }
+
+    fn is_ignore_duplication_flag_set(&self) -> bool {
+        is_flag_set(self.flags, IGNORE_DUPLICATIONS_FLAG)
     }
 }
