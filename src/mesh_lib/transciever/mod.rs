@@ -115,9 +115,9 @@ impl Transciever {
             self.timer.record_speak_time();
         }
         match self.receiver.update() {
-            Err(ReceiverError::MessageQueueIsFull) => {}
-            Err(ReceiverError::TransitPacketQueueIsFull) => {}
-            Err(ReceiverError::TransitPacketLifetimeEnded) => {}
+            Err(ReceiverError::MessageQueueIsFull) => (),
+            Err(ReceiverError::TransitPacketQueueIsFull) => (),
+            Err(ReceiverError::TransitPacketLifetimeEnded) => (),
             Err(ReceiverError::NoPacketToManage) => (),
             Err(ReceiverError::PacketDuplication) => (),
             Err(ReceiverError::FilterOverloaded) => (),

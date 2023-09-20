@@ -296,6 +296,7 @@ impl UniqueIdExtractor for Packet {
 impl PacketFlagOps for Packet {
     fn set_ignore_duplication_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, IGNORE_DUPLICATIONS_FLAG, new_state);
+        self.summarize();
     }
 
     fn is_ignore_duplication_flag_set(&self) -> bool {

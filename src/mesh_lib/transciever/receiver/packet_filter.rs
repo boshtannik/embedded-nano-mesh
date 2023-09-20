@@ -4,7 +4,7 @@ use crate::mesh_lib::{
     millis::{millis, ms},
     transciever::{
         config::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
-        packet::{Packet, PacketError, UniqueId, UniqueIdExtractor},
+        packet::{Packet, PacketError, PacketFlagOps, UniqueId, UniqueIdExtractor},
     },
 };
 
@@ -41,10 +41,15 @@ impl Filter {
     }
 
     pub fn filter_out_duplicated(&mut self, packet: Packet) -> Result<Packet, RegistrationError> {
-        match self._register_packet_entry(<Packet as UniqueIdExtractor>::get_unique_id(&packet)) {
-            Ok(()) => Ok(packet),
-            Err(error) => Err(error),
-        }
+        return if !packet.is_ignore_duplication_flag_set() {
+            Ok(packet)
+        } else {
+            match self._register_packet_entry(<Packet as UniqueIdExtractor>::get_unique_id(&packet))
+            {
+                Ok(()) => Ok(packet),
+                Err(error) => Err(error),
+            }
+        };
     }
 
     pub fn update(&mut self) {

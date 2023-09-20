@@ -45,7 +45,7 @@ impl Receiver {
     }
 
     pub fn update(&mut self) -> Result<(), ReceiverError> {
-        self.receive_byte();
+        self._receive_byte();
 
         self.packet_filter.update();
 
@@ -56,10 +56,10 @@ impl Receiver {
 
         let packet = match self.packet_filter.filter_out_duplicated(packet) {
             Err(RegistrationError::DuplicationFound) => {
-                return Err(ReceiverError::PacketDuplication)
+                return Err(ReceiverError::PacketDuplication);
             }
             Err(RegistrationError::RegistrationLimitExceeded) => {
-                return Err(ReceiverError::FilterOverloaded)
+                return Err(ReceiverError::FilterOverloaded);
             }
             Ok(packet) => packet,
         };
@@ -97,7 +97,7 @@ impl Receiver {
         self.message_queue.pop_front()
     }
 
-    fn receive_byte(&mut self) {
+    fn _receive_byte(&mut self) {
         let mut mutexed_celled_option_byte: Mutex<Cell<Option<u8>>> = Mutex::new(Cell::new(None));
         serial_try_read_byte!(mutexed_celled_option_byte);
 

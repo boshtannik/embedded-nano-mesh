@@ -19,17 +19,18 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut transciever = mesh_lib::init_transciever(TranscieverConfig {
-        device_identifyer: DeviceIdentifyer(2),
-        listen_period: 150 as ms,
+        device_identifyer: DeviceIdentifyer(1),
+        listen_period: 250 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
     });
 
-    let mut last_send_time: ms = millis();
-    let mut packet_counter: u32 = 0;
+    // let mut last_send_time: ms = millis();
+    // let mut packet_counter: u32 = 0;
 
     loop {
         transciever.update();
+        /*
         if let Some(received_message) = transciever.receive() {
             serial_println!("Caught packet back: ");
             for byte in received_message.iter() {
@@ -59,22 +60,11 @@ fn main() -> ! {
                 true,
             ) {
                 Ok(_) => {}
-                Err(TranscieverError::TryAgainLater) => {
-                    serial_println!("Too much packets, Transciever says try later");
-                }
+                Err(TranscieverError::TryAgainLater) => {}
             };
 
             packet_counter = packet_counter.overflowing_add(1).0;
         }
+        */
     }
 }
-
-/*
-// Sends the message to exact device (broadcast address is forbidden), and waits the `timeout`
-// time for the message back from that device with acknowledge flag being set.
-// In case, if the `acknowledge` message has been received successfully - Good result of calling of
-// this methoid is returned, otherwise GuaranteeError is returned.
-// The destination device may receive message one time, or multiple times. This can be configured
-// by set void_duplications argument.
-transciever.send_guaranteed("message", DeviceIdentifyer(target_device_id), LifeTimeType(5), timeout=SECOND * 2, void_duplications=true);
-*/
