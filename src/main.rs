@@ -19,18 +19,17 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut transciever = mesh_lib::init_transciever(TranscieverConfig {
-        device_identifyer: DeviceIdentifyer(1),
-        listen_period: 250 as ms,
+        device_identifyer: DeviceIdentifyer(2),
+        listen_period: 160 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
     });
 
-    // let mut last_send_time: ms = millis();
-    // let mut packet_counter: u32 = 0;
+    let mut last_send_time: ms = millis();
+    let mut packet_counter: u32 = 0;
 
     loop {
         transciever.update();
-        /*
         if let Some(received_message) = transciever.receive() {
             serial_println!("Caught packet back: ");
             for byte in received_message.iter() {
@@ -40,7 +39,7 @@ fn main() -> ! {
         }
 
         let now_time = millis();
-        if now_time > (last_send_time + 1000 as ms) {
+        if now_time > (last_send_time + 500 as ms) {
             last_send_time = now_time;
 
             let packet_num: String<20> = String::from(packet_counter);
@@ -57,7 +56,7 @@ fn main() -> ! {
                 message.into_bytes(),
                 DeviceIdentifyer(2),
                 LifeTimeType::from(3),
-                true,
+                false,
             ) {
                 Ok(_) => {}
                 Err(TranscieverError::TryAgainLater) => {}
@@ -65,6 +64,5 @@ fn main() -> ! {
 
             packet_counter = packet_counter.overflowing_add(1).0;
         }
-        */
     }
 }
