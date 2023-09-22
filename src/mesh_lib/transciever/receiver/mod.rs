@@ -13,7 +13,7 @@ use self::{
 use super::{
     packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes},
     types::PacketDataQueue,
-    GLOBAL_MUTEXED_CELLED_QUEUE,
+    BROADCAST_RESERVED_IDENTIFYER, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
 };
 
 use arduino_hal::prelude::_embedded_hal_serial_Read;
@@ -44,6 +44,63 @@ impl Receiver {
         }
     }
 
+    fn _proceed_duplicated(&mut self, packet: Packet) -> Result<Packet, ReceiverError> {
+        match self.packet_filter.filter_out_duplicated(packet) {
+            Err(RegistrationError::DuplicationFound) => {
+                return Err(ReceiverError::PacketDuplication);
+            }
+            Err(RegistrationError::RegistrationLimitExceeded) => {
+                return Err(ReceiverError::FilterOverloaded);
+            }
+            Ok(packet) => Ok(packet),
+        }
+    }
+
+    /// Result->Ok(Some(packet))     - Means, that packet is the transit packet.
+    /// Result->Ok(None)             - Means, that the packet has reached it's destination.
+    /// Result->Err(ReceiverError)   - Error.
+    fn _proceed_destination(&mut self, packet: Packet) -> Result<Option<Packet>, ReceiverError> {
+        if !packet.is_destination_identifyer_reached(&self.current_device_identifyer) {
+            return Ok(Some(packet));
+        }
+        match self
+            .message_queue
+            .push_back(<Packet as DataPacker>::unpack(packet.clone()))
+        {
+            Ok(_) => return Ok(None),
+            Err(_) => return Err(ReceiverError::MessageQueueIsFull),
+        }
+    }
+
+    fn _proceed_broadcast(&mut self, packet: Packet) -> Result<Packet, ReceiverError> {
+        if !packet
+            .is_destination_identifyer_reached(&DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER))
+        {
+            return Ok(packet);
+        }
+        match self
+            .message_queue
+            .push_back(<Packet as DataPacker>::unpack(packet.clone()))
+        {
+            Ok(_) => Ok(packet),
+            Err(_) => Err(ReceiverError::MessageQueueIsFull),
+        }
+    }
+
+    fn _proceed_transit(&mut self, packet: Packet) -> Result<(), ReceiverError> {
+        let _ = ::avr_device::interrupt::free(|cs| {
+            match GLOBAL_MUTEXED_CELLED_PACKET_QUEUE
+                .borrow(cs)
+                .borrow_mut()
+                .push_back(packet)
+            {
+                Ok(_) => return Ok(()),
+                Err(_) => return Err(ReceiverError::TransitPacketQueueIsFull),
+            }
+        });
+        Ok(())
+    }
+
     pub fn update(&mut self) -> Result<(), ReceiverError> {
         self._receive_byte();
 
@@ -54,43 +111,22 @@ impl Receiver {
             Some(packet) => packet,
         };
 
-        let packet = match self.packet_filter.filter_out_duplicated(packet) {
-            Err(RegistrationError::DuplicationFound) => {
-                return Err(ReceiverError::PacketDuplication);
-            }
-            Err(RegistrationError::RegistrationLimitExceeded) => {
-                return Err(ReceiverError::FilterOverloaded);
-            }
-            Ok(packet) => packet,
+        let packet = self._proceed_duplicated(packet)?;
+
+        let maybe_broadcast_packet = match self._proceed_destination(packet) {
+            Ok(None) => return Ok(()),
+            Ok(Some(packet)) => packet,
+            Err(any_err) => return Err(any_err),
         };
 
-        if packet.is_destination_identifyer_reached(&self.current_device_identifyer) {
-            match self
-                .message_queue
-                .push_back(<Packet as DataPacker>::unpack(packet))
-            {
-                Ok(_) => return Ok(()),
-                Err(_) => return Err(ReceiverError::MessageQueueIsFull),
-            };
-        }
+        let transit_packet = self._proceed_broadcast(maybe_broadcast_packet)?;
 
-        let packet = match self.packet_filter.filter_out_lifetime(packet) {
+        let transit_packet = match self.packet_filter.filter_out_lifetime(transit_packet) {
             Err(PacketLifetimeEndedError) => return Err(ReceiverError::TransitPacketLifetimeEnded),
             Ok(packet) => packet,
         };
 
-        let _ = ::avr_device::interrupt::free(|cs| {
-            match GLOBAL_MUTEXED_CELLED_QUEUE
-                .borrow(cs)
-                .borrow_mut()
-                .push_back(packet)
-            {
-                Ok(_) => Ok(()),
-                Err(_) => Err(ReceiverError::TransitPacketQueueIsFull),
-            }
-        });
-
-        Ok(())
+        self._proceed_transit(transit_packet)
     }
 
     pub fn receive(&mut self) -> Option<PacketDataBytes> {

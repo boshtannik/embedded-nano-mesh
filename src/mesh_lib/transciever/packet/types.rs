@@ -14,18 +14,6 @@ pub type PacketSerializedBytes = Vec<u8, PACKET_BYTES_COUNT>;
 pub type AddressType = u8;
 pub type ChecksumType = u8;
 
-/// `FlagsType` -         Is just typical alias to integer like type, with next fields being defined:
-///
-/// `IgnoreDuplication` - Flag, that forces device to filter out duplicated or in other words echoed packet from ether.
-///
-/// Echoed packet - means, that packet have been retransmitted by the intermediate node of the
-/// network and have same packet_id and sender's device identifyer.
-///
-/// Now I about to implement special flag `IgnoreDuplication` flag handling. If `IgnoreDuplication` flag is set, it
-/// says to every receiving device to record meta information of packet, and further ignore all same echoed
-/// packets that are caught from the ether for some period of time, which is defined in
-/// `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` constant of `transciever/config.rs` file.
-///
 /// NOTE: Just for note. I have idea for special sending mode to guarantee, that receiving device
 /// act on sent message only once. It is `Transaction`. `Transaction` will consist of four steps.
 ///
@@ -102,7 +90,48 @@ pub type ChecksumType = u8;
 /// The meaning of those flags - is to provide packed information about the purpose of the packet.
 
 pub type FlagsType = u8;
+/// This flag make the device, which have packet caught, to ignore
+/// same packets, which were re-transmitted from other devices.
 pub const IGNORE_DUPLICATIONS_FLAG: FlagsType = 0b10000000;
+
+/// This flag says, that the receiving device, should respond
+/// with packet with same `PROVIDE_ANSWER_FLAG` being set.
+pub const REQUIRE_ANSWER_FLAG: FlagsType = 0b01000000;
+
+/// This flag says, that the packet, is made to
+/// provide the answer to the device, which is waiting
+/// for the answer.
+pub const PROVIDE_ANSWER_FLAG: FlagsType = 0b00100000;
+
+/*
+/// This flag tells, that this packet is made by
+/// transaction sender device, is to create, and
+/// send the transaction to the transaction
+/// reponding device.
+pub const SEND_TRANSACTION_FLAG: FlagsType = 0b00010000;
+
+/// This flag tells, that this packet is made by
+/// transaction responding device, is to accept, and
+/// continue the transaction to the transaction
+/// sender's device.
+pub const ACCEPT_TRANSACTION_FLAG: FlagsType = 0b00001000;
+
+/// This flag tells, that this packet is made by
+/// transaction sneder device, is to initiate, and
+/// continue the transaction to the transaction
+/// reponding device.
+pub const INITIATE_TRANSACTION_FLAG: FlagsType = 0b00000100;
+
+/// This flag tells, that the packet, which contains
+/// this flag - is the last packet in the transaction
+/// sqeuence, and tells, that transaction receiver
+/// device is fully accepted the transaction, and informs
+/// transaction sender's device about that.
+pub const FINISH_TRANSACTION_FLAG: FlagsType = 0b00000010;
+
+// This flag is not used yet.
+//pub const NOT_USED_FLAG: FlagsType = 0b00000001;
+*/
 
 pub type LifeTimeType = u8;
 pub type IdType = u8;
@@ -127,26 +156,3 @@ impl FromBytes<DATA_LENGTH_TYPE_SIZE> for usize {
         Self::from_be_bytes(bytes)
     }
 }
-
-/*
-1. `SendTransaction`.
-In that moment of time, only sending device knows, about act, that is needed to be done. So sender changing it's state
-to the new one, and waits, that the receiver will change it's state too. In case, if no next transaction packet will
-be received back - will roll back the previous state. So to make the transaction, the sender sends the information about
-the transaction to the receiver within `SendTransaction` flag in packet.
-
-2. `AcceptTransaction`.
-In that moment of time, sneding device, has no information about the receiving device might have the message caught, or
-might have not the message caught yet. And the receiver device now, has changed it's state to the new one. So receiver
-informs the sender, about transaction being accepted.
-So the receiver is sending that information back to sender within `AcceptTransaction` flag in packet.
-
-3. `InitiateTransaction`.
-In that moment of time, the sender knows, that it keeps new state, but the receiver needs to know if the new
-state needs to be kept by the receiver or rolled back to previous one. So to keep new state by the receiver,
-the sender sends `InitiateTransaction` flag within the packet.
-
-4. `FinishTransaction`.
-In that moment of time, the sender does not know yet, if the receiver keeps it's new state, or will drop it back.
-So to fix that, the receiver sends packet with `FinishTransaction` flag being set.
-*/

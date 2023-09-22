@@ -16,8 +16,18 @@ pub trait DataPacker {
 }
 
 pub trait PacketFlagOps {
+    // SEND_TRANSACTION_FLAG
+    // ACCEPT_TRANSACTION_FLAG
+    // INITIATE_TRANSACTION_FLAG
+    // FINISH_TRANSACTION_FLAG
     fn set_ignore_duplication_flag(&mut self, new_state: bool);
     fn is_ignore_duplication_flag_set(&self) -> bool;
+
+    fn set_require_answer_flag(&mut self, new_state: bool);
+    fn is_require_answer_flag_set(&self) -> bool;
+
+    fn set_provide_answer_flag(&mut self, new_state: bool);
+    fn is_provide_answer_flag_set(&self) -> bool;
 }
 
 pub trait Serializer {

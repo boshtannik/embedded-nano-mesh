@@ -7,7 +7,7 @@ use core::slice::Iter;
 
 pub use traits::{DataPacker, FromBytes, PacketFlagOps, Serializer, UniqueId, UniqueIdExtractor};
 
-pub use config::{CONTENT_SIZE, PACKET_BYTES_COUNT};
+pub use config::{BROADCAST_RESERVED_IDENTIFYER, CONTENT_SIZE, PACKET_BYTES_COUNT};
 
 use crate::{mesh_lib::transciever::packet::bitpos::set_flag, serial_debug};
 
@@ -16,7 +16,7 @@ use self::{
     types::{
         AddressType, ChecksumType, FlagsType, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE,
         DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE,
-        IGNORE_DUPLICATIONS_FLAG, LIFETIME_TYPE_SIZE,
+        IGNORE_DUPLICATIONS_FLAG, LIFETIME_TYPE_SIZE, PROVIDE_ANSWER_FLAG, REQUIRE_ANSWER_FLAG,
     },
 };
 
@@ -294,6 +294,7 @@ impl UniqueIdExtractor for Packet {
 }
 
 impl PacketFlagOps for Packet {
+    // IGNORE_DUPLICATIONS_FLAG
     fn set_ignore_duplication_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, IGNORE_DUPLICATIONS_FLAG, new_state);
         self.summarize();
@@ -301,5 +302,24 @@ impl PacketFlagOps for Packet {
 
     fn is_ignore_duplication_flag_set(&self) -> bool {
         is_flag_set(self.flags, IGNORE_DUPLICATIONS_FLAG)
+    }
+
+    // REQUIRE_ANSWER_FLAG
+    fn set_require_answer_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, REQUIRE_ANSWER_FLAG, new_state);
+        self.summarize();
+    }
+
+    fn is_require_answer_flag_set(&self) -> bool {
+        is_flag_set(self.flags, REQUIRE_ANSWER_FLAG)
+    }
+
+    // PROVIDE_ANSWER_FLAG
+    fn set_provide_answer_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, PROVIDE_ANSWER_FLAG, new_state);
+        self.summarize();
+    }
+    fn is_provide_answer_flag_set(&self) -> bool {
+        is_flag_set(self.flags, PROVIDE_ANSWER_FLAG)
     }
 }

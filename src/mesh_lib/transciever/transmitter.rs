@@ -5,7 +5,7 @@ use super::packet::{
     DataPacker, DeviceIdentifyer, IdType, LifeTimeType, Packet, PacketDataBytes, PacketFlagOps,
     Serializer,
 };
-use super::GLOBAL_MUTEXED_CELLED_QUEUE;
+use super::GLOBAL_MUTEXED_CELLED_PACKET_QUEUE;
 
 use super::types::PacketQueue;
 
@@ -63,7 +63,7 @@ impl Transmitter {
     pub fn update(&mut self) {
         // Send transit queue
         avr_device::interrupt::free(|cs| {
-            while let Some(packet) = GLOBAL_MUTEXED_CELLED_QUEUE
+            while let Some(packet) = GLOBAL_MUTEXED_CELLED_PACKET_QUEUE
                 .borrow(cs)
                 .borrow_mut()
                 .pop_front()

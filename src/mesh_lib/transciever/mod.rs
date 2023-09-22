@@ -11,13 +11,13 @@ use avr_device::interrupt::Mutex;
 pub use packet::DeviceIdentifyer;
 pub use types::TranscieverString;
 
-pub use packet::LifeTimeType;
+pub use packet::{LifeTimeType, BROADCAST_RESERVED_IDENTIFYER};
 
 use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
 
 use super::millis::ms;
 
-pub static GLOBAL_MUTEXED_CELLED_QUEUE: Mutex<RefCell<PacketQueue>> =
+pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
 
 pub struct Transciever {
@@ -42,34 +42,29 @@ impl Transciever {
         }
     }
 
-    /// Sends message to all devices. They will be able to react on it,
-    /// as if the message was sent exactly to the device.
-    /// The broadcast only sets `destination_device_identifyer` address to special reserved address
-    /// during the sending.
-    /// So for broadcasting, the special reserved address value will be used as `destination_device_identifyer`,
-    /// that special address is defined in transciever/config.rs as `RESERVED_BROADCAST_IDENTIFYER`.
-    /// The duplication of that kind of message can be configured to be limited only by `LifeTimeType`
-    /// value only, or by `LifeTimeType` value and additionally by voiding duplications within the network by the nodes.
-    /*
-    pub fn broadcast(
-        &mut self,
-        data: PacketDataBytes,
-        lifetime: LifeTimeType,
-        void_duplications: bool,
-    ) -> Result<(), TranscieverError> {
-        Err(TranscieverError::TryAgainLater)
-    }
-    */
+    // pub fn send_and_wait_answer(&mut self, data: PacketDataBytes, destination_device_identifyer: DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType, filter_out_duplications: bool) -> Result<(), WaitingForAnswerTimeOut>
+    // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifyer: DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType, filter_out_duplications: bool) -> Result<(), TransactionFailed>
 
-    /// Sends the `data` to exact device.
+    /// Sends the `data` to exact device. or to all devices.
+    /// In order to send `data` to all devices, use `BROADCAST_RESERVED_IDENTIFYER`,
+    /// otherwise - use identifyer of exact device, which is not `BROADCAST_RESERVED_IDENTIFYER`
+    /// identifyer.
+    ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
     /// heapless vector of bytes of special size. This size is configured in the
     /// transciever/packet/config.rs file, and can be adjusted for case of other data size is needed.
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
+    ///
     /// * `destination_device_identifyer` is instance of DeviceIdentifyer type,
     /// That type is made for simplicity of reading the code, and to strict possible mess-ups
-    /// during the usage of methods.
+    /// during the usage of methods. It is made to present device id within the network.
+    /// `Note!`, that you can send message to all devices at once.
+    /// The reason of that, that in this protocol - there is reserved `BROADCAST_RESERVED_IDENTIFYER`.
+    /// This is the special kind of identifyer, made especially to make every node
+    /// to be able to recognize this identifyer as it's own identifyer. In other words, every node
+    /// will receive the broadcast message.
+    ///
     /// `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
     /// how many nodes - the packet will be able to pass. Also this value is needed
     /// to void the ether being jammed by packets, that in theory might be echoed
@@ -94,9 +89,6 @@ impl Transciever {
             }
         }
     }
-
-    // pub fn send_with_answer(&mut self, data: PacketDataBytes, destination_device_identifyer: DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType) -> Result<(), WaitingForAnswerTimeOut>
-    // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifyer: DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType) -> Result<(), TransactionFailed>
 
     /// Optionally returns `PacketDataBytes` instance with data,
     /// which has been send exactly to this device, or has been

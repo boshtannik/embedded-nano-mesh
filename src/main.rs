@@ -39,7 +39,7 @@ fn main() -> ! {
         }
 
         let now_time = millis();
-        if now_time > (last_send_time + 500 as ms) {
+        if now_time > (last_send_time + 1000 as ms) {
             last_send_time = now_time;
 
             let packet_num: String<20> = String::from(packet_counter);
