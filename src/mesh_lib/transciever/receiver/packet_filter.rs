@@ -23,6 +23,7 @@ struct PacketIgnorancePeriod {
 type RegistrationEntryVec = Vec<PacketIgnorancePeriod, RECEIVER_FILTER_REGISTRATION_SIZE>;
 
 pub struct Filter {
+    // Should be better use hashmaps, but it didn't succeed.
     entry_registration_vec: RegistrationEntryVec,
 }
 
@@ -54,8 +55,7 @@ impl Filter {
 
     pub fn update(&mut self) {
         let current_timme = millis(); // TODO: Hope for better perfomance, might be needed to call
-                                      // millis once, and then drop trough the whole library to use same value, void calling
-                                      // multiple times.
+                                      // millis once, and then drop trough the whole library to use same value calculated once
 
         let mut index_to_remove: Option<usize> = None;
 

@@ -119,7 +119,8 @@ impl Receiver {
             Err(any_err) => return Err(any_err),
         };
 
-        let transit_packet = self._proceed_broadcast(maybe_broadcast_packet)?;
+        let transit_packet = self._proceed_broadcast(maybe_broadcast_packet)?; // Even if the
+                                                                               // packet is the broadcast packet - it should be forwarded futher.
 
         let transit_packet = match self.packet_filter.filter_out_lifetime(transit_packet) {
             Err(PacketLifetimeEndedError) => return Err(ReceiverError::TransitPacketLifetimeEnded),

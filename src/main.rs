@@ -3,6 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
+use mesh_lib::transciever::BROADCAST_RESERVED_IDENTIFYER;
 use mesh_lib::{DeviceIdentifyer, TranscieverConfig, TranscieverError};
 use panic_halt as _;
 
@@ -27,10 +28,12 @@ fn main() -> ! {
 
     let mut last_send_time: ms = millis();
     let mut packet_counter: u32 = 0;
+    let mut led_pin = pins.d13.into_output();
 
     loop {
         transciever.update();
         if let Some(received_message) = transciever.receive() {
+            led_pin.toggle();
             serial_println!("Caught packet back: ");
             for byte in received_message.iter() {
                 serial_write_byte!(*byte).unwrap();
@@ -40,6 +43,7 @@ fn main() -> ! {
 
         let now_time = millis();
         if now_time > (last_send_time + 1000 as ms) {
+            led_pin.toggle();
             last_send_time = now_time;
 
             let packet_num: String<20> = String::from(packet_counter);
@@ -54,9 +58,9 @@ fn main() -> ! {
 
             match transciever.send(
                 message.into_bytes(),
-                DeviceIdentifyer(2),
+                DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER),
                 LifeTimeType::from(3),
-                false,
+                true,
             ) {
                 Ok(_) => {}
                 Err(TranscieverError::TryAgainLater) => {}

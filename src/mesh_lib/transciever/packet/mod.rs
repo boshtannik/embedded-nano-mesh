@@ -16,7 +16,7 @@ use self::{
     types::{
         AddressType, ChecksumType, FlagsType, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE,
         DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE,
-        IGNORE_DUPLICATIONS_FLAG, LIFETIME_TYPE_SIZE, PROVIDE_ANSWER_FLAG, REQUIRE_ANSWER_FLAG,
+        IGNORE_DUPLICATIONS_FLAG, LIFETIME_TYPE_SIZE, PING_FLAG, PONG_FLAG,
     },
 };
 
@@ -304,22 +304,22 @@ impl PacketFlagOps for Packet {
         is_flag_set(self.flags, IGNORE_DUPLICATIONS_FLAG)
     }
 
-    // REQUIRE_ANSWER_FLAG
-    fn set_require_answer_flag(&mut self, new_state: bool) {
-        set_flag(&mut self.flags, REQUIRE_ANSWER_FLAG, new_state);
+    // PING_FLAG
+    fn set_ping_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, PING_FLAG, new_state);
         self.summarize();
     }
 
-    fn is_require_answer_flag_set(&self) -> bool {
-        is_flag_set(self.flags, REQUIRE_ANSWER_FLAG)
+    fn is_ping_flag_set(&self) -> bool {
+        is_flag_set(self.flags, PING_FLAG)
     }
 
-    // PROVIDE_ANSWER_FLAG
-    fn set_provide_answer_flag(&mut self, new_state: bool) {
-        set_flag(&mut self.flags, PROVIDE_ANSWER_FLAG, new_state);
+    // PONG_FLAG
+    fn set_pong_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, PONG_FLAG, new_state);
         self.summarize();
     }
-    fn is_provide_answer_flag_set(&self) -> bool {
-        is_flag_set(self.flags, PROVIDE_ANSWER_FLAG)
+    fn is_pong_flag_set(&self) -> bool {
+        is_flag_set(self.flags, PONG_FLAG)
     }
 }

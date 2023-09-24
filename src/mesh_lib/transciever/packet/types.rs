@@ -95,13 +95,13 @@ pub type FlagsType = u8;
 pub const IGNORE_DUPLICATIONS_FLAG: FlagsType = 0b10000000;
 
 /// This flag says, that the receiving device, should respond
-/// with packet with same `PROVIDE_ANSWER_FLAG` being set.
-pub const REQUIRE_ANSWER_FLAG: FlagsType = 0b01000000;
+/// with packet with `PONG_FLAG` being set.
+pub const PING_FLAG: FlagsType = 0b01000000;
 
 /// This flag says, that the packet, is made to
 /// provide the answer to the device, which is waiting
 /// for the answer.
-pub const PROVIDE_ANSWER_FLAG: FlagsType = 0b00100000;
+pub const PONG_FLAG: FlagsType = 0b00100000;
 
 /*
 /// This flag tells, that this packet is made by
