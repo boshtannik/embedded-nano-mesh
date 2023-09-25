@@ -4,7 +4,7 @@
 
 use arduino_hal::default_serial;
 use mesh_lib::transciever::BROADCAST_RESERVED_IDENTIFYER;
-use mesh_lib::{DeviceIdentifyer, TranscieverConfig, TranscieverError};
+use mesh_lib::{DeviceIdentifyer, LifeTimeType, TranscieverConfig, TranscieverError};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -12,7 +12,7 @@ mod mesh_lib;
 use heapless::String;
 use mesh_lib::millis::{millis, ms};
 
-use mesh_lib::{LifeTimeType, TranscieverString};
+use mesh_lib::TranscieverString;
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -35,7 +35,7 @@ fn main() -> ! {
         if let Some(received_message) = transciever.receive() {
             led_pin.toggle();
             serial_println!("Caught packet back: ");
-            for byte in received_message.iter() {
+            for byte in received_message.data.iter() {
                 serial_write_byte!(*byte).unwrap();
             }
             serial_println!("");

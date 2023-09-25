@@ -1,16 +1,12 @@
 use crate::serial_write_byte;
 
 use super::config::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
-use super::packet::{
-    DataPacker, DeviceIdentifyer, IdType, LifeTimeType, Packet, PacketDataBytes, PacketFlagOps,
-    Serializer,
-};
-use super::GLOBAL_MUTEXED_CELLED_PACKET_QUEUE;
+use super::packet::{DataPacker, IdType, Packet, PacketFlagOps, Serializer};
+use super::{PacketMetaData, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE};
 
 use super::types::PacketQueue;
 
 pub struct Transmitter {
-    current_device_identifyer: DeviceIdentifyer,
     packet_queue: PacketQueue,
     id_counter: IdType,
 }
@@ -20,33 +16,23 @@ pub enum TransmitterError {
 }
 
 impl Transmitter {
-    pub fn new(current_device_identifyer: DeviceIdentifyer) -> Transmitter {
+    pub fn new() -> Transmitter {
         Transmitter {
-            current_device_identifyer,
             packet_queue: PacketQueue::new(),
             id_counter: IdType::default(),
         }
     }
 
-    pub fn send(
-        &mut self,
-        data: PacketDataBytes,
-        destination_device_identifyer: DeviceIdentifyer,
-        lifetime: LifeTimeType,
-        filter_out_duplications: bool,
-    ) -> Result<(), TransmitterError> {
+    pub fn send(&mut self, mut packet_meta_data: PacketMetaData) -> Result<(), TransmitterError> {
         let (new_val, _) = self.id_counter.overflowing_add(1);
         self.id_counter = new_val;
 
-        let mut packed_data = <Packet as DataPacker>::pack(
-            self.current_device_identifyer.clone(),
-            destination_device_identifyer,
-            self.id_counter,
-            lifetime,
-            data,
-        );
+        packet_meta_data.packet_id = self.id_counter;
 
-        packed_data.set_ignore_duplication_flag(filter_out_duplications);
+        let filter_out_duplication = packet_meta_data.filter_out_duplication;
+        let mut packed_data = <Packet as DataPacker>::pack(packet_meta_data);
+
+        packed_data.set_ignore_duplication_flag(filter_out_duplication);
 
         match self.packet_queue.push_back(packed_data) {
             Ok(_) => Ok(()),

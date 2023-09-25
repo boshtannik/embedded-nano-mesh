@@ -103,7 +103,6 @@ pub const PING_FLAG: FlagsType = 0b01000000;
 /// for the answer.
 pub const PONG_FLAG: FlagsType = 0b00100000;
 
-/*
 /// This flag tells, that this packet is made by
 /// transaction sender device, is to create, and
 /// send the transaction to the transaction
@@ -131,7 +130,6 @@ pub const FINISH_TRANSACTION_FLAG: FlagsType = 0b00000010;
 
 // This flag is not used yet.
 //pub const NOT_USED_FLAG: FlagsType = 0b00000001;
-*/
 
 pub type LifeTimeType = u8;
 pub type IdType = u8;

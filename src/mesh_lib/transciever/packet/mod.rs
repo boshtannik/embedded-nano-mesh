@@ -14,13 +14,16 @@ use crate::{mesh_lib::transciever::packet::bitpos::set_flag, serial_debug};
 use self::{
     bitpos::is_flag_set,
     types::{
-        AddressType, ChecksumType, FlagsType, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE,
-        DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE,
-        IGNORE_DUPLICATIONS_FLAG, LIFETIME_TYPE_SIZE, PING_FLAG, PONG_FLAG,
+        AddressType, ChecksumType, FlagsType, ACCEPT_TRANSACTION_FLAG, CHECKSUM_TYPE_SIZE,
+        DATA_LENGTH_TYPE_SIZE, DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE,
+        FINISH_TRANSACTION_FLAG, FLAGS_TYPE_SIZE, ID_TYPE_SIZE, IGNORE_DUPLICATIONS_FLAG,
+        INITIATE_TRANSACTION_FLAG, LIFETIME_TYPE_SIZE, PING_FLAG, PONG_FLAG, SEND_TRANSACTION_FLAG,
     },
 };
 
 pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
+
+use super::{special_packet_manager::SpecPacketState, PacketMetaData};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct DeviceIdentifyer(pub AddressType);
@@ -95,6 +98,28 @@ impl Packet {
         self.destination_device_identifyer == *identifyer
     }
 
+    fn get_spec_state(&self) -> SpecPacketState {
+        if self.is_ping_flag_set() {
+            return SpecPacketState::PingPacket;
+        }
+        if self.is_pong_flag_set() {
+            return SpecPacketState::PongPacket;
+        }
+        if self.is_send_transaction_flag_set() {
+            return SpecPacketState::SendTransactionPacket;
+        }
+        if self.is_accept_transaction_flag_set() {
+            return SpecPacketState::AcceptTransactionPacket;
+        }
+        if self.is_initiate_transaction_flag_set() {
+            return SpecPacketState::InitTransactionPacket;
+        }
+        if self.is_finish_transaction_flag_set() {
+            return SpecPacketState::FinishTransactionPacket;
+        }
+        SpecPacketState::Normal
+    }
+
     /// Calculates and returns checksum of whole packet.
     ///
     /// Checksum consist of next fields:
@@ -150,24 +175,26 @@ impl Packet {
 }
 
 impl DataPacker for Packet {
-    fn pack(
-        source_device_identifyer: DeviceIdentifyer,
-        destination_device_identifyer: DeviceIdentifyer,
-        id: IdType,
-        lifetime: LifeTimeType,
-        data: PacketDataBytes,
-    ) -> Self {
+    fn pack(packet_meta_data: PacketMetaData) -> Self {
         Packet::new(
-            source_device_identifyer,
-            destination_device_identifyer,
-            id,
-            lifetime,
-            data,
+            packet_meta_data.source_device_identifyer,
+            packet_meta_data.destination_device_identifyer,
+            packet_meta_data.packet_id,
+            packet_meta_data.lifetime,
+            packet_meta_data.data,
         )
     }
 
-    fn unpack(self: Self) -> PacketDataBytes {
-        self.data
+    fn unpack(self: Self) -> PacketMetaData {
+        PacketMetaData {
+            data: self.data.iter().map(|el| *el).collect(), // Can it be simplified?
+            source_device_identifyer: self.source_device_identifyer.clone(),
+            destination_device_identifyer: self.destination_device_identifyer.clone(),
+            lifetime: self.lifetime,
+            filter_out_duplication: self.is_ignore_duplication_flag_set(),
+            packet_spec_config: self.get_spec_state(),
+            packet_id: self.id,
+        }
     }
 }
 
@@ -321,5 +348,41 @@ impl PacketFlagOps for Packet {
     }
     fn is_pong_flag_set(&self) -> bool {
         is_flag_set(self.flags, PONG_FLAG)
+    }
+
+    // TRANSACTION_SEND_FLAG
+    fn set_send_transaction_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, SEND_TRANSACTION_FLAG, new_state);
+        self.summarize();
+    }
+    fn is_send_transaction_flag_set(&self) -> bool {
+        is_flag_set(self.flags, SEND_TRANSACTION_FLAG)
+    }
+
+    // ACCEPT_TRANSACTION_FLAG
+    fn set_accept_transaction_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, ACCEPT_TRANSACTION_FLAG, new_state);
+        self.summarize();
+    }
+    fn is_accept_transaction_flag_set(&self) -> bool {
+        is_flag_set(self.flags, ACCEPT_TRANSACTION_FLAG)
+    }
+
+    // INITIATE_TRANSACTION_FLAG
+    fn set_initiate_transaction_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, INITIATE_TRANSACTION_FLAG, new_state);
+        self.summarize();
+    }
+    fn is_initiate_transaction_flag_set(&self) -> bool {
+        is_flag_set(self.flags, INITIATE_TRANSACTION_FLAG)
+    }
+
+    // FINISH_TRANSACTION_FLAG
+    fn set_finish_transaction_flag(&mut self, new_state: bool) {
+        set_flag(&mut self.flags, FINISH_TRANSACTION_FLAG, new_state);
+        self.summarize();
+    }
+    fn is_finish_transaction_flag_set(&self) -> bool {
+        is_flag_set(self.flags, FINISH_TRANSACTION_FLAG)
     }
 }

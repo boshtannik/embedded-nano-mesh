@@ -3,6 +3,7 @@ use core::cell::RefCell;
 mod config;
 mod packet;
 mod receiver;
+mod special_packet_manager;
 mod timer;
 mod transmitter;
 mod types;
@@ -13,7 +14,12 @@ pub use types::TranscieverString;
 
 pub use packet::{LifeTimeType, BROADCAST_RESERVED_IDENTIFYER};
 
-use self::{packet::PacketDataBytes, receiver::ReceiverError, types::PacketQueue};
+use self::{
+    packet::{IdType, PacketDataBytes},
+    receiver::ReceiverError,
+    special_packet_manager::SpecPacketState,
+    types::PacketQueue,
+};
 
 use super::millis::ms;
 
@@ -23,7 +29,9 @@ pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
 pub struct Transciever {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
+    my_address: DeviceIdentifyer,
     timer: timer::Timer,
+    special_packet_manager: special_packet_manager::SpecialPacketManager,
 }
 
 pub enum TranscieverError {
@@ -33,12 +41,24 @@ pub enum TranscieverError {
 // pub struct WaitingForAnswerTimeOut;
 // pub struct TransactionFailed;
 
+pub struct PacketMetaData {
+    pub data: PacketDataBytes,
+    pub source_device_identifyer: DeviceIdentifyer,
+    pub destination_device_identifyer: DeviceIdentifyer,
+    pub lifetime: LifeTimeType,
+    pub filter_out_duplication: bool, // TODO: Rename in the whole project to void echo, or something...???
+    pub packet_spec_config: SpecPacketState,
+    pub packet_id: IdType,
+}
+
 impl Transciever {
     pub fn new(my_address: DeviceIdentifyer, listen_period: ms) -> Transciever {
         Transciever {
-            transmitter: transmitter::Transmitter::new(my_address.clone()),
-            receiver: receiver::Receiver::new(my_address),
+            transmitter: transmitter::Transmitter::new(),
+            receiver: receiver::Receiver::new(my_address.clone()),
+            my_address,
             timer: timer::Timer::new(listen_period),
+            special_packet_manager: special_packet_manager::SpecialPacketManager,
         }
     }
 
@@ -75,14 +95,17 @@ impl Transciever {
         data: PacketDataBytes,
         destination_device_identifyer: DeviceIdentifyer,
         lifetime: LifeTimeType,
-        filter_out_duplications: bool,
+        filter_out_duplication: bool,
     ) -> Result<(), TranscieverError> {
-        match self.transmitter.send(
+        match self.transmitter.send(PacketMetaData {
             data,
+            source_device_identifyer: self.my_address.clone(),
             destination_device_identifyer,
             lifetime,
-            filter_out_duplications,
-        ) {
+            filter_out_duplication,
+            packet_spec_config: SpecPacketState::Normal,
+            packet_id: 0,
+        }) {
             Ok(_) => Ok(()),
             Err(transmitter::TransmitterError::PacketQueueIsFull) => {
                 Err(TranscieverError::SendingQueueIsFull)
@@ -93,7 +116,7 @@ impl Transciever {
     /// Optionally returns `PacketDataBytes` instance with data,
     /// which has been send exactly to this device, or has been
     /// `broadcast`ed trough all the network.
-    pub fn receive(&mut self) -> Option<PacketDataBytes> {
+    pub fn receive(&mut self) -> Option<PacketMetaData> {
         self.receiver.receive()
     }
 

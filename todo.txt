@@ -12,7 +12,7 @@ Things are left to do:
   2 - send_guaranteed_only_once - Send packet, and guarantee, that receiver has used it only 1 time, and return result (Sent / Sending failed)
 
 * !!! Seeoms only reasonable modules to establish radio connection are
-  wireless USART extender modules, such as djy-40, djy-41, sv-610, hc-11, hc-12, lc12s,
+  wireless USART extender modules, such as jdy-40, jdy-41, sv-610, hc-11, hc-12, lc12s,
   GT-38. or bad chinese ones as WSN-31 other radio-uart module, that allow to
   transmit byte to multiple receiving devices at once.
 

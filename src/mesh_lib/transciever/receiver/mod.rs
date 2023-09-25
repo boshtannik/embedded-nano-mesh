@@ -11,9 +11,9 @@ use self::{
 };
 
 use super::{
-    packet::{DataPacker, DeviceIdentifyer, Packet, PacketDataBytes},
+    packet::{DataPacker, DeviceIdentifyer, Packet},
     types::PacketDataQueue,
-    BROADCAST_RESERVED_IDENTIFYER, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
+    PacketMetaData, BROADCAST_RESERVED_IDENTIFYER, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
 };
 
 use arduino_hal::prelude::_embedded_hal_serial_Read;
@@ -140,7 +140,7 @@ impl Receiver {
         self._proceed_transit(transit_packet)
     }
 
-    pub fn receive(&mut self) -> Option<PacketDataBytes> {
+    pub fn receive(&mut self) -> Option<PacketMetaData> {
         self.message_queue.pop_front()
     }
 

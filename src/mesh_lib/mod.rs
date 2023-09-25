@@ -8,7 +8,8 @@ use avr_device::atmega328p::TC0;
 pub use millis::{millis, millis_init, ms};
 pub use serial::Usart;
 pub use transciever::{
-    DeviceIdentifyer, LifeTimeType, Transciever, TranscieverError, TranscieverString,
+    DeviceIdentifyer, LifeTimeType, PacketMetaData, Transciever, TranscieverError,
+    TranscieverString,
 };
 
 pub struct TranscieverConfig {
