@@ -63,7 +63,7 @@ fn main() -> ! {
                 true,
             ) {
                 Ok(_) => {}
-                Err(TranscieverError::TryAgainLater) => {}
+                Err(TranscieverError::SendingQueueIsFull) => {}
             };
 
             packet_counter = packet_counter.overflowing_add(1).0;

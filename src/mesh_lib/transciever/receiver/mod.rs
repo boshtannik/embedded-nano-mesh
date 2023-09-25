@@ -44,6 +44,10 @@ impl Receiver {
         }
     }
 
+    // Checks if packet is duplicated one, and if packet has flag,
+    // that tells that that packet needs do be filtered out by the
+    // fact of duplication..
+    // Raises the error if so, or returns packet Otherwise.
     fn _proceed_duplicated(&mut self, packet: Packet) -> Result<Packet, ReceiverError> {
         match self.packet_filter.filter_out_duplicated(packet) {
             Err(RegistrationError::DuplicationFound) => {
@@ -56,9 +60,12 @@ impl Receiver {
         }
     }
 
-    /// Result->Ok(Some(packet))     - Means, that packet is the transit packet.
-    /// Result->Ok(None)             - Means, that the packet has reached it's destination.
-    /// Result->Err(ReceiverError)   - Error.
+    /// Checks if the packet, has reached it's destination.
+    /// Otherwise returns packet back.
+    /// Here is some possible results of use:
+    ///     Result->Ok(Some(packet))     - Means, that packet is the transit packet.
+    ///     Result->Ok(None)             - Means, that the packet has reached it's destination.
+    ///     Result->Err(ReceiverError)   - Error.
     fn _proceed_destination(&mut self, packet: Packet) -> Result<Option<Packet>, ReceiverError> {
         if !packet.is_destination_identifyer_reached(&self.current_device_identifyer) {
             return Ok(Some(packet));
@@ -72,6 +79,8 @@ impl Receiver {
         }
     }
 
+    /// Cheks if the packet is the broadcast one.
+    /// This method reacts on sugh kind pf oacket, and returns it's back.
     fn _proceed_broadcast(&mut self, packet: Packet) -> Result<Packet, ReceiverError> {
         if !packet
             .is_destination_identifyer_reached(&DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER))
@@ -87,6 +96,7 @@ impl Receiver {
         }
     }
 
+    // Processes packet, that is needed to be transitted.
     fn _proceed_transit(&mut self, packet: Packet) -> Result<(), ReceiverError> {
         let _ = ::avr_device::interrupt::free(|cs| {
             match GLOBAL_MUTEXED_CELLED_PACKET_QUEUE

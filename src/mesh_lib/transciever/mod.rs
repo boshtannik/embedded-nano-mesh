@@ -27,7 +27,7 @@ pub struct Transciever {
 }
 
 pub enum TranscieverError {
-    TryAgainLater,
+    SendingQueueIsFull,
 }
 
 // pub struct WaitingForAnswerTimeOut;
@@ -85,7 +85,7 @@ impl Transciever {
         ) {
             Ok(_) => Ok(()),
             Err(transmitter::TransmitterError::PacketQueueIsFull) => {
-                Err(TranscieverError::TryAgainLater)
+                Err(TranscieverError::SendingQueueIsFull)
             }
         }
     }
