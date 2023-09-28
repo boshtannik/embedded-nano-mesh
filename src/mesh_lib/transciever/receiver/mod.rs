@@ -18,21 +18,18 @@ use super::{
 use arduino_hal::prelude::_embedded_hal_serial_Read;
 
 pub struct Receiver {
-    received_packet: Option<PacketMetaData>,
     packet_filter: Filter,
     packet_bytes_parser: PacketBytesParser,
 }
 
-pub enum ReceiverError {
+enum ReceiverError {
     PacketDuplication,
-    NoPacketToManage,
     DuplicationFilterOverloaded,
 }
 
 impl Receiver {
     pub fn new() -> Receiver {
         Receiver {
-            received_packet: None,
             packet_filter: Filter::new(),
             packet_bytes_parser: PacketBytesParser::new(),
         }
@@ -54,26 +51,21 @@ impl Receiver {
         }
     }
 
-    pub fn update(&mut self) -> Result<(), ReceiverError> {
+    pub fn update(&mut self) {
         self._receive_byte();
-
         self.packet_filter.update();
-
-        let packet = match self.packet_bytes_parser.get_packet() {
-            None => return Err(ReceiverError::NoPacketToManage),
-            Some(packet) => packet,
-        };
-
-        let packet = self.filter_out_duplicated(packet)?;
-
-        self.received_packet
-            .replace(<Packet as DataPacker>::unpack(packet));
-
-        Ok(())
     }
 
     pub fn receive(&mut self) -> Option<PacketMetaData> {
-        self.received_packet.take()
+        let packet = match self.packet_bytes_parser.get_packet() {
+            None => return None,
+            Some(packet) => packet,
+        };
+
+        match self.filter_out_duplicated(packet) {
+            Ok(packet) => Some(<Packet as DataPacker>::unpack(packet)),
+            Err(_) => None,
+        }
     }
 
     fn _receive_byte(&mut self) {

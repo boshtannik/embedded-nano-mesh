@@ -1,7 +1,7 @@
 use crate::mesh_lib::transciever::packet::StateMutator;
 
 #[derive(PartialEq, Eq, Clone)]
-pub enum SpecPacketState {
+pub enum SpecState {
     Normal,
     PingPacket,
     PongPacket,
@@ -11,7 +11,7 @@ pub enum SpecPacketState {
     FinishTransaction,
 }
 
-impl StateMutator for SpecPacketState {
+impl StateMutator for SpecState {
     fn mutated(self) -> Self {
         match self {
             Self::PingPacket => Self::PongPacket,

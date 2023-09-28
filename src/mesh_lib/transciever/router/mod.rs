@@ -1,19 +1,19 @@
 mod types;
 
-pub use types::SpecPacketState;
+pub use types::SpecState;
 
 use super::{
-    packet::{DataPacker, Packet, BROADCAST_RESERVED_IDENTIFYER},
+    packet::{DataPacker, Packet, StateMutator, BROADCAST_RESERVED_IDENTIFYER},
     DeviceIdentifyer, PacketMetaData, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
 };
 
-pub struct SpecialPacketHandler {
+pub struct PacketRouter {
     current_device_identifyer: DeviceIdentifyer,
 }
 
 pub enum OkCase {
     Handled,
-    DestinationReached(PacketMetaData),
+    Received(PacketMetaData),
 }
 
 pub enum ErrCase {
@@ -21,7 +21,7 @@ pub enum ErrCase {
     PacketLifetimeEnded,
 }
 
-impl SpecialPacketHandler {
+impl PacketRouter {
     pub fn new(current_device_identifyer: DeviceIdentifyer) -> Self {
         Self {
             current_device_identifyer,
@@ -44,7 +44,7 @@ impl SpecialPacketHandler {
 
     fn handle_normal(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         if packet_meta_data.destination_device_identifyer == self.current_device_identifyer {
-            return Ok(OkCase::DestinationReached(packet_meta_data));
+            return Ok(OkCase::Received(packet_meta_data));
         } else {
             let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
                 Ok(packet_meta_data) => packet_meta_data,
@@ -62,9 +62,7 @@ impl SpecialPacketHandler {
             Err(_) => return Err(ErrCase::PacketLifetimeEnded),
         };
         match self.push_to_transit_queue(packet_decreased_lifettime) {
-            Ok(OkCase::Handled) => {
-                return Ok(OkCase::DestinationReached(original_packet_meta_data))
-            }
+            Ok(OkCase::Handled) => return Ok(OkCase::Received(original_packet_meta_data)),
             other_err => return other_err,
         }
     }
@@ -75,14 +73,16 @@ impl SpecialPacketHandler {
             Ok(packet_decreased_lifettime) => packet_decreased_lifettime,
             Err(_) => return Err(ErrCase::PacketLifetimeEnded),
         };
-        self.push_to_transit_queue(packet_decreased_lifettime)?;
-        Ok(OkCase::DestinationReached(original_packet_meta_data))
+        let mutated_packet_meta_data = packet_decreased_lifettime.mutated();
+        self.push_to_transit_queue(mutated_packet_meta_data)?;
+        Ok(OkCase::Received(original_packet_meta_data))
     }
 
     fn handle_pong(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         self.handle_normal(packet_meta_data)
     }
 
+    /*
     fn handle_send_transaction(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         // I have received SendTransaction
         // decrease lifetime
@@ -120,10 +120,11 @@ impl SpecialPacketHandler {
         // return received FinishTransaction packet_meta_data
         unimplemented!()
     }
+    */
 
-    pub fn handle(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
-        match packet_meta_data.packet_spec_state {
-            SpecPacketState::Normal => {
+    pub fn route(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
+        match packet_meta_data.spec_state {
+            SpecState::Normal => {
                 let is_broadcast = packet_meta_data.is_destination_identifyer_reached(
                     &DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER),
                 );
@@ -132,12 +133,13 @@ impl SpecialPacketHandler {
                     false => self.handle_normal(packet_meta_data),
                 }
             }
-            SpecPacketState::PingPacket => self.handle_ping(packet_meta_data),
-            SpecPacketState::PongPacket => self.handle_pong(packet_meta_data),
-            SpecPacketState::SendTransaction => self.handle_send_transaction(packet_meta_data),
-            SpecPacketState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
-            SpecPacketState::InitTransaction => self.handle_init_transaction(packet_meta_data),
-            SpecPacketState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
+            SpecState::PingPacket => self.handle_ping(packet_meta_data),
+            SpecState::PongPacket => self.handle_pong(packet_meta_data),
+            _ => Ok(OkCase::Handled),
+            // SpecState::SendTransaction => self.handle_send_transaction(packet_meta_data),
+            // SpecState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
+            // SpecState::InitTransaction => self.handle_init_transaction(packet_meta_data),
+            // SpecState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
         }
     }
 }

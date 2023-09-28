@@ -3,22 +3,21 @@ use core::cell::RefCell;
 mod config;
 mod packet;
 mod receiver;
-mod special_packet_handler;
+mod router;
 mod timer;
 mod transmitter;
 mod types;
 
 use avr_device::interrupt::Mutex;
 pub use packet::DeviceIdentifyer;
-pub use special_packet_handler::SpecPacketState;
+pub use router::SpecState;
 pub use types::TranscieverString;
 
 pub use packet::LifeTimeType;
 
 use self::{
     packet::{IdType, PacketDataBytes, StateMutator},
-    receiver::ReceiverError,
-    special_packet_handler::{ErrCase, OkCase, SpecialPacketHandler},
+    router::{ErrCase, OkCase, PacketRouter},
     types::{PacketDataQueue, PacketQueue},
 };
 
@@ -33,8 +32,7 @@ pub struct Transciever {
     my_address: DeviceIdentifyer,
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
-    special_packet_handler: SpecialPacketHandler,
-    received_packet_meta_data: Option<PacketMetaData>,
+    packet_router: PacketRouter,
 }
 
 pub enum TranscieverError {
@@ -42,7 +40,6 @@ pub enum TranscieverError {
 }
 
 pub enum TranscieverUpdateError {
-    NoPacketToManage,
     ReceivingQueueIsFull,
     TransitQueueIsFull,
 }
@@ -55,7 +52,7 @@ pub struct PacketMetaData {
     pub destination_device_identifyer: DeviceIdentifyer,
     pub lifetime: LifeTimeType,
     pub filter_out_duplication: bool, // TODO: Rename in the whole project to void echo, or something...???
-    pub packet_spec_state: SpecPacketState,
+    pub spec_state: SpecState,
     pub packet_id: IdType,
 }
 
@@ -90,20 +87,21 @@ impl PacketMetaData {
 
 impl StateMutator for PacketMetaData {
     fn mutated(mut self) -> Self {
-        let old_state = self.packet_spec_state;
+        let old_state = self.spec_state.clone();
         match old_state {
-            SpecPacketState::PingPacket
-            | SpecPacketState::SendTransaction
-            | SpecPacketState::AcceptTransaction
-            | SpecPacketState::InitTransaction => self.swap_source_destination(),
+            SpecState::PingPacket
+            | SpecState::SendTransaction
+            | SpecState::AcceptTransaction
+            | SpecState::InitTransaction => self.swap_source_destination(),
             _ => (),
         }
+        self.spec_state = old_state.mutated();
         self
     }
 }
 
-pub enum AnswerError {
-    ErrorKind(TranscieverError),
+pub enum PingPongError {
+    TryAgainLater,
     Timeout,
 }
 
@@ -112,11 +110,10 @@ impl Transciever {
         Transciever {
             transmitter: transmitter::Transmitter::new(),
             receiver: receiver::Receiver::new(),
-            my_address,
+            my_address: my_address.clone(),
             timer: timer::Timer::new(listen_period),
             received_packet_meta_data_queue: PacketDataQueue::new(),
-            special_packet_handler: SpecialPacketHandler::new(my_address.clone()),
-            received_packet_meta_data: None,
+            packet_router: PacketRouter::new(my_address),
         }
     }
 
@@ -127,9 +124,7 @@ impl Transciever {
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
         timeout: ms,
-    ) -> Result<(), AnswerError> {
-        let lifetime = if lifetime < 2 { 2 } else { lifetime };
-
+    ) -> Result<(), PingPongError> {
         let mut current_time = millis::millis();
         let wait_end_time = current_time + timeout;
 
@@ -141,26 +136,31 @@ impl Transciever {
             destination_device_identifyer: destination_device_identifyer.clone(),
             lifetime,
             filter_out_duplication,
-            packet_spec_state: SpecPacketState::PingPacket,
+            spec_state: SpecState::PingPacket,
             packet_id: 0,
         }) {
             Ok(_) => (),
             Err(TranscieverError::SendingQueueIsFull) => {
-                return Err(AnswerError::ErrorKind(TranscieverError::SendingQueueIsFull))
+                return Err(PingPongError::TryAgainLater);
             }
         };
 
         while current_time < wait_end_time {
-            self.update();
+            let _ = self.update();
+
             if let Some(answer) = self.receive() {
-                if answer.source_device_identifyer == destination_device_identifyer {
-                    return Ok(());
+                if !(answer.spec_state == SpecState::PongPacket) {
+                    continue;
                 }
+                if !(answer.source_device_identifyer == destination_device_identifyer) {
+                    continue;
+                }
+                return Ok(());
             }
             current_time = millis::millis();
         }
 
-        Err(AnswerError::Timeout)
+        Err(PingPongError::Timeout)
     }
     // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifyer:
     // DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType, filter_out_duplications: bool) ->
@@ -204,7 +204,7 @@ impl Transciever {
             destination_device_identifyer,
             lifetime,
             filter_out_duplication,
-            packet_spec_state: SpecPacketState::Normal,
+            spec_state: SpecState::Normal,
             packet_id: 0,
         })
     }
@@ -222,7 +222,7 @@ impl Transciever {
     /// which has been send exactly to this device, or has been
     /// `broadcast`ed trough all the network.
     pub fn receive(&mut self) -> Option<PacketMetaData> {
-        self.receiver.receive()
+        self.received_packet_meta_data_queue.pop_front()
     }
 
     /// Does all necessary internal work of mesh node:
@@ -234,23 +234,17 @@ impl Transciever {
             self.transmitter.update();
             self.timer.record_speak_time();
         }
-        match self.receiver.update() {
-            Err(ReceiverError::NoPacketToManage) => (),
-            Err(ReceiverError::PacketDuplication) => (),
-            Err(ReceiverError::DuplicationFilterOverloaded) => (),
-            Ok(_) => (),
-        };
+        self.receiver.update();
 
         let packet_to_handle = match self.receiver.receive() {
             Some(packet_to_handle) => packet_to_handle,
-            None => return Err(TranscieverUpdateError::NoPacketToManage),
+            None => return Ok(()),
         };
 
-        let reached_destination_packet = match self.special_packet_handler.handle(packet_to_handle)
-        {
+        let reached_destination_packet = match self.packet_router.route(packet_to_handle) {
             Ok(ok_case) => match ok_case {
                 OkCase::Handled => return Ok(()),
-                OkCase::DestinationReached(packet) => packet,
+                OkCase::Received(packet) => packet,
             },
             Err(err_case) => match err_case {
                 ErrCase::TransitQueueIsFull => {

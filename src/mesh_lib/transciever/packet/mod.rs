@@ -25,7 +25,7 @@ use self::{
 
 pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
-pub use super::special_packet_handler::SpecPacketState;
+pub use super::router::SpecState;
 use super::PacketMetaData;
 
 #[derive(Clone, PartialEq, Eq)]
@@ -49,6 +49,7 @@ impl Packet {
         destination_device_identifyer: DeviceIdentifyer,
         id: IdType,
         lifetime: LifeTimeType,
+        spec_state: SpecState,
         data: PacketDataBytes,
     ) -> Packet {
         let mut new_packet = Packet {
@@ -61,6 +62,7 @@ impl Packet {
             data,
             checksum: ChecksumType::MIN,
         };
+        new_packet.set_spec_state(spec_state);
         new_packet.summarized()
     }
 
@@ -81,29 +83,29 @@ impl Packet {
         self.calculate_packet_sum() == self.checksum
     }
 
-    pub fn get_spec_state(&self) -> SpecPacketState {
+    pub fn get_spec_state(&self) -> SpecState {
         if self.is_ping_flag_set() {
-            return SpecPacketState::PingPacket;
+            return SpecState::PingPacket;
         }
         if self.is_pong_flag_set() {
-            return SpecPacketState::PongPacket;
+            return SpecState::PongPacket;
         }
         if self.is_send_transaction_flag_set() {
-            return SpecPacketState::SendTransaction;
+            return SpecState::SendTransaction;
         }
         if self.is_accept_transaction_flag_set() {
-            return SpecPacketState::AcceptTransaction;
+            return SpecState::AcceptTransaction;
         }
         if self.is_initiate_transaction_flag_set() {
-            return SpecPacketState::InitTransaction;
+            return SpecState::InitTransaction;
         }
         if self.is_finish_transaction_flag_set() {
-            return SpecPacketState::FinishTransaction;
+            return SpecState::FinishTransaction;
         }
-        SpecPacketState::Normal
+        SpecState::Normal
     }
 
-    pub fn set_spec_state(&mut self, new_state: SpecPacketState) {
+    pub fn set_spec_state(&mut self, new_state: SpecState) {
         self.set_ping_flag(false);
         self.set_pong_flag(false);
         self.set_send_transaction_flag(false);
@@ -111,23 +113,23 @@ impl Packet {
         self.set_initiate_transaction_flag(false);
         self.set_finish_transaction_flag(false);
         match new_state {
-            SpecPacketState::Normal => (),
-            SpecPacketState::PingPacket => {
+            SpecState::Normal => (),
+            SpecState::PingPacket => {
                 self.set_ping_flag(true);
             }
-            SpecPacketState::PongPacket => {
+            SpecState::PongPacket => {
                 self.set_pong_flag(true);
             }
-            SpecPacketState::SendTransaction => {
+            SpecState::SendTransaction => {
                 self.set_send_transaction_flag(true);
             }
-            SpecPacketState::AcceptTransaction => {
+            SpecState::AcceptTransaction => {
                 self.set_accept_transaction_flag(true);
             }
-            SpecPacketState::InitTransaction => {
+            SpecState::InitTransaction => {
                 self.set_initiate_transaction_flag(true);
             }
-            SpecPacketState::FinishTransaction => {
+            SpecState::FinishTransaction => {
                 self.set_finish_transaction_flag(true);
             }
         }
@@ -196,6 +198,7 @@ impl DataPacker for Packet {
             packet_meta_data.destination_device_identifyer,
             packet_meta_data.packet_id,
             packet_meta_data.lifetime,
+            packet_meta_data.spec_state,
             packet_meta_data.data,
         )
     }
@@ -207,7 +210,7 @@ impl DataPacker for Packet {
             destination_device_identifyer: self.destination_device_identifyer.clone(),
             lifetime: self.lifetime,
             filter_out_duplication: self.is_ignore_duplication_flag_set(),
-            packet_spec_state: self.get_spec_state(),
+            spec_state: self.get_spec_state(),
             packet_id: self.id,
         }
     }
