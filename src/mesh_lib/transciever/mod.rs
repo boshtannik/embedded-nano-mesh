@@ -16,7 +16,7 @@ pub use types::TranscieverString;
 pub use packet::LifeTimeType;
 
 use self::{
-    packet::{IdType, PacketDataBytes, StateMutator},
+    packet::{IdType, PacketDataBytes, StateMutator, BROADCAST_RESERVED_IDENTIFYER},
     router::{ErrCase, OkCase, PacketRouter},
     types::{PacketDataQueue, PacketQueue},
 };
@@ -100,7 +100,8 @@ impl StateMutator for PacketMetaData {
     }
 }
 
-pub enum PingPongError {
+pub enum SpecialSendError {
+    BroadcastAddressForbidden,
     TryAgainLater,
     Timeout,
 }
@@ -124,7 +125,10 @@ impl Transciever {
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
         timeout: ms,
-    ) -> Result<(), PingPongError> {
+    ) -> Result<(), SpecialSendError> {
+        if destination_device_identifyer.0 == BROADCAST_RESERVED_IDENTIFYER {
+            return Err(SpecialSendError::BroadcastAddressForbidden);
+        }
         let mut current_time = millis::millis();
         let wait_end_time = current_time + timeout;
 
@@ -141,7 +145,7 @@ impl Transciever {
         }) {
             Ok(_) => (),
             Err(TranscieverError::SendingQueueIsFull) => {
-                return Err(PingPongError::TryAgainLater);
+                return Err(SpecialSendError::TryAgainLater);
             }
         };
 
@@ -160,7 +164,7 @@ impl Transciever {
             current_time = millis::millis();
         }
 
-        Err(PingPongError::Timeout)
+        Err(SpecialSendError::Timeout)
     }
 
     // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifyer:
@@ -173,7 +177,10 @@ impl Transciever {
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
         timeout: ms,
-    ) -> Result<(), PingPongError> {
+    ) -> Result<(), SpecialSendError> {
+        if destination_device_identifyer.0 == BROADCAST_RESERVED_IDENTIFYER {
+            return Err(SpecialSendError::BroadcastAddressForbidden);
+        }
         let mut current_time = millis::millis();
         let wait_end_time = current_time + timeout;
 
@@ -190,7 +197,7 @@ impl Transciever {
         }) {
             Ok(_) => (),
             Err(TranscieverError::SendingQueueIsFull) => {
-                return Err(PingPongError::TryAgainLater);
+                return Err(SpecialSendError::TryAgainLater);
             }
         };
 
@@ -209,7 +216,7 @@ impl Transciever {
             current_time = millis::millis();
         }
 
-        Err(PingPongError::Timeout)
+        Err(SpecialSendError::Timeout)
     }
 
     /// Sends the `data` to exact device. or to all devices.

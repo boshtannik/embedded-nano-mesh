@@ -4,7 +4,7 @@ pub use types::SpecState;
 
 use super::{
     packet::{DataPacker, Packet, StateMutator, BROADCAST_RESERVED_IDENTIFYER},
-    DeviceIdentifyer, PacketMetaData, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
+    DeviceIdentifyer, PacketMetaData, PacketMetaDataError, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
 };
 
 pub struct PacketRouter {
@@ -43,16 +43,7 @@ impl PacketRouter {
     }
 
     fn handle_normal(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
-        if packet_meta_data.destination_device_identifyer == self.current_device_identifyer {
-            return Ok(OkCase::Received(packet_meta_data));
-        } else {
-            let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
-                Ok(packet_meta_data) => packet_meta_data,
-                Err(_) => return Err(ErrCase::PacketLifetimeEnded),
-            };
-
-            self.push_to_transit_queue(packet_decreased_lifettime)
-        }
+        return Ok(OkCase::Received(packet_meta_data));
     }
 
     fn handle_broadcast(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
@@ -118,22 +109,28 @@ impl PacketRouter {
     }
 
     pub fn route(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
-        match packet_meta_data.spec_state {
-            SpecState::Normal => {
-                let is_broadcast = packet_meta_data.is_destination_identifyer_reached(
-                    &DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER),
-                );
-                match is_broadcast {
-                    true => self.handle_broadcast(packet_meta_data),
-                    false => self.handle_normal(packet_meta_data),
-                }
+        if packet_meta_data.is_destination_identifyer_reached(&self.current_device_identifyer) {
+            match packet_meta_data.spec_state {
+                SpecState::Normal => self.handle_normal(packet_meta_data),
+                SpecState::PingPacket => self.handle_ping(packet_meta_data),
+                SpecState::PongPacket => self.handle_pong(packet_meta_data),
+                SpecState::SendTransaction => self.handle_send_transaction(packet_meta_data),
+                SpecState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
+                SpecState::InitTransaction => self.handle_init_transaction(packet_meta_data),
+                SpecState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
             }
-            SpecState::PingPacket => self.handle_ping(packet_meta_data),
-            SpecState::PongPacket => self.handle_pong(packet_meta_data),
-            SpecState::SendTransaction => self.handle_send_transaction(packet_meta_data),
-            SpecState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
-            SpecState::InitTransaction => self.handle_init_transaction(packet_meta_data),
-            SpecState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
+        } else if packet_meta_data
+            .is_destination_identifyer_reached(&DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER))
+        {
+            self.handle_broadcast(packet_meta_data)
+        } else {
+            let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
+                Ok(packet_decreased_lifettime) => packet_decreased_lifettime,
+                Err(PacketMetaDataError::PacketLifetimeEnded) => {
+                    return Err(ErrCase::PacketLifetimeEnded)
+                }
+            };
+            self.push_to_transit_queue(packet_decreased_lifettime)
         }
     }
 }

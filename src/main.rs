@@ -19,7 +19,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut transciever = mesh_lib::init_transciever(TranscieverConfig {
-        device_identifyer: DeviceIdentifyer(1),
+        device_identifyer: DeviceIdentifyer(2),
         listen_period: 360 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
