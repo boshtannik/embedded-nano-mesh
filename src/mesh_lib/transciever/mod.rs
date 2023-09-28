@@ -162,9 +162,55 @@ impl Transciever {
 
         Err(PingPongError::Timeout)
     }
+
     // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifyer:
     // DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType, filter_out_duplications: bool) ->
     // Result<(), TransactionFailed>
+    pub fn send_with_transaction(
+        &mut self,
+        data: PacketDataBytes,
+        destination_device_identifyer: DeviceIdentifyer,
+        lifetime: LifeTimeType,
+        filter_out_duplication: bool,
+        timeout: ms,
+    ) -> Result<(), PingPongError> {
+        let mut current_time = millis::millis();
+        let wait_end_time = current_time + timeout;
+
+        while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
+
+        match self._send(PacketMetaData {
+            data,
+            source_device_identifyer: self.my_address.clone(),
+            destination_device_identifyer: destination_device_identifyer.clone(),
+            lifetime,
+            filter_out_duplication,
+            spec_state: SpecState::SendTransaction,
+            packet_id: 0,
+        }) {
+            Ok(_) => (),
+            Err(TranscieverError::SendingQueueIsFull) => {
+                return Err(PingPongError::TryAgainLater);
+            }
+        };
+
+        while current_time < wait_end_time {
+            let _ = self.update();
+
+            if let Some(answer) = self.receive() {
+                if !(answer.spec_state == SpecState::FinishTransaction) {
+                    continue;
+                }
+                if !(answer.source_device_identifyer == destination_device_identifyer) {
+                    continue;
+                }
+                return Ok(());
+            }
+            current_time = millis::millis();
+        }
+
+        Err(PingPongError::Timeout)
+    }
 
     /// Sends the `data` to exact device. or to all devices.
     /// In order to send `data` to all devices, use `BROADCAST_RESERVED_IDENTIFYER`,

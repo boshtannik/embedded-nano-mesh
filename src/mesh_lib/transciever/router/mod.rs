@@ -82,45 +82,40 @@ impl PacketRouter {
         self.handle_normal(packet_meta_data)
     }
 
-    /*
     fn handle_send_transaction(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
-        // I have received SendTransaction
-        // decrease lifetime
-        // mutate packet_meta_data
-        // push_to_transit_queue
-        unimplemented!()
+        let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
+            Ok(packet) => packet,
+            Err(_) => return Err(ErrCase::PacketLifetimeEnded),
+        };
+        let mutated_decreased_packet = packet_decreased_lifettime.mutated();
+        self.push_to_transit_queue(mutated_decreased_packet)
     }
 
     fn handle_accept_transaction(
         &self,
         packet_meta_data: PacketMetaData,
     ) -> Result<OkCase, ErrCase> {
-        // I have received AcceptTransaction
-        // deacrease_lifetime
-        // mutate packet_meta_data
-        // push_to_transit_queue
-        unimplemented!()
+        let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
+            Ok(packet) => packet,
+            Err(_) => return Err(ErrCase::PacketLifetimeEnded),
+        };
+        let mutated_decreased_packet = packet_decreased_lifettime.mutated();
+        self.push_to_transit_queue(mutated_decreased_packet)
     }
 
     fn handle_init_transaction(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
-        // I have received InitTransaction
-        // save original packet
-        // Do not decrease lifetime
-        // mutate packet
-        // push_to_transit_queue
-        // return original_packet_meta_data
-        unimplemented!()
+        let original_packet_meta_data = packet_meta_data.clone();
+        let mutated_packet_meta_data = packet_meta_data.mutated();
+        self.push_to_transit_queue(mutated_packet_meta_data)?;
+        Ok(OkCase::Received(original_packet_meta_data))
     }
 
     fn handle_finish_transaction(
         &self,
         packet_meta_data: PacketMetaData,
     ) -> Result<OkCase, ErrCase> {
-        // I have received FinishTransaction
-        // return received FinishTransaction packet_meta_data
-        unimplemented!()
+        Ok(OkCase::Received(packet_meta_data))
     }
-    */
 
     pub fn route(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         match packet_meta_data.spec_state {
@@ -135,11 +130,10 @@ impl PacketRouter {
             }
             SpecState::PingPacket => self.handle_ping(packet_meta_data),
             SpecState::PongPacket => self.handle_pong(packet_meta_data),
-            _ => Ok(OkCase::Handled),
-            // SpecState::SendTransaction => self.handle_send_transaction(packet_meta_data),
-            // SpecState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
-            // SpecState::InitTransaction => self.handle_init_transaction(packet_meta_data),
-            // SpecState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
+            SpecState::SendTransaction => self.handle_send_transaction(packet_meta_data),
+            SpecState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
+            SpecState::InitTransaction => self.handle_init_transaction(packet_meta_data),
+            SpecState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
         }
     }
 }

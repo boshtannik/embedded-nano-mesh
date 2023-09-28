@@ -19,7 +19,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut transciever = mesh_lib::init_transciever(TranscieverConfig {
-        device_identifyer: DeviceIdentifyer(2),
+        device_identifyer: DeviceIdentifyer(1),
         listen_period: 360 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
@@ -57,14 +57,17 @@ fn main() -> ! {
                 message.push('\0').unwrap_or_else(|_| {});
             }
 
-            if let Ok(_) = transciever.send_ping_pong(
+            if let Ok(_) = transciever.send_with_transaction(
                 message.into_bytes(),
                 DeviceIdentifyer(1),
                 4 as LifeTimeType,
                 true,
                 2000 as ms,
             ) {
-                serial_println!("Pong caught");
+                led_pin.toggle();
+                serial_println!("Transaction done!");
+            } else {
+                serial_println!("Transaction not done!");
             }
             packet_counter = packet_counter.overflowing_add(1).0;
         }
