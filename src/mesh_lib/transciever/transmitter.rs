@@ -54,8 +54,9 @@ impl Transmitter {
                 .borrow_mut()
                 .pop_front()
             {
+                let serialized_packet = packet.summarized().serialize();
                 self.send_start_byte_sequence();
-                for serialized_byte in packet.serialize() {
+                for serialized_byte in serialized_packet {
                     serial_write_byte!(serialized_byte).unwrap_or_else(|_| {});
                 }
                 return;
@@ -64,8 +65,9 @@ impl Transmitter {
 
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
+            let serialized_packet = packet.summarized().serialize();
             self.send_start_byte_sequence();
-            for serialized_byte in packet.serialize() {
+            for serialized_byte in serialized_packet {
                 serial_write_byte!(serialized_byte).unwrap_or_else(|_| {});
             }
             return;

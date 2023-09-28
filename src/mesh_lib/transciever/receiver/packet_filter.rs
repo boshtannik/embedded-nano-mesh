@@ -4,7 +4,7 @@ use crate::mesh_lib::{
     millis::{millis, ms},
     transciever::{
         config::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
-        packet::{Packet, PacketError, PacketFlagOps, UniqueId, UniqueIdExtractor},
+        packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
     },
 };
 
@@ -34,13 +34,6 @@ impl Filter {
         }
     }
 
-    pub fn filter_out_lifetime(&self, packet: Packet) -> Result<Packet, PacketLifetimeEndedError> {
-        match packet.deacrease_lifetime() {
-            Ok(packet) => Ok(packet),
-            Err(PacketError::PacketLifetimeEnded) => Err(PacketLifetimeEndedError),
-        }
-    }
-
     pub fn filter_out_duplicated(&mut self, packet: Packet) -> Result<Packet, RegistrationError> {
         return if !packet.is_ignore_duplication_flag_set() {
             Ok(packet)
@@ -54,8 +47,7 @@ impl Filter {
     }
 
     pub fn update(&mut self) {
-        let current_timme = millis(); // TODO: Hope for better perfomance, might be needed to call
-                                      // millis once, and then drop trough the whole library to use same value calculated once
+        let current_timme = millis();
 
         let mut index_to_remove: Option<usize> = None;
 

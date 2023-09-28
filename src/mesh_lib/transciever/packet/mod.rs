@@ -5,7 +5,9 @@ mod types;
 
 use core::slice::Iter;
 
-pub use traits::{DataPacker, FromBytes, PacketFlagOps, Serializer, UniqueId, UniqueIdExtractor};
+pub use traits::{
+    DataPacker, FromBytes, PacketFlagOps, Serializer, StateMutator, UniqueId, UniqueIdExtractor,
+};
 
 pub use config::{BROADCAST_RESERVED_IDENTIFYER, CONTENT_SIZE, PACKET_BYTES_COUNT};
 
@@ -23,7 +25,8 @@ use self::{
 
 pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
-use super::{special_packet_manager::SpecPacketState, PacketMetaData};
+pub use super::special_packet_handler::SpecPacketState;
+use super::PacketMetaData;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct DeviceIdentifyer(pub AddressType);
@@ -38,10 +41,6 @@ pub struct Packet {
     data_length: usize,
     data: PacketDataBytes,
     checksum: ChecksumType,
-}
-
-pub enum PacketError {
-    PacketLifetimeEnded,
 }
 
 impl Packet {
@@ -62,8 +61,7 @@ impl Packet {
             data,
             checksum: ChecksumType::MIN,
         };
-        new_packet.summarize();
-        new_packet
+        new_packet.summarized()
     }
 
     pub const fn size_of_bytes() -> usize {
@@ -77,28 +75,13 @@ impl Packet {
         + CHECKSUM_TYPE_SIZE
     }
 
-    pub fn deacrease_lifetime(mut self) -> Result<Self, PacketError> {
-        match self.lifetime.cmp(&1) {
-            core::cmp::Ordering::Greater => {
-                self.lifetime -= 1;
-                self.summarize();
-                Ok(self)
-            }
-            _ => Err(PacketError::PacketLifetimeEnded),
-        }
-    }
-
     /// Checks if the calculated checksum of the packet
     /// matches to the already stored one.
     pub fn is_checksum_correct(&self) -> bool {
         self.calculate_packet_sum() == self.checksum
     }
 
-    pub fn is_destination_identifyer_reached(&self, identifyer: &DeviceIdentifyer) -> bool {
-        self.destination_device_identifyer == *identifyer
-    }
-
-    fn get_spec_state(&self) -> SpecPacketState {
+    pub fn get_spec_state(&self) -> SpecPacketState {
         if self.is_ping_flag_set() {
             return SpecPacketState::PingPacket;
         }
@@ -106,18 +89,48 @@ impl Packet {
             return SpecPacketState::PongPacket;
         }
         if self.is_send_transaction_flag_set() {
-            return SpecPacketState::SendTransactionPacket;
+            return SpecPacketState::SendTransaction;
         }
         if self.is_accept_transaction_flag_set() {
-            return SpecPacketState::AcceptTransactionPacket;
+            return SpecPacketState::AcceptTransaction;
         }
         if self.is_initiate_transaction_flag_set() {
-            return SpecPacketState::InitTransactionPacket;
+            return SpecPacketState::InitTransaction;
         }
         if self.is_finish_transaction_flag_set() {
-            return SpecPacketState::FinishTransactionPacket;
+            return SpecPacketState::FinishTransaction;
         }
         SpecPacketState::Normal
+    }
+
+    pub fn set_spec_state(&mut self, new_state: SpecPacketState) {
+        self.set_ping_flag(false);
+        self.set_pong_flag(false);
+        self.set_send_transaction_flag(false);
+        self.set_accept_transaction_flag(false);
+        self.set_initiate_transaction_flag(false);
+        self.set_finish_transaction_flag(false);
+        match new_state {
+            SpecPacketState::Normal => (),
+            SpecPacketState::PingPacket => {
+                self.set_ping_flag(true);
+            }
+            SpecPacketState::PongPacket => {
+                self.set_pong_flag(true);
+            }
+            SpecPacketState::SendTransaction => {
+                self.set_send_transaction_flag(true);
+            }
+            SpecPacketState::AcceptTransaction => {
+                self.set_accept_transaction_flag(true);
+            }
+            SpecPacketState::InitTransaction => {
+                self.set_initiate_transaction_flag(true);
+            }
+            SpecPacketState::FinishTransaction => {
+                self.set_finish_transaction_flag(true);
+            }
+        }
     }
 
     /// Calculates and returns checksum of whole packet.
@@ -168,9 +181,11 @@ impl Packet {
     }
 
     /// Calculates checksum for this packet, and sets
-    /// calculated value into .checksum field
-    fn summarize(&mut self) {
+    /// calculated value into .checksum field. returns
+    /// new summarized packet.
+    pub fn summarized(mut self) -> Packet {
         self.checksum = self.calculate_packet_sum();
+        self
     }
 }
 
@@ -192,7 +207,7 @@ impl DataPacker for Packet {
             destination_device_identifyer: self.destination_device_identifyer.clone(),
             lifetime: self.lifetime,
             filter_out_duplication: self.is_ignore_duplication_flag_set(),
-            packet_spec_config: self.get_spec_state(),
+            packet_spec_state: self.get_spec_state(),
             packet_id: self.id,
         }
     }
@@ -324,7 +339,6 @@ impl PacketFlagOps for Packet {
     // IGNORE_DUPLICATIONS_FLAG
     fn set_ignore_duplication_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, IGNORE_DUPLICATIONS_FLAG, new_state);
-        self.summarize();
     }
 
     fn is_ignore_duplication_flag_set(&self) -> bool {
@@ -334,7 +348,6 @@ impl PacketFlagOps for Packet {
     // PING_FLAG
     fn set_ping_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, PING_FLAG, new_state);
-        self.summarize();
     }
 
     fn is_ping_flag_set(&self) -> bool {
@@ -344,7 +357,6 @@ impl PacketFlagOps for Packet {
     // PONG_FLAG
     fn set_pong_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, PONG_FLAG, new_state);
-        self.summarize();
     }
     fn is_pong_flag_set(&self) -> bool {
         is_flag_set(self.flags, PONG_FLAG)
@@ -353,7 +365,6 @@ impl PacketFlagOps for Packet {
     // TRANSACTION_SEND_FLAG
     fn set_send_transaction_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, SEND_TRANSACTION_FLAG, new_state);
-        self.summarize();
     }
     fn is_send_transaction_flag_set(&self) -> bool {
         is_flag_set(self.flags, SEND_TRANSACTION_FLAG)
@@ -362,7 +373,6 @@ impl PacketFlagOps for Packet {
     // ACCEPT_TRANSACTION_FLAG
     fn set_accept_transaction_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, ACCEPT_TRANSACTION_FLAG, new_state);
-        self.summarize();
     }
     fn is_accept_transaction_flag_set(&self) -> bool {
         is_flag_set(self.flags, ACCEPT_TRANSACTION_FLAG)
@@ -371,7 +381,6 @@ impl PacketFlagOps for Packet {
     // INITIATE_TRANSACTION_FLAG
     fn set_initiate_transaction_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, INITIATE_TRANSACTION_FLAG, new_state);
-        self.summarize();
     }
     fn is_initiate_transaction_flag_set(&self) -> bool {
         is_flag_set(self.flags, INITIATE_TRANSACTION_FLAG)
@@ -380,7 +389,6 @@ impl PacketFlagOps for Packet {
     // FINISH_TRANSACTION_FLAG
     fn set_finish_transaction_flag(&mut self, new_state: bool) {
         set_flag(&mut self.flags, FINISH_TRANSACTION_FLAG, new_state);
-        self.summarize();
     }
     fn is_finish_transaction_flag_set(&self) -> bool {
         is_flag_set(self.flags, FINISH_TRANSACTION_FLAG)

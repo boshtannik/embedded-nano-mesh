@@ -45,6 +45,10 @@ pub trait Serializer {
     fn deserialize(bytes: PacketSerializedBytes) -> Self;
 }
 
+pub trait StateMutator {
+    fn mutated(self) -> Self;
+}
+
 #[derive(PartialEq, Eq, Clone)]
 pub struct UniqueId(DeviceIdentifyer, IdType);
 

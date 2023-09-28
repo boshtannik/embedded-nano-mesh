@@ -3,7 +3,6 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::transciever::BROADCAST_RESERVED_IDENTIFYER;
 use mesh_lib::{DeviceIdentifyer, LifeTimeType, TranscieverConfig, TranscieverError};
 use panic_halt as _;
 
@@ -13,6 +12,8 @@ use heapless::String;
 use mesh_lib::millis::{millis, ms};
 
 use mesh_lib::TranscieverString;
+
+use crate::mesh_lib::transciever::SpecPacketState;
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -32,15 +33,19 @@ fn main() -> ! {
 
     loop {
         transciever.update();
-        if let Some(received_message) = transciever.receive() {
-            led_pin.toggle();
-            serial_println!("Caught packet back: ");
-            for byte in received_message.data.iter() {
-                serial_write_byte!(*byte).unwrap();
+
+        if let Some(message) = transciever.receive() {
+            if message.packet_spec_state == SpecPacketState::PingPacket {
+                led_pin.toggle();
+                serial_println!("Message received");
+                for byte in message.data {
+                    serial_write_byte!(byte).unwrap_or({});
+                }
+                serial_println!("");
             }
-            serial_println!("");
         }
 
+        /*
         let now_time = millis();
         if now_time > (last_send_time + 1000 as ms) {
             led_pin.toggle();
@@ -56,17 +61,21 @@ fn main() -> ! {
                 message.push('\0').unwrap_or_else(|_| {});
             }
 
-            match transciever.send(
+            if let Ok(_) = transciever.send_ping_pong(
                 message.into_bytes(),
-                DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER),
-                LifeTimeType::from(3),
+                DeviceIdentifyer(1),
+                1 as LifeTimeType,
                 true,
+                2000 as ms,
             ) {
-                Ok(_) => {}
-                Err(TranscieverError::SendingQueueIsFull) => {}
-            };
+                serial_println!("Pong packet back, Ping Pont is ok!");
+                led_pin.toggle()
+            } else {
+                serial_println!("Pong packet not cahught");
+            }
 
             packet_counter = packet_counter.overflowing_add(1).0;
         }
+        */
     }
 }
