@@ -44,9 +44,9 @@ being processed or not. `transit`ion, `ping-pong`ing, `transaction`ing - is done
 - call `update` method periodically. 
 
 The `Transciever` needs to be initialized with Two values:
-   1 - `DeviceIdentifyer` - Is the structure, that presents device
+   - 1 - `DeviceIdentifyer` - Is the structure, that presents device
    identification address in the pool of nodes.
-   2 - `listen period` - value of milliseconds type, which is the `u32` type alias. It stands for,
+   - 2 - `listen period` - value of milliseconds type, which is the `u32` type alias. It stands for,
    period in which, the device will be held before being allowed for speaking to ether. The purpose of
    it - is to prevent the ether from being jammed by the devices.
 
@@ -55,19 +55,19 @@ It is possible to regulate the range of packets being spreaded by configuring th
 the nearest devices, and not furhter, you just can set `lifetime to 1` - which
 `will allow the message to reach only nearest devices` in the network.
        
-The `send` method require next arguments to be provided:`NOTE This interface has been changed, and this part of documentation shall
+- The `send` method require next arguments to be provided:`NOTE This interface has been changed, and this part of documentation shall
 be updated in furhter, after the work will be finished upon this part of code`
 
-The `receive` method optionally returns `PacketDataBytes`, in case, if transceiver
+- The `receive` method optionally returns `PacketDataBytes`, in case, if transceiver
 has data successfully received.
 `NOTE This interface has been changed, and this part of documentation shall
 be updated in furhter, after the work will be finished upon this part of code`
 
-The `send_ping_pong` method - sends the message with `ping` flag to the destination node, and
+- The `send_ping_pong` method - sends the message with `ping` flag to the destination node, and
 waits the same message being received back with `pong` flag being set. Returns error
 if ping-pong exchange was not succeeded.
 
-The `send_with_transaction` method - send the message, and internally handles all furhter
+- The `send_with_transaction` method - send the message, and internally handles all furhter
 work, to guarantee, that the responding device has reacted on the message. Returns error
 if transaction was not succeeded.
 
