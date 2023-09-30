@@ -54,9 +54,17 @@ It is possible to regulate the range of packets being spreaded by configuring th
 `lifetime` parameter to needed value. For example: If you want to send message to
 the nearest devices, and not furhter, you just can set `lifetime to 1` - which
 `will allow the message to reach only nearest devices` in the network.
+
+`Echoed message` the same as `duplicated message` - The message which is travelling in order
+to reach it's destination node, and has been re-transmitted again into the ether by
+any inter-mediate device.
        
-- The `send` method require next arguments to be provided:`NOTE This interface has been changed, and this part of documentation shall
-be updated in furhter, after the work will be finished upon this part of code`
+- The `send` method require next arguments to be provided:
+   - `data` - `PacketDataBytes` instance - simple type alias for heapless::Vec - is to hold bytes of the message,
+   - `destination_device_identifyer` - `DeviceIdentifyer` instance - to tell, to which device this is addressed for,
+   - `lifetime` - `LifeTimeType` instance - to tell, how far your message will be able to travel,
+   - `filter_out_duplication` - bool - to tell, if you want to filter out echoed messages from the network,
+
 
 - The `receive` method optionally returns `PacketDataBytes`, in case, if transceiver
 has data successfully received.
@@ -65,14 +73,21 @@ be updated in furhter, after the work will be finished upon this part of code`
 
 - The `send_ping_pong` method - sends the message with `ping` flag to the destination node, and
 waits the same message being received back with `pong` flag being set. Returns error
-if ping-pong exchange was not succeeded.
+if ping-pong exchange was not succeeded. Requires next arguments to be provided:
+   - `data` - `PacketDataBytes` instance - simple type alias for heapless::Vec - is to hold bytes of the message,
+   - `destination_device_identifyer` - `DeviceIdentifyer` instance - to tell, to which device this is addressed for,
+   - `lifetime` - `LifeTimeType` instance - to tell, how far your message will be able to travel,
+   - `filter_out_duplication` - bool - to tell, if you want to filter out echoed messages from the network,
+   - `timeout` - `ms` instance, which is type alias for unsigned integer. Needed to tell, for how long to wait for the response.
 
 - The `send_with_transaction` method - send the message, and internally handles all furhter
 work, to guarantee, that the responding device has reacted on the message. Returns error
-if transaction was not succeeded.
-
-`Echoed message` - The message which is travelling in order to reach it's destination node,
-and has been re-transmitted again into the ether by any inter-mediate device.
+if transaction was not succeeded. Requires next arguments to be provided:
+   - `data` - `PacketDataBytes` instance - simple type alias for heapless::Vec - is to hold bytes of the message,
+   - `destination_device_identifyer` - `DeviceIdentifyer` instance - to tell, to which device this is addressed for,
+   - `lifetime` - `LifeTimeType` instance - to tell, how far your message will be able to travel,
+   - `filter_out_duplication` - bool - to tell, if you want to filter out echoed messages from the network,
+   - `timeout` - `ms` instance, which is type alias for unsigned integer. Needed to tell, for how long to wait for the response.
 
 Also the re-transmitting of packets may cause the ether being jammed by the `echoed messages`. So to
 void that - the packet can be configured in order to tell any device, that caughts this packet
