@@ -32,7 +32,6 @@ fn main() -> ! {
     loop {
         let _ = transciever.update();
 
-        /*
         if let Some(message) = transciever.receive() {
             led_pin.toggle();
             serial_println!("\nMsg");
@@ -40,11 +39,9 @@ fn main() -> ! {
                 serial_write_byte!(byte).unwrap_or({});
             }
         }
-        */
 
         let now_time = millis();
         if now_time > (last_send_time + 1000 as ms) {
-            led_pin.toggle();
             last_send_time = now_time;
 
             let packet_num: String<10> = String::from(packet_counter);
@@ -60,14 +57,14 @@ fn main() -> ! {
             if let Ok(_) = transciever.send_with_transaction(
                 message.into_bytes(),
                 DeviceIdentifyer(1),
-                4 as LifeTimeType,
+                10 as LifeTimeType,
                 true,
-                2000 as ms,
+                5000 as ms,
             ) {
                 led_pin.toggle();
                 serial_println!("Transaction done!");
             } else {
-                serial_println!("Transaction not done!");
+                serial_println!("Transaction failed!");
             }
             packet_counter = packet_counter.overflowing_add(1).0;
         }
