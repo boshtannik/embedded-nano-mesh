@@ -1,4 +1,4 @@
-use crate::mesh_lib::transciever::packet::StateMutator;
+use crate::mesh_lib::node::packet::StateMutator;
 
 #[derive(PartialEq, Eq, Clone)]
 pub enum SpecState {

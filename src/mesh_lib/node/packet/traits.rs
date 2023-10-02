@@ -1,4 +1,4 @@
-use crate::mesh_lib::transciever::PacketMetaData;
+use crate::mesh_lib::node::PacketMetaData;
 
 use super::{
     types::{IdType, PacketSerializedBytes},

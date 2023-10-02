@@ -11,7 +11,7 @@ pub use traits::{
 
 pub use config::{BROADCAST_RESERVED_IDENTIFYER, CONTENT_SIZE, PACKET_BYTES_COUNT};
 
-use crate::{mesh_lib::transciever::packet::bitpos::set_flag, serial_debug};
+use crate::{mesh_lib::node::packet::bitpos::set_flag, serial_debug};
 
 use self::{
     bitpos::is_flag_set,

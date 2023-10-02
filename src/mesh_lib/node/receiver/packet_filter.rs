@@ -2,7 +2,7 @@ use heapless::Vec;
 
 use crate::mesh_lib::{
     millis::{millis, ms},
-    transciever::{
+    node::{
         config::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
         packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
     },
@@ -35,7 +35,7 @@ impl Filter {
     }
 
     pub fn filter_out_duplicated(&mut self, packet: Packet) -> Result<Packet, RegistrationError> {
-        return if !packet.is_ignore_duplication_flag_set() {
+        if !packet.is_ignore_duplication_flag_set() {
             Ok(packet)
         } else {
             match self._register_packet_entry(<Packet as UniqueIdExtractor>::get_unique_id(&packet))
@@ -43,7 +43,7 @@ impl Filter {
                 Ok(()) => Ok(packet),
                 Err(error) => Err(error),
             }
-        };
+        }
     }
 
     pub fn update(&mut self) {

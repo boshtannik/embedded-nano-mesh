@@ -3,7 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{DeviceIdentifyer, LifeTimeType, TranscieverConfig};
+use mesh_lib::{DeviceIdentifyer, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -11,14 +11,14 @@ mod mesh_lib;
 use heapless::String;
 use mesh_lib::millis::{millis, ms};
 
-use mesh_lib::TranscieverString;
+use mesh_lib::NodeString;
 
 #[arduino_hal::entry]
 fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
-    let mut transciever = mesh_lib::init_transciever(TranscieverConfig {
+    let mut mesh_node = mesh_lib::init_node(NodeConfig {
         device_identifyer: DeviceIdentifyer(2),
         listen_period: 360 as ms,
         usart: default_serial!(dp, pins, 9600),
@@ -30,9 +30,9 @@ fn main() -> ! {
     let mut led_pin = pins.d13.into_output();
 
     loop {
-        let _ = transciever.update();
+        let _ = mesh_node.update();
 
-        if let Some(message) = transciever.receive() {
+        if let Some(message) = mesh_node.receive() {
             led_pin.toggle();
             serial_println!("\nMsg");
             for byte in message.data {
@@ -46,7 +46,7 @@ fn main() -> ! {
 
             let packet_num: String<10> = String::from(packet_counter);
 
-            let mut message = TranscieverString::from("Packet #: ");
+            let mut message = NodeString::from("Packet #: ");
 
             message.push_str(&packet_num).unwrap();
 
@@ -54,7 +54,7 @@ fn main() -> ! {
                 message.push('\0').unwrap_or_else(|_| {});
             }
 
-            if let Ok(_) = transciever.send_with_transaction(
+            if let Ok(_) = mesh_node.send_with_transaction(
                 message.into_bytes(),
                 DeviceIdentifyer(1),
                 10 as LifeTimeType,

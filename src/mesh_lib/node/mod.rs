@@ -11,7 +11,7 @@ mod types;
 use avr_device::interrupt::Mutex;
 pub use packet::DeviceIdentifyer;
 pub use router::SpecState;
-pub use types::TranscieverString;
+pub use types::NodeString;
 
 pub use packet::LifeTimeType;
 
@@ -26,7 +26,7 @@ use super::millis::{self, ms};
 pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
 
-pub struct Transciever {
+pub struct Node {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
     my_address: DeviceIdentifyer,
@@ -35,11 +35,11 @@ pub struct Transciever {
     packet_router: PacketRouter,
 }
 
-pub enum TranscieverError {
+pub enum NodeError {
     SendingQueueIsFull,
 }
 
-pub enum TranscieverUpdateError {
+pub enum NodeUpdateError {
     ReceivingQueueIsFull,
     TransitQueueIsFull,
 }
@@ -106,9 +106,9 @@ pub enum SpecialSendError {
     Timeout,
 }
 
-impl Transciever {
-    pub fn new(my_address: DeviceIdentifyer, listen_period: ms) -> Transciever {
-        Transciever {
+impl Node {
+    pub fn new(my_address: DeviceIdentifyer, listen_period: ms) -> Node {
+        Node {
             transmitter: transmitter::Transmitter::new(),
             receiver: receiver::Receiver::new(),
             my_address: my_address.clone(),
@@ -144,7 +144,7 @@ impl Transciever {
             packet_id: 0,
         }) {
             Ok(_) => (),
-            Err(TranscieverError::SendingQueueIsFull) => {
+            Err(NodeError::SendingQueueIsFull) => {
                 return Err(SpecialSendError::TryAgainLater);
             }
         };
@@ -196,7 +196,7 @@ impl Transciever {
             packet_id: 0,
         }) {
             Ok(_) => (),
-            Err(TranscieverError::SendingQueueIsFull) => {
+            Err(NodeError::SendingQueueIsFull) => {
                 return Err(SpecialSendError::TryAgainLater);
             }
         };
@@ -226,7 +226,7 @@ impl Transciever {
     ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
     /// heapless vector of bytes of special size. This size is configured in the
-    /// transciever/packet/config.rs file, and can be adjusted for case of other data size is needed.
+    /// node/packet/config.rs file, and can be adjusted for case of other data size is needed.
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
@@ -250,7 +250,7 @@ impl Transciever {
         destination_device_identifyer: DeviceIdentifyer,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
-    ) -> Result<(), TranscieverError> {
+    ) -> Result<(), NodeError> {
         self._send(PacketMetaData {
             data,
             source_device_identifyer: self.my_address.clone(),
@@ -262,11 +262,11 @@ impl Transciever {
         })
     }
 
-    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), TranscieverError> {
+    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), NodeError> {
         match self.transmitter.send(packet_meta_data) {
             Ok(_) => Ok(()),
             Err(transmitter::TransmitterError::PacketQueueIsFull) => {
-                Err(TranscieverError::SendingQueueIsFull)
+                Err(NodeError::SendingQueueIsFull)
             }
         }
     }
@@ -282,7 +282,7 @@ impl Transciever {
     /// * Receives packets from ether, and manages their further life.
     ///     ** Data of other devices are going to be send back into ether.
     ///     ** Data addressed to current device, will be unpacked and stored.
-    pub fn update(&mut self) -> Result<(), TranscieverUpdateError> {
+    pub fn update(&mut self) -> Result<(), NodeUpdateError> {
         if self.timer.is_time_to_speak() {
             self.transmitter.update();
             self.timer.record_speak_time();
@@ -300,9 +300,7 @@ impl Transciever {
                 OkCase::Received(packet) => packet,
             },
             Err(err_case) => match err_case {
-                ErrCase::TransitQueueIsFull => {
-                    return Err(TranscieverUpdateError::TransitQueueIsFull)
-                }
+                ErrCase::TransitQueueIsFull => return Err(NodeUpdateError::TransitQueueIsFull),
                 ErrCase::PacketLifetimeEnded => return Ok(()),
             },
         };
@@ -312,7 +310,7 @@ impl Transciever {
             .push_back(reached_destination_packet)
         {
             Ok(()) => Ok(()),
-            Err(_) => Err(TranscieverUpdateError::ReceivingQueueIsFull),
+            Err(_) => Err(NodeUpdateError::ReceivingQueueIsFull),
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::mesh_lib::transciever::{
+use crate::mesh_lib::node::{
     packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
     types::PacketBytesBuffer,
 };
