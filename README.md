@@ -1,153 +1,107 @@
-arduino nano mesh
-=================
+# Arduino Nano Mesh
 
 ## Goal
-Is to create mesh-like data transferring protocol
-using cheap, and simple parts, which will allow to build reliable enough, easy to use,
-mesh-like network in one weekend for usages as: 
-* home automation
-* remote control
-* remote monitoring (telemetry)
 
-Was designed to use with mostly spreaded Atmega328p chips, but not only.
-(The code is not protable enough yet, but is welcomed to be forked out and ported on other platforms).
+The goal of this project is to create a mesh-like data transferring protocol using inexpensive and simple components. This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
+
+- Home automation
+- Remote control
+- Remote monitoring (telemetry)
+
+While initially designed for Atmega328p chips, the code is not limited to this platform and can be forked and ported to other platforms.
 
 ## Status
-Code is designed to use UART rx / tx pins of your MCU.
-Currently was tested with cheap, and popular radio modules jdy-40 with UART interface on them.
-Possibly this protocol also should work "out of the box" with the modules, such as:
-jdy-41, sv-610, hc-11, hc-12, lc12s, GT-38.
 
-`Send` - Tested - Ok.
-`Receive` - Tested - Ok.
-`Broadcast` - Tested - Ok.
-`Transit` - Tested - Ok.
-`Ping-Pong sending` - Tested - Ok.
-`Transaction sending` - Tested - Ok.
+The code is designed to utilize UART rx/tx pins of your MCU and has been tested with popular radio modules like JDY-40, JDY-41, SV-610, HC-11, HC-12, LC12S, and GT-38. The following functionalities have been tested and verified:
+
+- Sending data
+- Receiving data
+- Broadcasting
+- Message transit
+- Ping-Pong sending
+- Transaction sending
 
 ## Warning
-This protocol does not provide data cryption.
-So to prevent your data being stolen - you should (de/en)-crypt your
-data on your own.
 
-## Possible use case:
-You also can broadcast the en-crypted messages to the whole network, in
-order to let the devices which can de-crypt - react on that sord of messages.
-In other words - it is the sord of `Publisher / Subscriber` pattern.
+This protocol does not provide data encryption. To secure your data from being stolen, you should implement encryption and decryption mechanisms independently.
 
-## Main parts
-Main part of this protocol - is the exposed to the user - `Transciever` structure.
-The purpose of the `Transicever` - is to provide simple front-end interface to the user, like:
-`send`, `receive`, `broadcast`, send with answer `ping-pong`, sending with guarantee of message
-being processed or not. `transit`ion, `ping-pong`ing, `transaction`ing - is done under the hood automatically.
-!!! The transciever shall be `update`d constantly - to make it do it's job. To reach this
-- call `update` method periodically. 
+## Possible Use Case
 
-The `Transciever` needs to be initialized with Two values:
-   - 1 - `DeviceIdentifyer` - Is the structure, that presents device
-   identification address in the pool of nodes.
-   - 2 - `listen period` - value of milliseconds type, which is the `u32` type alias. It stands for,
-   period in which, the device will be held before being allowed for speaking to ether. The purpose of
-   it - is to prevent the ether from being jammed by the devices.
+You can broadcast encrypted messages to the entire network, allowing devices capable of decryption to react to these messages. In other words, it resembles a "Publisher/Subscriber" pattern.
 
-It is possible to regulate the range of packets being spreaded by configuring the
-`lifetime` parameter to needed value. For example: If you want to send message to
-the nearest devices, and not furhter, you just can set `lifetime to 1` - which
-`will allow the message to reach only nearest devices` in the network.
+## Main Components
 
-`Echoed message` the same as `duplicated message` - The message which is travelling in order
-to reach it's destination node, and has been re-transmitted again into the ether by
-any inter-mediate device.
-       
-- The `send` method require next arguments to be provided:
-   - `data` - `PacketDataBytes` instance - simple type alias for heapless::Vec - is to hold bytes of the message,
-   - `destination_device_identifyer` - `DeviceIdentifyer` instance - to tell, to which device this is addressed for,
-   - `lifetime` - `LifeTimeType` instance - to tell, how far your message will be able to travel,
-   - `filter_out_duplication` - bool - to tell, if you want to filter out echoed messages from the network,
+The central component of this protocol is the `Node` structure, which offers a user-friendly interface for actions like sending, receiving, broadcasting, ping-ponging, and handling message transactions. The `Node` should be constantly updated by calling its `update` method.
 
+To initialize a `Node`, you need to provide two values:
 
-- The `receive` method optionally returns `PacketDataBytes`, in case, if transceiver
-has data successfully received.
-`NOTE This interface has been changed, and this part of documentation shall
-be updated in furhter, after the work will be finished upon this part of code`
+1. `DeviceIdentifier`: Represents the device's identification address in the node pool.
+2. `Listen period`: A value in milliseconds that determines how long the device will wait before transmitting on the network to prevent network congestion.
 
-- The `send_ping_pong` method - sends the message with `ping` flag to the destination node, and
-waits the same message being received back with `pong` flag being set. Returns error
-if ping-pong exchange was not succeeded. Requires next arguments to be provided:
-   - `data` - `PacketDataBytes` instance - simple type alias for heapless::Vec - is to hold bytes of the message,
-   - `destination_device_identifyer` - `DeviceIdentifyer` instance - to tell, to which device this is addressed for,
-   - `lifetime` - `LifeTimeType` instance - to tell, how far your message will be able to travel,
-   - `filter_out_duplication` - bool - to tell, if you want to filter out echoed messages from the network,
-   - `timeout` - `ms` instance, which is type alias for unsigned integer. Needed to tell, for how long to wait for the response.
+You can regulate the range of packets by configuring the `lifetime` parameter. For example, setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
 
-- The `send_with_transaction` method - send the message, and internally handles all furhter
-work, to guarantee, that the responding device has reacted on the message. Returns error
-if transaction was not succeeded. Requires next arguments to be provided:
-   - `data` - `PacketDataBytes` instance - simple type alias for heapless::Vec - is to hold bytes of the message,
-   - `destination_device_identifyer` - `DeviceIdentifyer` instance - to tell, to which device this is addressed for,
-   - `lifetime` - `LifeTimeType` instance - to tell, how far your message will be able to travel,
-   - `filter_out_duplication` - bool - to tell, if you want to filter out echoed messages from the network,
-   - `timeout` - `ms` instance, which is type alias for unsigned integer. Needed to tell, for how long to wait for the response.
+The term "echoed message" refers to a duplicated message that has been re-transmitted into the ether by an intermediate device.
 
-Also the re-transmitting of packets may cause the ether being jammed by the `echoed messages`. So to
-void that - the packet can be configured in order to tell any device, that caughts this packet
-to ignore all further `echoed packets`. To reach that - the
-`filter_out_duplications` argument should be set to `true`, while sending the message.
+### Send Method
+
+The `send` method requires the following arguments:
+
+- `data`: A `PacketDataBytes` instance to hold the message bytes.
+- `destination_device_identifier`: A `DeviceIdentifier` instance indicating the target device.
+- `lifetime`: A `LifeTimeType` instance to control the message's travel distance.
+- `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
+
+### Receive Method
+
+The `receive` method optionally returns received data in a `PacketDataBytes` instance.
+
+### Send Ping-Pong Method
+
+The `send_ping_pong` method sends a message with a "ping" flag to the destination node and waits for the same message with a "pong" flag. It returns an error if the ping-pong exchange fails. The following arguments are required:
+
+- `data`: A `PacketDataBytes` instance.
+- `destination_device_identifier`: A `DeviceIdentifier` instance.
+- `lifetime`: A `LifeTimeType` instance.
+- `filter_out_duplication`: A boolean flag.
+- `timeout`: An `ms` instance specifying how long to wait for a response.
+
+### Send with Transaction Method
+
+The `send_with_transaction` method sends a message and handles all further work to ensure the target device responds. It returns an error if the transaction fails. The required arguments are:
+
+- `data`: A `PacketDataBytes` instance.
+- `destination_device_identifier`: A `DeviceIdentifier` instance.
+- `lifetime`: A `LifeTimeType` instance.
+- `filter_out_duplication`: A boolean flag.
+- `timeout`: An `ms` instance to specify the response wait time.
 
 ## Note
-Under the hood, the data is packed into `Packet` instance. The `Packet`
-data fields can be configured via `src/transciever/packet/config.rs` and via
-`src/transciever/packet/types.rs`. Modification of these files, will keep up
-packet structure in the whole protocol easily.
 
-## Note
-Keep in mind, that all nodes shall have same version of protocol installed
-in order to be able to communicate with each other. The reason of that, that
-node expects specific structure of `Packet`, in order to be able
-to parse it, check sum, verify destination address, etc..
-So if different devices has different presentation of `Packet` structure,
-thay may not be able to communicate.
+Under the hood, data is packed into a `Packet` instance. You can configure the `Packet` data fields in `src/Node/packet/config.rs` and `src/Node/packet/types.rs`.
 
-## Note
-Changing `Packet` structure - will require also modification of `serialization` part, `deserialization` part,
-and part, which calculates the `size of packet` by calculating sizes of all packet fields (this number of
-bytes is needed for the device to know, how many bytes to receive, and start deserialization process
-right after it).
+## Compatibility
 
-Written entirely in rust.
+All nodes must have the same version of the protocol installed to communicate effectively. Different device implementations of the `Packet` structure may lead to communication issues.
 
-## Note
-  Choose radio modules with frequency that are legal in your country.
-  In case, if no free communication is legal in
-  your country - Leave your country for better perfomance!
+## Getting Started
 
+1. Install the required prerequisites, as described in the [`avr-hal` README](https://github.com/Rahix/avr-hal#readme) (avr-gcc, avr-libc, avrdude, [`ravedude`](https://crates.io/crates/ravedude)).
 
-## Build Instructions
-1. Install prerequisites as described in the [`avr-hal` README] (`avr-gcc`, `avr-libc`, `avrdude`, [`ravedude`]).
+2. Build the firmware with `cargo build`.
 
-2. Run `cargo build` to build the firmware.
+3. Flash the firmware to a connected board with `cargo run`. If `ravedude` fails to detect your board, consult its documentation at [crates.io](https://crates.io/crates/ravedude).
 
-3. Run `cargo run` to flash the firmware to a connected board.  If `ravedude`
-   fails to detect your board, check its documentation at
-   <https://crates.io/crates/ravedude>.
-
-4. `ravedude` will open a console session after flashing where you can interact
-   with the UART console of your board.
-
-[`avr-hal` README]: https://github.com/Rahix/avr-hal#readme
-[`ravedude`]: https://crates.io/crates/ravedude
+4. `ravedude` will open a console session after flashing for UART console interaction.
 
 ## License
-Licensed under either of
 
- - Apache License, Version 2.0
-   ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
- - MIT license
-   ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+This project is licensed under:
 
-at your option.
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0))
+- MIT License ([LICENSE-MIT](LICENSE-MIT) or [MIT License](http://opensource.org/licenses/MIT))
+
+You can choose the license that best suits your preferences.
 
 ## Contribution
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the Apache-2.0 license, shall
-be dual licensed as above, without any additional terms or conditions.
+
+Unless you specify otherwise, any contributions submitted for inclusion in this project, as defined in the Apache-2.0 license, will be dual-licensed under both licenses without additional terms or conditions.
