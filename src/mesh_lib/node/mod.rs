@@ -9,14 +9,14 @@ mod transmitter;
 mod types;
 
 use avr_device::interrupt::Mutex;
-pub use packet::DeviceIdentifyer;
+pub use packet::DeviceIdentifier;
 pub use router::SpecState;
 pub use types::NodeString;
 
 pub use packet::LifeTimeType;
 
 use self::{
-    packet::{IdType, PacketDataBytes, StateMutator, BROADCAST_RESERVED_IDENTIFYER},
+    packet::{IdType, PacketDataBytes, StateMutator, BROADCAST_RESERVED_IDENTIFIER},
     router::{ErrCase, OkCase, PacketRouter},
     types::{PacketDataQueue, PacketQueue},
 };
@@ -29,7 +29,7 @@ pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
 pub struct Node {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
-    my_address: DeviceIdentifyer,
+    my_address: DeviceIdentifier,
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
     packet_router: PacketRouter,
@@ -48,8 +48,8 @@ pub enum NodeUpdateError {
 #[derive(Clone)]
 pub struct PacketMetaData {
     pub data: PacketDataBytes,
-    pub source_device_identifyer: DeviceIdentifyer,
-    pub destination_device_identifyer: DeviceIdentifyer,
+    pub source_device_identifier: DeviceIdentifier,
+    pub destination_device_identifier: DeviceIdentifier,
     pub lifetime: LifeTimeType,
     pub filter_out_duplication: bool, // TODO: Rename in the whole project to void echo, or something...???
     pub spec_state: SpecState,
@@ -63,11 +63,11 @@ pub enum PacketMetaDataError {
 impl PacketMetaData {
     fn swap_source_destination(&mut self) {
         (
-            self.source_device_identifyer,
-            self.destination_device_identifyer,
+            self.source_device_identifier,
+            self.destination_device_identifier,
         ) = (
-            DeviceIdentifyer(self.destination_device_identifyer.0),
-            DeviceIdentifyer(self.source_device_identifyer.0),
+            DeviceIdentifier(self.destination_device_identifier.0),
+            DeviceIdentifier(self.source_device_identifier.0),
         );
     }
     pub fn deacrease_lifetime(mut self) -> Result<Self, PacketMetaDataError> {
@@ -80,8 +80,8 @@ impl PacketMetaData {
         }
     }
 
-    pub fn is_destination_identifyer_reached(&self, identifyer: &DeviceIdentifyer) -> bool {
-        self.destination_device_identifyer == *identifyer
+    pub fn is_destination_identifier_reached(&self, identifier: &DeviceIdentifier) -> bool {
+        self.destination_device_identifier == *identifier
     }
 }
 
@@ -107,7 +107,7 @@ pub enum SpecialSendError {
 }
 
 impl Node {
-    pub fn new(my_address: DeviceIdentifyer, listen_period: ms) -> Node {
+    pub fn new(my_address: DeviceIdentifier, listen_period: ms) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
             receiver: receiver::Receiver::new(),
@@ -121,12 +121,12 @@ impl Node {
     pub fn send_ping_pong(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifyer: DeviceIdentifyer,
+        destination_device_identifier: DeviceIdentifier,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
-        if destination_device_identifyer.0 == BROADCAST_RESERVED_IDENTIFYER {
+        if destination_device_identifier.0 == BROADCAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::BroadcastAddressForbidden);
         }
         let mut current_time = millis::millis();
@@ -136,8 +136,8 @@ impl Node {
 
         match self._send(PacketMetaData {
             data,
-            source_device_identifyer: self.my_address.clone(),
-            destination_device_identifyer: destination_device_identifyer.clone(),
+            source_device_identifier: self.my_address.clone(),
+            destination_device_identifier: destination_device_identifier.clone(),
             lifetime,
             filter_out_duplication,
             spec_state: SpecState::PingPacket,
@@ -156,7 +156,7 @@ impl Node {
                 if !(answer.spec_state == SpecState::PongPacket) {
                     continue;
                 }
-                if !(answer.source_device_identifyer == destination_device_identifyer) {
+                if !(answer.source_device_identifier == destination_device_identifier) {
                     continue;
                 }
                 return Ok(());
@@ -167,18 +167,18 @@ impl Node {
         Err(SpecialSendError::Timeout)
     }
 
-    // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifyer:
-    // DeviceIdentifyer: DeviceIdentifyer, lifetime: LifeTimeType, filter_out_duplications: bool) ->
+    // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifier:
+    // Deviceidentifier: Deviceidentifier, lifetime: LifeTimeType, filter_out_duplications: bool) ->
     // Result<(), TransactionFailed>
     pub fn send_with_transaction(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifyer: DeviceIdentifyer,
+        destination_device_identifier: DeviceIdentifier,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
-        if destination_device_identifyer.0 == BROADCAST_RESERVED_IDENTIFYER {
+        if destination_device_identifier.0 == BROADCAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::BroadcastAddressForbidden);
         }
         let mut current_time = millis::millis();
@@ -188,8 +188,8 @@ impl Node {
 
         match self._send(PacketMetaData {
             data,
-            source_device_identifyer: self.my_address.clone(),
-            destination_device_identifyer: destination_device_identifyer.clone(),
+            source_device_identifier: self.my_address.clone(),
+            destination_device_identifier: destination_device_identifier.clone(),
             lifetime,
             filter_out_duplication,
             spec_state: SpecState::SendTransaction,
@@ -208,7 +208,7 @@ impl Node {
                 if !(answer.spec_state == SpecState::FinishTransaction) {
                     continue;
                 }
-                if !(answer.source_device_identifyer == destination_device_identifyer) {
+                if !(answer.source_device_identifier == destination_device_identifier) {
                     continue;
                 }
                 return Ok(());
@@ -220,9 +220,9 @@ impl Node {
     }
 
     /// Sends the `data` to exact device. or to all devices.
-    /// In order to send `data` to all devices, use `BROADCAST_RESERVED_IDENTIFYER`,
-    /// otherwise - use identifyer of exact device, which is not `BROADCAST_RESERVED_IDENTIFYER`
-    /// identifyer.
+    /// In order to send `data` to all devices, use `BROADCAST_RESERVED_IDENTIFIER`,
+    /// otherwise - use identifier of exact device, which is not `BROADCAST_RESERVED_IDENTIFIER`
+    /// identifier.
     ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
     /// heapless vector of bytes of special size. This size is configured in the
@@ -230,13 +230,14 @@ impl Node {
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
-    /// * `destination_device_identifyer` is instance of DeviceIdentifyer type,
+    /// * `destination_device_identifier` is instance of Deviceidentifier type,
     /// That type is made for simplicity of reading the code, and to strict possible mess-ups
     /// during the usage of methods. It is made to present device id within the network.
     /// `Note!`, that you can send message to all devices at once.
-    /// The reason of that, that in this protocol - there is reserved `BROADCAST_RESERVED_IDENTIFYER`.
-    /// This is the special kind of identifyer, made especially to make every node
-    /// to be able to recognize this identifyer as it's own identifyer. In other words, every node
+    /// The reason of that, that in this protocol - there is reserved
+    /// `BROADCAST_RESERVED_IDENTIFIER`.
+    /// This is the special kind of identifier, made especially to make every node
+    /// to be able to recognize this identifier as it's own identifier. In other words, every node
     /// will receive the broadcast message.
     ///
     /// `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
@@ -247,14 +248,14 @@ impl Node {
     pub fn send(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifyer: DeviceIdentifyer,
+        destination_device_identifier: DeviceIdentifier,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
     ) -> Result<(), NodeError> {
         self._send(PacketMetaData {
             data,
-            source_device_identifyer: self.my_address.clone(),
-            destination_device_identifyer,
+            source_device_identifier: self.my_address.clone(),
+            destination_device_identifier,
             lifetime,
             filter_out_duplication,
             spec_state: SpecState::Normal,

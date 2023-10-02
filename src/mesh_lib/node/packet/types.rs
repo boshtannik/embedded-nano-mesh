@@ -135,7 +135,7 @@ pub type LifeTimeType = u8;
 pub type IdType = u8;
 
 const ADDRESS_TYPE_SIZE: usize = size_of::<AddressType>();
-pub const DEVICE_IDENTIFYER_TYPE_SIZE: usize = ADDRESS_TYPE_SIZE;
+pub const DEVICE_IDENTIFIER_TYPE_SIZE: usize = ADDRESS_TYPE_SIZE;
 pub const ID_TYPE_SIZE: usize = size_of::<IdType>();
 pub const LIFETIME_TYPE_SIZE: usize = size_of::<LifeTimeType>();
 pub const FLAGS_TYPE_SIZE: usize = size_of::<FlagsType>();

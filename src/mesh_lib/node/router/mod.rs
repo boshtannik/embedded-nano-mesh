@@ -3,12 +3,12 @@ mod types;
 pub use types::SpecState;
 
 use super::{
-    packet::{DataPacker, Packet, StateMutator, BROADCAST_RESERVED_IDENTIFYER},
-    DeviceIdentifyer, PacketMetaData, PacketMetaDataError, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
+    packet::{DataPacker, Packet, StateMutator, BROADCAST_RESERVED_IDENTIFIER},
+    DeviceIdentifier, PacketMetaData, PacketMetaDataError, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
 };
 
 pub struct PacketRouter {
-    current_device_identifyer: DeviceIdentifyer,
+    current_device_identifier: DeviceIdentifier,
 }
 
 pub enum OkCase {
@@ -22,9 +22,9 @@ pub enum ErrCase {
 }
 
 impl PacketRouter {
-    pub fn new(current_device_identifyer: DeviceIdentifyer) -> Self {
+    pub fn new(current_device_identifier: DeviceIdentifier) -> Self {
         Self {
-            current_device_identifyer,
+            current_device_identifier,
         }
     }
 
@@ -109,7 +109,7 @@ impl PacketRouter {
     }
 
     pub fn route(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
-        if packet_meta_data.is_destination_identifyer_reached(&self.current_device_identifyer) {
+        if packet_meta_data.is_destination_identifier_reached(&self.current_device_identifier) {
             match packet_meta_data.spec_state {
                 SpecState::Normal => self.handle_normal(packet_meta_data),
                 SpecState::PingPacket => self.handle_ping(packet_meta_data),
@@ -120,7 +120,7 @@ impl PacketRouter {
                 SpecState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
             }
         } else if packet_meta_data
-            .is_destination_identifyer_reached(&DeviceIdentifyer(BROADCAST_RESERVED_IDENTIFYER))
+            .is_destination_identifier_reached(&DeviceIdentifier(BROADCAST_RESERVED_IDENTIFIER))
         {
             self.handle_broadcast(packet_meta_data)
         } else {

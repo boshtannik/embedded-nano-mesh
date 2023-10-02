@@ -2,7 +2,7 @@ use crate::mesh_lib::node::PacketMetaData;
 
 use super::{
     types::{IdType, PacketSerializedBytes},
-    DeviceIdentifyer, Packet,
+    DeviceIdentifier, Packet,
 };
 
 pub trait DataPacker {
@@ -50,11 +50,11 @@ pub trait StateMutator {
 }
 
 #[derive(PartialEq, Eq, Clone)]
-pub struct UniqueId(DeviceIdentifyer, IdType);
+pub struct UniqueId(DeviceIdentifier, IdType);
 
 impl UniqueId {
-    pub fn new(source_device_identifyer: DeviceIdentifyer, id: IdType) -> UniqueId {
-        UniqueId(source_device_identifyer, id)
+    pub fn new(source_device_identifier: DeviceIdentifier, id: IdType) -> UniqueId {
+        UniqueId(source_device_identifier, id)
     }
 }
 

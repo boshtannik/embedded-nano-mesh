@@ -9,7 +9,7 @@ pub use traits::{
     DataPacker, FromBytes, PacketFlagOps, Serializer, StateMutator, UniqueId, UniqueIdExtractor,
 };
 
-pub use config::{BROADCAST_RESERVED_IDENTIFYER, CONTENT_SIZE, PACKET_BYTES_COUNT};
+pub use config::{BROADCAST_RESERVED_IDENTIFIER, CONTENT_SIZE, PACKET_BYTES_COUNT};
 
 use crate::{mesh_lib::node::packet::bitpos::set_flag, serial_debug};
 
@@ -17,7 +17,7 @@ use self::{
     bitpos::is_flag_set,
     types::{
         AddressType, ChecksumType, FlagsType, ACCEPT_TRANSACTION_FLAG, CHECKSUM_TYPE_SIZE,
-        DATA_LENGTH_TYPE_SIZE, DATA_TYPE_SIZE, DEVICE_IDENTIFYER_TYPE_SIZE,
+        DATA_LENGTH_TYPE_SIZE, DATA_TYPE_SIZE, DEVICE_IDENTIFIER_TYPE_SIZE,
         FINISH_TRANSACTION_FLAG, FLAGS_TYPE_SIZE, ID_TYPE_SIZE, IGNORE_DUPLICATIONS_FLAG,
         INITIATE_TRANSACTION_FLAG, LIFETIME_TYPE_SIZE, PING_FLAG, PONG_FLAG, SEND_TRANSACTION_FLAG,
     },
@@ -29,12 +29,12 @@ pub use super::router::SpecState;
 use super::PacketMetaData;
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct DeviceIdentifyer(pub AddressType);
+pub struct DeviceIdentifier(pub AddressType);
 
 #[derive(Clone)]
 pub struct Packet {
-    source_device_identifyer: DeviceIdentifyer,
-    destination_device_identifyer: DeviceIdentifyer,
+    source_device_identifier: DeviceIdentifier,
+    destination_device_identifier: DeviceIdentifier,
     id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
@@ -45,16 +45,16 @@ pub struct Packet {
 
 impl Packet {
     fn new(
-        source_device_identifyer: DeviceIdentifyer,
-        destination_device_identifyer: DeviceIdentifyer,
+        source_device_identifier: DeviceIdentifier,
+        destination_device_identifier: DeviceIdentifier,
         id: IdType,
         lifetime: LifeTimeType,
         spec_state: SpecState,
         data: PacketDataBytes,
     ) -> Packet {
         let mut new_packet = Packet {
-            source_device_identifyer,
-            destination_device_identifyer,
+            source_device_identifier,
+            destination_device_identifier,
             id,
             lifetime,
             flags: FlagsType::MIN,
@@ -67,8 +67,8 @@ impl Packet {
     }
 
     pub const fn size_of_bytes() -> usize {
-        DEVICE_IDENTIFYER_TYPE_SIZE  // source_device_identifyer
-        + DEVICE_IDENTIFYER_TYPE_SIZE  // destination_device_identifyer
+        DEVICE_IDENTIFIER_TYPE_SIZE  // source_device_identifier
+        + DEVICE_IDENTIFIER_TYPE_SIZE  // destination_device_identifier
         + ID_TYPE_SIZE
         + LIFETIME_TYPE_SIZE
         + FLAGS_TYPE_SIZE
@@ -138,20 +138,20 @@ impl Packet {
     /// Calculates and returns checksum of whole packet.
     ///
     /// Checksum consist of next fields:
-    ///      source_device_identifyer
-    ///      destination_device_identifyer
+    ///      source_device_identifier
+    ///      destination_device_identifier
     ///      flags
     ///      data_length
     ///      data
     fn calculate_packet_sum(&self) -> ChecksumType {
         let result: ChecksumType = 0;
 
-        // Calculate source_device_identifyer
-        let result = result.overflowing_add(self.source_device_identifyer.0).0;
+        // Calculate source_device_identifier
+        let result = result.overflowing_add(self.source_device_identifier.0).0;
 
-        // Calculate destination_device_identifyer
+        // Calculate destination_device_identifier
         let mut result = result
-            .overflowing_add(self.destination_device_identifyer.0)
+            .overflowing_add(self.destination_device_identifier.0)
             .0;
 
         // Calculate id
@@ -194,8 +194,8 @@ impl Packet {
 impl DataPacker for Packet {
     fn pack(packet_meta_data: PacketMetaData) -> Self {
         Packet::new(
-            packet_meta_data.source_device_identifyer,
-            packet_meta_data.destination_device_identifyer,
+            packet_meta_data.source_device_identifier,
+            packet_meta_data.destination_device_identifier,
             packet_meta_data.packet_id,
             packet_meta_data.lifetime,
             packet_meta_data.spec_state,
@@ -206,8 +206,8 @@ impl DataPacker for Packet {
     fn unpack(self: Self) -> PacketMetaData {
         PacketMetaData {
             data: self.data.iter().map(|el| *el).collect(), // Can it be simplified?
-            source_device_identifyer: self.source_device_identifyer.clone(),
-            destination_device_identifyer: self.destination_device_identifyer.clone(),
+            source_device_identifier: self.source_device_identifier.clone(),
+            destination_device_identifier: self.destination_device_identifier.clone(),
             lifetime: self.lifetime,
             filter_out_duplication: self.is_ignore_duplication_flag_set(),
             spec_state: self.get_spec_state(),
@@ -233,17 +233,17 @@ where
 impl Serializer for Packet {
     fn serialize(self) -> types::PacketSerializedBytes {
         let mut result = PacketSerializedBytes::new();
-        // source_device_identifyer: DeviceIdentifyer,
-        for b in self.source_device_identifyer.0.to_be_bytes() {
+        // source_device_identifier: Deviceidentifier,
+        for b in self.source_device_identifier.0.to_be_bytes() {
             result.push(b).unwrap_or_else(|_| {
-                serial_debug!("Could not serialize byte of source_device_identifyer field")
+                serial_debug!("Could not serialize byte of source_device_identifier field")
             });
         }
 
-        // destination_device_identifyer: DeviceIdentifyer,
-        for b in self.destination_device_identifyer.0.to_be_bytes() {
+        // destination_device_identifier: Deviceidentifier,
+        for b in self.destination_device_identifier.0.to_be_bytes() {
             result.push(b).unwrap_or_else(|_| {
-                serial_debug!("Could not serialize byte of destination_device_identifyer field")
+                serial_debug!("Could not serialize byte of destination_device_identifier field")
             });
         }
 
@@ -294,13 +294,13 @@ impl Serializer for Packet {
     fn deserialize(bytes: types::PacketSerializedBytes) -> Self {
         let mut bytes_iterator = bytes.iter();
 
-        let source_device_identifyer =
-            deserialize_field::<AddressType, DEVICE_IDENTIFYER_TYPE_SIZE>(&mut bytes_iterator);
-        let source_device_identifyer = DeviceIdentifyer(source_device_identifyer);
+        let source_device_identifier =
+            deserialize_field::<AddressType, DEVICE_IDENTIFIER_TYPE_SIZE>(&mut bytes_iterator);
+        let source_device_identifier = DeviceIdentifier(source_device_identifier);
 
-        let destination_device_identifyer =
-            deserialize_field::<AddressType, DEVICE_IDENTIFYER_TYPE_SIZE>(&mut bytes_iterator);
-        let destination_device_identifyer = DeviceIdentifyer(destination_device_identifyer);
+        let destination_device_identifier =
+            deserialize_field::<AddressType, DEVICE_IDENTIFIER_TYPE_SIZE>(&mut bytes_iterator);
+        let destination_device_identifier = DeviceIdentifier(destination_device_identifier);
 
         let id = deserialize_field::<IdType, ID_TYPE_SIZE>(&mut bytes_iterator);
         let lifetime = deserialize_field::<LifeTimeType, LIFETIME_TYPE_SIZE>(&mut bytes_iterator);
@@ -320,8 +320,8 @@ impl Serializer for Packet {
         }
         let checksum = deserialize_field::<ChecksumType, CHECKSUM_TYPE_SIZE>(&mut bytes_iterator);
         Packet {
-            source_device_identifyer,
-            destination_device_identifyer,
+            source_device_identifier,
+            destination_device_identifier,
             id,
             lifetime,
             flags,
@@ -334,7 +334,7 @@ impl Serializer for Packet {
 
 impl UniqueIdExtractor for Packet {
     fn get_unique_id(&self) -> UniqueId {
-        UniqueId::new(self.source_device_identifyer.clone(), self.id)
+        UniqueId::new(self.source_device_identifier.clone(), self.id)
     }
 }
 
