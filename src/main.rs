@@ -3,7 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{DeviceIdentifier, LifeTimeType, NodeConfig};
+use mesh_lib::{init_node, DeviceIdentifier, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -18,14 +18,15 @@ fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
-    let mut mesh_node = mesh_lib::init_node(NodeConfig {
+    let mut mesh_node = init_node(NodeConfig {
         device_identifier: DeviceIdentifier(2),
-        listen_period: 360 as ms,
+        listen_period: 500 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
     });
 
     let mut last_send_time: ms = millis();
+    let mut now_time: ms;
     let mut packet_counter: u32 = 0;
     let mut led_pin = pins.d13.into_output();
 
@@ -40,7 +41,7 @@ fn main() -> ! {
             }
         }
 
-        let now_time = millis();
+        now_time = millis();
         if now_time > (last_send_time + 1000 as ms) {
             last_send_time = now_time;
 
@@ -54,7 +55,7 @@ fn main() -> ! {
                 message.push('\0').unwrap_or_else(|_| {});
             }
 
-            if let Ok(_) = mesh_node.send_with_transaction(
+            if let Ok(_) = mesh_node.send_ping_pong(
                 message.into_bytes(),
                 DeviceIdentifier(1),
                 10 as LifeTimeType,

@@ -10,12 +10,33 @@ pub use node::{DeviceIdentifier, LifeTimeType, Node, NodeError, NodeString, Pack
 pub use serial::Usart;
 
 pub struct NodeConfig {
+    /// This is the identifier, that representds the device within the network.
+    /// It is made in `DeviceIdentifier` type in order to simplify usage and reading
+    /// of the value.
     pub device_identifier: DeviceIdentifier,
+
+    /// The period, during which the `Node` will be in listen only mode.
+    /// This prevents the `Node` from constantly speaking into the ether
+    /// in order to reduce the ethter being jammed by immediate answers
+    /// from `Nodess, that have just received the messages.
     pub listen_period: ms,
+
+    // It is the `Usart` interface, which `Node` is using to send packed
+    // messages and receive packed messages.
+    // It is expected that the modules of radio transmitter and receiver
+    // will be connected to the current MCU to provide communication
+    // between `Node`s
     pub usart: Usart,
+
+    // The hardware abstraction library timer, which will be used for
+    // counting of milliseconds.
     pub millis_timer: TC0,
 }
 
+/// Receives `NodeConfig` instance as instance,
+/// which helds configurations of current node device.
+/// Makes all necessarry preparations, and returns `Node`
+/// instance.
 pub fn init_node(config: NodeConfig) -> Node {
     millis_init(config.millis_timer);
     serial::init(config.usart);
