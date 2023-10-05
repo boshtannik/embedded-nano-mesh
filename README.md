@@ -2,13 +2,13 @@
 
 ## Goal
 
-The goal of this project is to create a mesh-like data transferring protocol using inexpensive and simple components. This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
+The goal of this project is to create a mesh-like data transferring protocol using cheap and simple components. This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
 
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
 
-While initially designed for Atmega328p chips, the code is not limited to this platform and can be forked and ported to other platforms.
+While initially designed for Atmega328p chips, the code is tied to this platform but can be forked and ported to other platforms.
 
 ## Status
 
