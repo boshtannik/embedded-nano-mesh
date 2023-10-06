@@ -118,6 +118,31 @@ impl Node {
         }
     }
 
+    /// Sends the `data` to exact device, and the receiving device will
+    /// be forsed to make answer back. The answer from receiving device
+    /// will tell if sending was successful.
+    ///
+    /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
+    /// heapless vector of bytes of special size. This size is configured in the
+    /// node/packet/config.rs file, and can be adjusted for case of other data size is needed.
+    /// `Note!` That all devices should have same version of protocol flashed, in order to
+    /// be able to correctly to communicate with each other.
+    ///
+    /// * `destination_device_identifier` is instance of Deviceidentifier type,
+    /// That type is made for simplicity of reading the code, and to strict possible mess-ups
+    /// during the usage of methods. It is made to present device id within the network.
+    /// Broadcast trough this method - is prohibited. In case if you will try to broadcast it,
+    /// you will get Error with proper reason.
+    ///
+    /// `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
+    /// how many nodes - the packet will be able to pass. Also this value is needed
+    /// to void the ether being jammed by packets, that in theory might be echoed
+    /// by the nodes to the infinity...
+    /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
+    ///
+    /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// echoes of this message. It is strongly recommended to use in order to make lower load
+    /// onto the network.
     pub fn send_ping_pong(
         &mut self,
         data: PacketDataBytes,
@@ -167,9 +192,30 @@ impl Node {
         Err(SpecialSendError::Timeout)
     }
 
-    // pub fn send_with_transaction(&mut self, data: PacketDataBytes, destination_device_identifier:
-    // Deviceidentifier: Deviceidentifier, lifetime: LifeTimeType, filter_out_duplications: bool) ->
-    // Result<(), TransactionFailed>
+    /// Sends the `data` to exact device with the response, that tells if the message
+    /// was sent successfully, or sending has failed.
+    ///
+    /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
+    /// heapless vector of bytes of special size. This size is configured in the
+    /// node/packet/config.rs file, and can be adjusted for case of other data size is needed.
+    /// `Note!` That all devices should have same version of protocol flashed, in order to
+    /// be able to correctly to communicate with each other.
+    ///
+    /// * `destination_device_identifier` is instance of Deviceidentifier type,
+    /// That type is made for simplicity of reading the code, and to strict possible mess-ups
+    /// during the usage of methods. It is made to present device id within the network.
+    /// Broadcast trough this method - is prohibited. In case if you will try to broadcast it,
+    /// you will get Error with proper reason.
+    ///
+    /// `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
+    /// how many nodes - the packet will be able to pass. Also this value is needed
+    /// to void the ether being jammed by packets, that in theory might be echoed
+    /// by the nodes to the infinity...
+    /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
+    ///
+    /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// echoes of this message. It is strongly recommended to use in order to make lower load
+    /// onto the network.
     pub fn send_with_transaction(
         &mut self,
         data: PacketDataBytes,
@@ -245,6 +291,10 @@ impl Node {
     /// to void the ether being jammed by packets, that in theory might be echoed
     /// by the nodes to the infinity...
     /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
+    ///
+    /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// echoes of this message. It is strongly recommended to use in order to make lower load
+    /// onto the network.
     pub fn send(
         &mut self,
         data: PacketDataBytes,

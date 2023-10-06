@@ -28,13 +28,11 @@ fn main() -> ! {
     let mut last_send_time: ms = millis();
     let mut now_time: ms;
     let mut packet_counter: u32 = 0;
-    let mut led_pin = pins.d13.into_output();
 
     loop {
         let _ = mesh_node.update();
 
         if let Some(message) = mesh_node.receive() {
-            led_pin.toggle();
             serial_println!("\nMsg");
             for byte in message.data {
                 serial_write_byte!(byte).unwrap_or({});
@@ -43,23 +41,19 @@ fn main() -> ! {
 
         now_time = millis();
         if now_time > (last_send_time + 1000 as ms) {
-            last_send_time = now_time;
-
             let mut message = NodeString::new();
             uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
 
-            if let Ok(_) = mesh_node.send_with_transaction(
-                message.into_bytes(),
-                DeviceIdentifier(1),
-                10 as LifeTimeType,
-                true,
-                5000 as ms,
-            ) {
-                led_pin.toggle();
-                serial_println!("Transaction done!");
-            } else {
-                serial_println!("Transaction failed!");
-            }
+            mesh_node
+                .send(
+                    message.into_bytes(),
+                    DeviceIdentifier(1),
+                    10 as LifeTimeType,
+                    true,
+                )
+                .unwrap_or_else(|_| serial_println!("Not sent!"));
+
+            last_send_time = now_time;
             packet_counter = packet_counter.overflowing_add(1).0;
         }
     }
