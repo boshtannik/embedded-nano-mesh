@@ -48,7 +48,7 @@ fn main() -> ! {
             let mut message = NodeString::new();
             uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
 
-            if let Ok(_) = mesh_node.send_ping_pong(
+            if let Ok(_) = mesh_node.send_with_transaction(
                 message.into_bytes(),
                 DeviceIdentifier(1),
                 10 as LifeTimeType,
