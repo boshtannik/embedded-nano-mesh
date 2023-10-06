@@ -8,10 +8,10 @@ use panic_halt as _;
 
 mod mesh_lib;
 
-use heapless::String;
 use mesh_lib::millis::{millis, ms};
 
 use mesh_lib::NodeString;
+use ufmt::uwrite;
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -45,15 +45,8 @@ fn main() -> ! {
         if now_time > (last_send_time + 1000 as ms) {
             last_send_time = now_time;
 
-            let packet_num: String<10> = String::from(packet_counter);
-
-            let mut message = NodeString::from("Packet #: ");
-
-            message.push_str(&packet_num).unwrap();
-
-            while message.len() != message.capacity() {
-                message.push('\0').unwrap_or_else(|_| {});
-            }
+            let mut message = NodeString::new();
+            uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
 
             if let Ok(_) = mesh_node.send_ping_pong(
                 message.into_bytes(),

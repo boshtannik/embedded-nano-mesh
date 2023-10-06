@@ -146,6 +146,7 @@ dependencies = [
  "serde",
  "spin",
  "stable_deref_trait",
+ "ufmt-write",
 ]
 
 [[package]]

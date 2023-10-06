@@ -50,8 +50,11 @@ impl Packet {
         id: IdType,
         lifetime: LifeTimeType,
         spec_state: SpecState,
-        data: PacketDataBytes,
+        mut data: PacketDataBytes,
     ) -> Packet {
+        while !data.is_full() {
+            data.push(b'\0').unwrap_or_else(|_| ());
+        }
         let mut new_packet = Packet {
             source_device_identifier,
             destination_device_identifier,
