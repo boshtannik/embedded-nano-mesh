@@ -7,7 +7,7 @@ use super::{
 
 pub trait DataPacker {
     fn pack(packet_meta_data: PacketMetaData) -> Packet;
-    fn unpack(self: Self) -> PacketMetaData;
+    fn unpack(self) -> PacketMetaData;
 }
 
 pub trait PacketFlagOps {
@@ -58,9 +58,9 @@ impl UniqueId {
     }
 }
 
-/// This strait is made for being eble to tell instances one
+/// This trait is made for being able to tell instances one
 /// from another. It builds values of fields combination, which shall
-/// be extremely rare to be accidentally duplicated.
+/// be extremely rare to be accidentally occurred.
 /// Is used to identify same packet in the network.
 pub trait UniqueIdExtractor {
     /// builds and returns UniquePacketId of packet.

@@ -206,7 +206,7 @@ impl DataPacker for Packet {
         )
     }
 
-    fn unpack(self: Self) -> PacketMetaData {
+    fn unpack(self) -> PacketMetaData {
         PacketMetaData {
             data: self.data.iter().map(|el| *el).collect(), // Can it be simplified?
             source_device_identifier: self.source_device_identifier.clone(),
