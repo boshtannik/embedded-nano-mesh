@@ -245,6 +245,9 @@ fn main() -> ! {
     }
 }
 ```
+### Send Ping-Pong
+The call - is pretty the same as send transaction. The only difference is in that, that receiving device sends
+the answering packet only once.
 
 ## Possible Use Case
 
