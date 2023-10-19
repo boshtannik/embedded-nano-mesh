@@ -25,6 +25,103 @@ The code is designed to utilize UART rx/tx pins of your MCU and has been tested 
 
 This protocol does not provide data encryption. To secure your data from being stolen, you should implement encryption and decryption mechanisms independently.
 
+## Usage
+### Receiver
+```
+#![no_std]
+#![no_main]
+#![feature(abi_avr_interrupt)]
+
+use arduino_hal::default_serial;
+use mesh_lib::{init_node, DeviceIdentifier, NodeConfig};
+use panic_halt as _;
+
+mod mesh_lib;
+
+use mesh_lib::millis::ms;
+
+#[arduino_hal::entry]
+fn main() -> ! {
+    let dp = arduino_hal::Peripherals::take().unwrap();
+    let pins = arduino_hal::pins!(dp);
+
+    let mut mesh_node = init_node(NodeConfig {
+        device_identifier: DeviceIdentifier(2),
+        listen_period: 150 as ms,
+        usart: default_serial!(dp, pins, 9600),
+        millis_timer: dp.TC0,
+    });
+
+    loop {
+        let _ = mesh_node.update();
+
+        if let Some(got_message) = mesh_node.receive() {
+          for byte in got_message.data {
+            /* Do your job here */
+          }
+        }
+    }
+}
+```
+
+### Sender (from device 1 to device 2)
+```
+#![no_std]
+#![no_main]
+#![feature(abi_avr_interrupt)]
+
+use arduino_hal::default_serial;
+use mesh_lib::{init_node, DeviceIdentifier, LifeTimeType, NodeConfig};
+use panic_halt as _;
+
+mod mesh_lib;
+
+use mesh_lib::millis::{millis, ms};
+
+use mesh_lib::NodeString;
+use ufmt::uwrite;
+
+#[arduino_hal::entry]
+fn main() -> ! {
+    let dp = arduino_hal::Peripherals::take().unwrap();
+    let pins = arduino_hal::pins!(dp);
+
+    let mut mesh_node = init_node(NodeConfig {
+        device_identifier: DeviceIdentifier(1),
+        listen_period: 150 as ms,
+        usart: default_serial!(dp, pins, 9600),
+        millis_timer: dp.TC0,
+    });
+
+    let mut last_send_time: ms = millis();
+    let mut now_time: ms;
+    let mut packet_counter: u32 = 0;
+
+    loop {
+        let _ = mesh_node.update();
+
+        now_time = millis();
+
+        if now_time > (last_send_time + 210 as ms) {
+            let mut message = NodeString::new();
+            uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
+
+            mesh_node
+                .send(
+                    message.into_bytes(),
+                    DeviceIdentifier(2),
+                    10 as LifeTimeType,
+                    true,
+                )
+                .unwrap_or_else(|_| serial_debug!("Not sent!"));
+
+            last_send_time = now_time;
+            packet_counter = packet_counter.overflowing_add(1).0;
+        }
+    }
+}
+```
+
 ## Possible Use Case
 
 You can broadcast encrypted messages to the entire network, allowing devices capable of decryption to react to these messages. In other words, it resembles a "Publisher/Subscriber" pattern.
