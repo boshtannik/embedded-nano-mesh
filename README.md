@@ -3,18 +3,24 @@
 ## Goal
 
 The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components. This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
-
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
-- Decentralized message transfering
+- Decentralized messaging
 
 While initially designed for Atmega328p chips, the code is tied to this platform but can be forked and ported to other platforms.
 
 ## Status
-
-The code is designed to utilize UART rx/tx pins of your MCU and has been tested with popular radio modules like JDY-40, JDY-41, SV-610, HC-11, HC-12, LC12S, and GT-38. The following functionalities have been tested and verified:
-
+The code is designed to utilize UART rx/tx pins of your MCU and has been tested with popular radio modules JDY-40.
+The code potentially can use radio modules with similar UART interface, that devices, such as:
+- JDY-41
+- SV-610
+- HC-11
+- HC-12
+- LC12S
+- GT-38
+  
+The following functionalities of protocol have been tested and verified:
 - Sending data
 - Receiving data
 - Broadcasting
