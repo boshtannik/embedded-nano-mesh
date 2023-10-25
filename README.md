@@ -7,6 +7,7 @@ The goal of this project is to create a mesh-like data transferring protocol usi
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
+- Decentralized message transfering
 
 While initially designed for Atmega328p chips, the code is tied to this platform but can be forked and ported to other platforms.
 
@@ -124,8 +125,8 @@ fn main() -> ! {
 ### Broadcast message to all near devices (1 hop)
 Number of hops, sets ammount - for how many devices the packet will be able to jump trough.
 In that case, the packet will travel only to the nearest devices.
-`BROADCAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved in the protocol
-                                  by every device in the network to be treated as it's own.
+`BROADCAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved by the protocol
+                                  for every device in the network to be treated as it's own.
 ```
 #![no_std]
 #![no_main]
