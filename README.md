@@ -23,10 +23,14 @@ The code potentially can use radio modules with similar UART interface, that dev
 The following functionalities of protocol have been tested and verified:
 - Sending data
 - Receiving data
+- Sending data with duplications filtered out (to make less net load)
+- Sending with limit of hops (lifetime) (to make less net load)
 - Broadcasting
 - Message transit
-- Ping-Pong sending
-- Transaction sending
+- Ping-Pong sending (recommended to use `ignore_duplications`)
+- Transaction sending (loads net a lot, it is highly recommended to use `ignore_duplications`)
+
+### Note: The more nodes in the network leads to the more chance of the message to be reached to it's destination. So, more devices you have within the network - the less need of use `transactions` for sending data. And otherwise: The less devices are in the network - the more reason for you to use `transaction` or `ping-pong` way of sending of data, to get guarantee, that the message was reached it's destination.
 
 ## Warning
 
