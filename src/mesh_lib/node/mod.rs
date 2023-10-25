@@ -9,14 +9,14 @@ mod transmitter;
 mod types;
 
 use avr_device::interrupt::Mutex;
-pub use packet::DeviceIdentifier;
+pub use packet::{DeviceIdentifier, BROADCAST_RESERVED_IDENTIFIER};
 pub use router::SpecState;
 pub use types::NodeString;
 
 pub use packet::LifeTimeType;
 
 use self::{
-    packet::{IdType, PacketDataBytes, StateMutator, BROADCAST_RESERVED_IDENTIFIER},
+    packet::{IdType, PacketDataBytes, StateMutator},
     router::{ErrCase, OkCase, PacketRouter},
     types::{PacketDataQueue, PacketQueue},
 };
