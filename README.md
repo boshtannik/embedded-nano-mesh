@@ -23,7 +23,7 @@ The code potentially can use radio modules with similar UART interface, that dev
 The following functionalities of protocol have been tested and verified:
 - Sending data
 - Receiving data
-- Sending data with duplications filtered out (to make less net load)
+- Sending data with duplications being ignored by the nodes (to make less net load)
 - Sending with limit of hops (lifetime) (to make less net load)
 - Broadcasting
 - Message transit
