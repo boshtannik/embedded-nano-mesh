@@ -133,7 +133,7 @@ fn main() -> ! {
 }
 ```
 ### Broadcast message to all near devices (1 hop)
-Number of hops, sets ammount - for how many devices the packet will be able to jump trough.
+Number of hops, or (`lifetime`), sets ammount - for how many devices the packet will be able to jump trough.
 In that case, the packet will travel only to the nearest devices.
 `BROADCAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved by the protocol
                                   for every device in the network to be treated as it's own.
