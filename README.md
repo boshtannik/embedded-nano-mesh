@@ -2,24 +2,35 @@
 
 ## Goal
 
-The goal of this project is to create a mesh-like data transferring protocol using cheap and simple components. This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
-
+The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components. This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
+- Decentralized messaging
 
 While initially designed for Atmega328p chips, the code is tied to this platform but can be forked and ported to other platforms.
 
 ## Status
-
-The code is designed to utilize UART rx/tx pins of your MCU and has been tested with popular radio modules like JDY-40, JDY-41, SV-610, HC-11, HC-12, LC12S, and GT-38. The following functionalities have been tested and verified:
-
+The code is designed to utilize UART rx/tx pins of your MCU and has been tested with popular radio modules JDY-40.
+The code potentially can use radio modules with similar UART interface, that devices, such as:
+- JDY-41
+- SV-610
+- HC-11
+- HC-12
+- LC12S
+- GT-38
+  
+The following functionalities of protocol have been tested and verified:
 - Sending data
 - Receiving data
+- Sending data with duplications being ignored by the nodes (to make less net load)
+- Sending with limit of hops (lifetime) (to make less net load)
 - Broadcasting
 - Message transit
-- Ping-Pong sending
-- Transaction sending
+- Ping-Pong sending (recommended to use `ignore_duplications`)
+- Transaction sending (loads net a lot, it is highly recommended to use `ignore_duplications`)
+
+### Note: The more nodes in the network leads to the more chance of the message to be reached to it's destination. So, more devices you have within the network - the less need of use `transactions` for sending data. And otherwise: The less devices are in the network - the more reason for you to use `transaction` or `ping-pong` way of sending of data, to get guaranteed knowledge that the message was reached it's destination or not.
 
 ## Warning
 
@@ -122,10 +133,10 @@ fn main() -> ! {
 }
 ```
 ### Broadcast message to all near devices (1 hop)
-Number of hops, sets ammount - for how many devices the packet will be able to jump trough.
+Number of hops, or (`lifetime`), sets ammount - for how many devices the packet will be able to jump trough.
 In that case, the packet will travel only to the nearest devices.
-`BROADCAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved in the protocol
-                                  by every device in the network to be treated as it's own.
+`BROADCAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved by the protocol
+                                  for every device in the network to be treated as it's own.
 ```
 #![no_std]
 #![no_main]
