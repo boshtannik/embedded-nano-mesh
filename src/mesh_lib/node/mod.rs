@@ -44,14 +44,13 @@ pub enum NodeUpdateError {
     TransitQueueIsFull,
 }
 
-// TODO: Move out to packet
 #[derive(Clone)]
 pub struct PacketMetaData {
     pub data: PacketDataBytes,
     pub source_device_identifier: DeviceIdentifier,
     pub destination_device_identifier: DeviceIdentifier,
     pub lifetime: LifeTimeType,
-    pub filter_out_duplication: bool, // TODO: Rename in the whole project to void echo, or something...???
+    pub filter_out_duplication: bool,
     pub spec_state: SpecState,
     pub packet_id: IdType,
 }
