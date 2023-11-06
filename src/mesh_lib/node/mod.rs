@@ -10,7 +10,7 @@ mod types;
 
 use avr_device::interrupt::Mutex;
 pub use packet::{DeviceIdentifier, BROADCAST_RESERVED_IDENTIFIER};
-pub use router::SpecState;
+pub use router::PacketState;
 pub use types::NodeString;
 
 pub use packet::LifeTimeType;
@@ -51,7 +51,7 @@ pub struct PacketMetaData {
     pub destination_device_identifier: DeviceIdentifier,
     pub lifetime: LifeTimeType,
     pub filter_out_duplication: bool,
-    pub spec_state: SpecState,
+    pub spec_state: PacketState,
     pub packet_id: IdType,
 }
 
@@ -88,10 +88,10 @@ impl StateMutator for PacketMetaData {
     fn mutated(mut self) -> Self {
         let old_state = self.spec_state.clone();
         match old_state {
-            SpecState::PingPacket
-            | SpecState::SendTransaction
-            | SpecState::AcceptTransaction
-            | SpecState::InitTransaction => self.swap_source_destination(),
+            PacketState::Ping
+            | PacketState::SendTransaction
+            | PacketState::AcceptTransaction
+            | PacketState::InitTransaction => self.swap_source_destination(),
             _ => (),
         }
         self.spec_state = old_state.mutated();
@@ -164,7 +164,7 @@ impl Node {
             destination_device_identifier: destination_device_identifier.clone(),
             lifetime,
             filter_out_duplication,
-            spec_state: SpecState::PingPacket,
+            spec_state: PacketState::Ping,
             packet_id: 0,
         }) {
             Ok(_) => (),
@@ -177,7 +177,7 @@ impl Node {
             let _ = self.update();
 
             if let Some(answer) = self.receive() {
-                if !(answer.spec_state == SpecState::PongPacket) {
+                if !(answer.spec_state == PacketState::Pong) {
                     continue;
                 }
                 if !(answer.source_device_identifier == destination_device_identifier) {
@@ -237,7 +237,7 @@ impl Node {
             destination_device_identifier: destination_device_identifier.clone(),
             lifetime,
             filter_out_duplication,
-            spec_state: SpecState::SendTransaction,
+            spec_state: PacketState::SendTransaction,
             packet_id: 0,
         }) {
             Ok(_) => (),
@@ -250,7 +250,7 @@ impl Node {
             let _ = self.update();
 
             if let Some(answer) = self.receive() {
-                if !(answer.spec_state == SpecState::FinishTransaction) {
+                if !(answer.spec_state == PacketState::FinishTransaction) {
                     continue;
                 }
                 if !(answer.source_device_identifier == destination_device_identifier) {
@@ -307,7 +307,7 @@ impl Node {
             destination_device_identifier,
             lifetime,
             filter_out_duplication,
-            spec_state: SpecState::Normal,
+            spec_state: PacketState::Normal,
             packet_id: 0,
         })
     }

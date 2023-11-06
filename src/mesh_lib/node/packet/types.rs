@@ -81,10 +81,10 @@ impl FromBytes<DATA_LENGTH_TYPE_SIZE> for usize {
 }
 
 #[derive(PartialEq, Eq, Clone)]
-pub enum SpecState {
+pub enum PacketState {
     Normal,
-    PingPacket,
-    PongPacket,
+    Ping,
+    Pong,
     SendTransaction,
     AcceptTransaction,
     InitTransaction,

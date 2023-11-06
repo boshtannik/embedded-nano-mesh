@@ -1,29 +1,29 @@
-use super::super::{Packet, PacketFlagOps, SpecState};
+use super::super::{Packet, PacketFlagOps, PacketState};
 
 impl Packet {
-    pub fn get_spec_state(&self) -> SpecState {
+    pub fn get_spec_state(&self) -> PacketState {
         if self.is_ping_flag_set() {
-            return SpecState::PingPacket;
+            return PacketState::Ping;
         }
         if self.is_pong_flag_set() {
-            return SpecState::PongPacket;
+            return PacketState::Pong;
         }
         if self.is_send_transaction_flag_set() {
-            return SpecState::SendTransaction;
+            return PacketState::SendTransaction;
         }
         if self.is_accept_transaction_flag_set() {
-            return SpecState::AcceptTransaction;
+            return PacketState::AcceptTransaction;
         }
         if self.is_initiate_transaction_flag_set() {
-            return SpecState::InitTransaction;
+            return PacketState::InitTransaction;
         }
         if self.is_finish_transaction_flag_set() {
-            return SpecState::FinishTransaction;
+            return PacketState::FinishTransaction;
         }
-        SpecState::Normal
+        PacketState::Normal
     }
 
-    pub fn set_spec_state(&mut self, new_state: SpecState) {
+    pub fn set_spec_state(&mut self, new_state: PacketState) {
         self.set_ping_flag(false);
         self.set_pong_flag(false);
         self.set_send_transaction_flag(false);
@@ -31,23 +31,23 @@ impl Packet {
         self.set_initiate_transaction_flag(false);
         self.set_finish_transaction_flag(false);
         match new_state {
-            SpecState::Normal => (),
-            SpecState::PingPacket => {
+            PacketState::Normal => (),
+            PacketState::Ping => {
                 self.set_ping_flag(true);
             }
-            SpecState::PongPacket => {
+            PacketState::Pong => {
                 self.set_pong_flag(true);
             }
-            SpecState::SendTransaction => {
+            PacketState::SendTransaction => {
                 self.set_send_transaction_flag(true);
             }
-            SpecState::AcceptTransaction => {
+            PacketState::AcceptTransaction => {
                 self.set_accept_transaction_flag(true);
             }
-            SpecState::InitTransaction => {
+            PacketState::InitTransaction => {
                 self.set_initiate_transaction_flag(true);
             }
-            SpecState::FinishTransaction => {
+            PacketState::FinishTransaction => {
                 self.set_finish_transaction_flag(true);
             }
         }

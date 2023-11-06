@@ -1,4 +1,4 @@
-pub use super::packet::SpecState;
+pub use super::packet::PacketState;
 
 use super::{
     packet::{DataPacker, Packet, StateMutator, BROADCAST_RESERVED_IDENTIFIER},
@@ -109,13 +109,13 @@ impl PacketRouter {
     pub fn route(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         if packet_meta_data.is_destination_identifier_reached(&self.current_device_identifier) {
             match packet_meta_data.spec_state {
-                SpecState::Normal => self.handle_normal(packet_meta_data),
-                SpecState::PingPacket => self.handle_ping(packet_meta_data),
-                SpecState::PongPacket => self.handle_pong(packet_meta_data),
-                SpecState::SendTransaction => self.handle_send_transaction(packet_meta_data),
-                SpecState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
-                SpecState::InitTransaction => self.handle_init_transaction(packet_meta_data),
-                SpecState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
+                PacketState::Normal => self.handle_normal(packet_meta_data),
+                PacketState::Ping => self.handle_ping(packet_meta_data),
+                PacketState::Pong => self.handle_pong(packet_meta_data),
+                PacketState::SendTransaction => self.handle_send_transaction(packet_meta_data),
+                PacketState::AcceptTransaction => self.handle_accept_transaction(packet_meta_data),
+                PacketState::InitTransaction => self.handle_init_transaction(packet_meta_data),
+                PacketState::FinishTransaction => self.handle_finish_transaction(packet_meta_data),
             }
         } else if packet_meta_data
             .is_destination_identifier_reached(&DeviceIdentifier(BROADCAST_RESERVED_IDENTIFIER))

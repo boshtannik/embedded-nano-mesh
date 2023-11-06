@@ -29,7 +29,7 @@ use self::{
 pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
 use super::PacketMetaData;
-pub use types::SpecState;
+pub use types::PacketState;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct DeviceIdentifier(pub AddressType);
@@ -52,7 +52,7 @@ impl Packet {
         destination_device_identifier: DeviceIdentifier,
         id: IdType,
         lifetime: LifeTimeType,
-        spec_state: SpecState,
+        spec_state: PacketState,
         mut data: PacketDataBytes,
     ) -> Packet {
         while !data.is_full() {
