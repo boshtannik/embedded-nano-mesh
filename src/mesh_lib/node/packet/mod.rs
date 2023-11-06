@@ -3,6 +3,9 @@ mod config;
 mod traits;
 mod types;
 
+pub mod implementations;
+pub mod trait_implementations;
+
 use core::slice::Iter;
 
 pub use traits::{
@@ -25,8 +28,8 @@ use self::{
 
 pub use self::types::{IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
-pub use super::router::SpecState;
 use super::PacketMetaData;
+pub use types::SpecState;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct DeviceIdentifier(pub AddressType);
@@ -78,119 +81,6 @@ impl Packet {
         + DATA_LENGTH_TYPE_SIZE
         + CONTENT_SIZE
         + CHECKSUM_TYPE_SIZE
-    }
-
-    /// Checks if the calculated checksum of the packet
-    /// matches to the already stored one.
-    pub fn is_checksum_correct(&self) -> bool {
-        self.calculate_packet_sum() == self.checksum
-    }
-
-    pub fn get_spec_state(&self) -> SpecState {
-        if self.is_ping_flag_set() {
-            return SpecState::PingPacket;
-        }
-        if self.is_pong_flag_set() {
-            return SpecState::PongPacket;
-        }
-        if self.is_send_transaction_flag_set() {
-            return SpecState::SendTransaction;
-        }
-        if self.is_accept_transaction_flag_set() {
-            return SpecState::AcceptTransaction;
-        }
-        if self.is_initiate_transaction_flag_set() {
-            return SpecState::InitTransaction;
-        }
-        if self.is_finish_transaction_flag_set() {
-            return SpecState::FinishTransaction;
-        }
-        SpecState::Normal
-    }
-
-    pub fn set_spec_state(&mut self, new_state: SpecState) {
-        self.set_ping_flag(false);
-        self.set_pong_flag(false);
-        self.set_send_transaction_flag(false);
-        self.set_accept_transaction_flag(false);
-        self.set_initiate_transaction_flag(false);
-        self.set_finish_transaction_flag(false);
-        match new_state {
-            SpecState::Normal => (),
-            SpecState::PingPacket => {
-                self.set_ping_flag(true);
-            }
-            SpecState::PongPacket => {
-                self.set_pong_flag(true);
-            }
-            SpecState::SendTransaction => {
-                self.set_send_transaction_flag(true);
-            }
-            SpecState::AcceptTransaction => {
-                self.set_accept_transaction_flag(true);
-            }
-            SpecState::InitTransaction => {
-                self.set_initiate_transaction_flag(true);
-            }
-            SpecState::FinishTransaction => {
-                self.set_finish_transaction_flag(true);
-            }
-        }
-    }
-
-    /// Calculates and returns checksum of whole packet.
-    ///
-    /// Checksum consist of next fields:
-    ///      source_device_identifier
-    ///      destination_device_identifier
-    ///      flags
-    ///      data_length
-    ///      data
-    fn calculate_packet_sum(&self) -> ChecksumType {
-        let result: ChecksumType = 0;
-
-        // Calculate source_device_identifier
-        let result = result.overflowing_add(self.source_device_identifier.0).0;
-
-        // Calculate destination_device_identifier
-        let mut result = result
-            .overflowing_add(self.destination_device_identifier.0)
-            .0;
-
-        // Calculate id
-        for byte in self.id.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
-        }
-
-        // Calculate lifetime
-        for byte in self.lifetime.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
-        }
-
-        // Calculate flags
-        for byte in self.flags.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
-        }
-
-        // Calculate data_length
-        for byte in self.data_length.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
-        }
-
-        // Calculate data
-        for byte in self.data.iter() {
-            result = result.overflowing_add(*byte).0;
-        }
-
-        result
-    }
-
-    /// Calculates checksum for this packet, and sets
-    /// calculated value into .checksum field. returns
-    /// new summarized packet.
-    pub fn summarized(mut self) -> Packet {
-        self.checksum = self.calculate_packet_sum();
-        self
     }
 }
 

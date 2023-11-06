@@ -79,3 +79,14 @@ impl FromBytes<DATA_LENGTH_TYPE_SIZE> for usize {
         Self::from_be_bytes(bytes)
     }
 }
+
+#[derive(PartialEq, Eq, Clone)]
+pub enum SpecState {
+    Normal,
+    PingPacket,
+    PongPacket,
+    SendTransaction,
+    AcceptTransaction,
+    InitTransaction,
+    FinishTransaction,
+}

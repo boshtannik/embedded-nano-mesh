@@ -1,15 +1,5 @@
-use crate::mesh_lib::node::packet::StateMutator;
-
-#[derive(PartialEq, Eq, Clone)]
-pub enum SpecState {
-    Normal,
-    PingPacket,
-    PongPacket,
-    SendTransaction,
-    AcceptTransaction,
-    InitTransaction,
-    FinishTransaction,
-}
+use super::super::SpecState;
+use super::super::StateMutator;
 
 impl StateMutator for SpecState {
     fn mutated(self) -> Self {

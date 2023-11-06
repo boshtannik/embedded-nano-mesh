@@ -1,6 +1,6 @@
 mod types;
 
-pub use types::SpecState;
+pub use super::packet::SpecState;
 
 use super::{
     packet::{DataPacker, Packet, StateMutator, BROADCAST_RESERVED_IDENTIFIER},
