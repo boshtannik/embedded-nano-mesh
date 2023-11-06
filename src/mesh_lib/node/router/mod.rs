@@ -1,5 +1,3 @@
-mod types;
-
 pub use super::packet::SpecState;
 
 use super::{
