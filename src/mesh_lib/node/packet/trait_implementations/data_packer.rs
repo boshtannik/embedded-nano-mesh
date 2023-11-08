@@ -1,7 +1,7 @@
+use super::super::meta_data::PacketMetaData;
 use super::super::traits::DataPacker;
 use super::super::traits::PacketFlagOps;
 use super::super::Packet;
-use super::super::PacketMetaData;
 
 impl DataPacker for Packet {
     fn pack(packet_meta_data: PacketMetaData) -> Self {

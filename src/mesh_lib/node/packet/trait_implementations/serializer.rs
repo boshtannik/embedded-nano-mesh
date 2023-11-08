@@ -1,11 +1,16 @@
 use super::super::traits::Serializer;
 use super::super::Packet;
 
+use super::super::constants::{
+    CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE, DATA_TYPE_SIZE, DEVICE_IDENTIFIER_TYPE_SIZE,
+    FLAGS_TYPE_SIZE, ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
+};
+
 use super::super::types::{
     AddressType, ChecksumType, DeviceIdentifier, FlagsType, IdType, LifeTimeType, PacketDataBytes,
-    PacketSerializedBytes, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE, DATA_TYPE_SIZE,
-    DEVICE_IDENTIFIER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
+    PacketSerializedBytes,
 };
+
 use crate::serial_debug;
 
 use super::super::traits::FromBytes;

@@ -1,27 +1,30 @@
 mod bitpos;
-mod config;
+mod constants;
 mod traits;
 mod types;
 
 pub mod implementations;
+pub mod meta_data;
 pub mod trait_implementations;
+
+pub use meta_data::{PacketMetaData, PacketMetaDataError};
 
 pub use traits::{
     DataPacker, FromBytes, PacketFlagOps, Serializer, StateMutator, UniqueId, UniqueIdExtractor,
 };
 
-pub use config::{BROADCAST_RESERVED_IDENTIFIER, CONTENT_SIZE, PACKET_BYTES_COUNT};
-
-use self::types::{
-    ChecksumType, FlagsType, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE,
+pub use constants::{
+    BROADCAST_RESERVED_IDENTIFIER, CHECKSUM_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE,
     DEVICE_IDENTIFIER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
+    PACKET_BYTES_COUNT,
 };
+
+use self::types::{ChecksumType, FlagsType};
 
 pub use self::types::{
     DeviceIdentifier, IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes,
 };
 
-use super::PacketMetaData;
 pub use types::PacketState;
 
 #[derive(Clone)]

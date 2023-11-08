@@ -1,9 +1,9 @@
 use super::super::bitpos::{is_flag_set, set_flag};
-use super::super::traits::PacketFlagOps;
-use super::super::types::{
+use super::super::constants::{
     ACCEPT_TRANSACTION_FLAG, FINISH_TRANSACTION_FLAG, IGNORE_DUPLICATIONS_FLAG,
     INITIATE_TRANSACTION_FLAG, PING_FLAG, PONG_FLAG, SEND_TRANSACTION_FLAG,
 };
+use super::super::traits::PacketFlagOps;
 use super::super::Packet;
 
 impl PacketFlagOps for Packet {

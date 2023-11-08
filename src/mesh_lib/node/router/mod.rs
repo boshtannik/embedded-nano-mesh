@@ -1,8 +1,11 @@
 pub use super::packet::PacketState;
 
 use super::{
-    packet::{DataPacker, Packet, StateMutator, BROADCAST_RESERVED_IDENTIFIER},
-    DeviceIdentifier, PacketMetaData, PacketMetaDataError, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
+    packet::{
+        DataPacker, Packet, PacketMetaData, PacketMetaDataError, StateMutator,
+        BROADCAST_RESERVED_IDENTIFIER,
+    },
+    DeviceIdentifier, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
 };
 
 pub struct PacketRouter {
