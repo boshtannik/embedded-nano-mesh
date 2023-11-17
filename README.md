@@ -25,7 +25,7 @@ The following functionalities of protocol have been tested and verified:
 - Receiving data
 - Sending data with duplications being ignored by the nodes (to make less net load)
 - Sending with limit of hops (lifetime) (to make less net load)
-- Broadcasting
+- Multicasting
 - Message transit
 - Ping-Pong sending (recommended to use `ignore_duplications`)
 - Transaction sending (loads net a lot, it is highly recommended to use `ignore_duplications`)
@@ -44,7 +44,7 @@ This protocol does not provide data encryption. To secure your data from being s
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{init_node, DeviceIdentifier, NodeConfig};
+use mesh_lib::{init_node, AddressType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -57,7 +57,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut mesh_node = init_node(NodeConfig {
-        device_identifier: DeviceIdentifier(2),
+        device_identifier: 2,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
@@ -82,7 +82,7 @@ fn main() -> ! {
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{init_node, DeviceIdentifier, LifeTimeType, NodeConfig};
+use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -98,7 +98,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut mesh_node = init_node(NodeConfig {
-        device_identifier: DeviceIdentifier(1),
+        device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
@@ -120,7 +120,7 @@ fn main() -> ! {
             mesh_node
                 .send(
                     message.into_bytes(),
-                    DeviceIdentifier(2),
+                    2 as AddressType,
                     10 as LifeTimeType,
                     true,
                 )
@@ -132,10 +132,10 @@ fn main() -> ! {
     }
 }
 ```
-### Broadcast message to all near devices (1 hop)
+### Multicast message to all near devices (1 hop)
 Number of hops, or (`lifetime`), sets ammount - for how many devices the packet will be able to jump trough.
 In that case, the packet will travel only to the nearest devices.
-`BROADCAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved by the protocol
+`MULTICAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved by the protocol
                                   for every device in the network to be treated as it's own.
 ```
 #![no_std]
@@ -143,8 +143,8 @@ In that case, the packet will travel only to the nearest devices.
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::node::BROADCAST_RESERVED_IDENTIFIER;
-use mesh_lib::{init_node, DeviceIdentifier, LifeTimeType, NodeConfig};
+use mesh_lib::node::MULTICAST_RESERVED_IDENTIFIER;
+use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -160,7 +160,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut mesh_node = init_node(NodeConfig {
-        device_identifier: DeviceIdentifier(1),
+        device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
@@ -182,7 +182,7 @@ fn main() -> ! {
             mesh_node
                 .send(
                     message.into_bytes(),
-                    DeviceIdentifier(BROADCAST_RESERVED_IDENTIFIER),
+                    MULTICAST_RESERVED_IDENTIFIER as AddressType,
                     1 as LifeTimeType,
                     true,
                 )
@@ -205,7 +205,7 @@ transaction packets.
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{init_node, DeviceIdentifier, LifeTimeType, NodeConfig};
+use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -221,7 +221,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut mesh_node = init_node(NodeConfig {
-        device_identifier: DeviceIdentifier(1),
+        device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
@@ -243,7 +243,7 @@ fn main() -> ! {
             mesh_node
                 .send_with_transaction(
                     message.into_bytes(),
-                    DeviceIdentifier(2),
+                    2 as AddressType,
                     10 as LifeTimeType,
                     true,
                     3000 as ms,
@@ -262,15 +262,15 @@ the answering packet only once.
 
 ## Possible Use Case
 
-You can broadcast encrypted messages to the entire network, allowing devices capable of decryption to react to these messages. In other words, it resembles a "Publisher/Subscriber" pattern.
+You can multicast encrypted messages to the entire network, allowing devices capable of decryption to react to these messages. In other words, it resembles a "Publisher/Subscriber" pattern.
 
 ## Main Components
 
-The central component of this protocol is the `Node` structure, which offers a user-friendly interface for actions like sending, receiving, broadcasting, ping-ponging, and handling message transactions. The `Node` should be constantly updated by calling its `update` method.
+The central component of this protocol is the `Node` structure, which offers a user-friendly interface for actions like sending, receiving, multicasting, ping-ponging, and handling message transactions. The `Node` should be constantly updated by calling its `update` method.
 
 To initialize a `Node`, you need to provide two values:
 
-1. `DeviceIdentifier`: Represents the device's identification address in the node pool.
+1. `AddressType`: Represents the device's identification address in the node pool.
 2. `Listen period`: A value in milliseconds that determines how long the device will wait before transmitting on the network to prevent network congestion.
 
 You can regulate the range of packets by configuring the `lifetime` parameter. For example, setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
@@ -282,7 +282,7 @@ The term "echoed message" refers to a duplicated message that has been re-transm
 The `send` method requires the following arguments:
 
 - `data`: A `PacketDataBytes` instance to hold the message bytes.
-- `destination_device_identifier`: A `DeviceIdentifier` instance indicating the target device.
+- `destination_device_identifier`: A `AddressType` instance indicating the target device.
 - `lifetime`: A `LifeTimeType` instance to control the message's travel distance.
 - `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
 
@@ -295,7 +295,7 @@ The `receive` method optionally returns received data in a `PacketDataBytes` ins
 The `send_ping_pong` method sends a message with a "ping" flag to the destination node and waits for the same message with a "pong" flag. It returns an error if the ping-pong exchange fails. The following arguments are required:
 
 - `data`: A `PacketDataBytes` instance.
-- `destination_device_identifier`: A `DeviceIdentifier` instance.
+- `destination_device_identifier`: A `AddressType` instance.
 - `lifetime`: A `LifeTimeType` instance.
 - `filter_out_duplication`: A boolean flag.
 - `timeout`: An `ms` instance specifying how long to wait for a response.
@@ -305,7 +305,7 @@ The `send_ping_pong` method sends a message with a "ping" flag to the destinatio
 The `send_with_transaction` method sends a message and handles all further work to ensure the target device responds. It returns an error if the transaction fails. The required arguments are:
 
 - `data`: A `PacketDataBytes` instance.
-- `destination_device_identifier`: A `DeviceIdentifier` instance.
+- `destination_device_identifier`: A `AddressType` instance.
 - `lifetime`: A `LifeTimeType` instance.
 - `filter_out_duplication`: A boolean flag.
 - `timeout`: An `ms` instance to specify the response wait time.
