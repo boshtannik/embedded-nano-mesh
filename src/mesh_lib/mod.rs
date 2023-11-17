@@ -9,9 +9,12 @@ pub use millis::{millis, millis_init, ms};
 pub use node::{AddressType, LifeTimeType, Node, NodeError, NodeString, PacketMetaData};
 pub use serial::Usart;
 
+/// This structure is made to group the required settings,
+/// which are need to be provided to let mesh `Node` to be
+/// functionally working.
 pub struct NodeConfig {
     /// This is the identifier, that representds the device within the network.
-    /// It is made in `DeviceIdentifier` type in order to simplify usage and reading
+    /// It is made in `AddressType` type in order to simplify usage and reading
     /// of the value.
     pub device_identifier: AddressType,
 
