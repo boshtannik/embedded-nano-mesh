@@ -3,7 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{init_node, DeviceIdentifier, LifeTimeType, NodeConfig};
+use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -19,7 +19,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut mesh_node = init_node(NodeConfig {
-        device_identifier: DeviceIdentifier(1),
+        device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
         millis_timer: dp.TC0,
@@ -41,7 +41,7 @@ fn main() -> ! {
             mesh_node
                 .send_with_transaction(
                     message.clone().into_bytes(),
-                    DeviceIdentifier(2),
+                    2 as AddressType,
                     10 as LifeTimeType,
                     true,
                     3000 as ms,

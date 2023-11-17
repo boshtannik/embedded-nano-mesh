@@ -7,7 +7,7 @@ use core::mem::size_of;
 pub const CONTENT_SIZE: usize = 32;
 pub const PACKET_BYTES_COUNT: usize = Packet::size_of_bytes();
 
-pub const BROADCAST_RESERVED_IDENTIFIER: AddressType = 0;
+pub const MULTICAST_RESERVED_IDENTIFIER: AddressType = 0;
 
 /// This flag make the device, which have packet caught, to ignore
 /// same packets, which were re-transmitted from other devices.
@@ -51,7 +51,6 @@ pub const FINISH_TRANSACTION_FLAG: FlagsType = 0b00000010;
 // pub const NOT_USED_FLAG: FlagsType = 0b00000001;
 
 pub const ADDRESS_TYPE_SIZE: usize = size_of::<AddressType>();
-pub const DEVICE_IDENTIFIER_TYPE_SIZE: usize = ADDRESS_TYPE_SIZE;
 pub const ID_TYPE_SIZE: usize = size_of::<IdType>();
 pub const LIFETIME_TYPE_SIZE: usize = size_of::<LifeTimeType>();
 pub const FLAGS_TYPE_SIZE: usize = size_of::<FlagsType>();

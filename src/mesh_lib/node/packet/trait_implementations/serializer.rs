@@ -2,12 +2,12 @@ use super::super::traits::Serializer;
 use super::super::Packet;
 
 use super::super::constants::{
-    CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE, DATA_TYPE_SIZE, DEVICE_IDENTIFIER_TYPE_SIZE,
-    FLAGS_TYPE_SIZE, ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
+    ADDRESS_TYPE_SIZE, CHECKSUM_TYPE_SIZE, DATA_LENGTH_TYPE_SIZE, DATA_TYPE_SIZE, FLAGS_TYPE_SIZE,
+    ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
 };
 
 use super::super::types::{
-    AddressType, ChecksumType, DeviceIdentifier, FlagsType, IdType, LifeTimeType, PacketDataBytes,
+    AddressType, ChecksumType, FlagsType, IdType, LifeTimeType, PacketDataBytes,
     PacketSerializedBytes,
 };
 
@@ -20,14 +20,14 @@ impl Serializer for Packet {
     fn serialize(self) -> PacketSerializedBytes {
         let mut result = PacketSerializedBytes::new();
         // source_device_identifier: Deviceidentifier,
-        for b in self.source_device_identifier.0.to_be_bytes() {
+        for b in self.source_device_identifier.to_be_bytes() {
             result.push(b).unwrap_or_else(|_| {
                 serial_debug!("Could not serialize byte of source_device_identifier field")
             });
         }
 
         // destination_device_identifier: Deviceidentifier,
-        for b in self.destination_device_identifier.0.to_be_bytes() {
+        for b in self.destination_device_identifier.to_be_bytes() {
             result.push(b).unwrap_or_else(|_| {
                 serial_debug!("Could not serialize byte of destination_device_identifier field")
             });
@@ -81,12 +81,10 @@ impl Serializer for Packet {
         let mut bytes_iterator = bytes.iter();
 
         let source_device_identifier =
-            deserialize_field::<AddressType, DEVICE_IDENTIFIER_TYPE_SIZE>(&mut bytes_iterator);
-        let source_device_identifier = DeviceIdentifier(source_device_identifier);
+            deserialize_field::<AddressType, ADDRESS_TYPE_SIZE>(&mut bytes_iterator);
 
         let destination_device_identifier =
-            deserialize_field::<AddressType, DEVICE_IDENTIFIER_TYPE_SIZE>(&mut bytes_iterator);
-        let destination_device_identifier = DeviceIdentifier(destination_device_identifier);
+            deserialize_field::<AddressType, ADDRESS_TYPE_SIZE>(&mut bytes_iterator);
 
         let id = deserialize_field::<IdType, ID_TYPE_SIZE>(&mut bytes_iterator);
         let lifetime = deserialize_field::<LifeTimeType, LIFETIME_TYPE_SIZE>(&mut bytes_iterator);

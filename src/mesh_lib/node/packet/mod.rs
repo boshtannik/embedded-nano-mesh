@@ -14,23 +14,20 @@ pub use traits::{
 };
 
 pub use constants::{
-    BROADCAST_RESERVED_IDENTIFIER, CHECKSUM_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE,
-    DEVICE_IDENTIFIER_TYPE_SIZE, FLAGS_TYPE_SIZE, ID_TYPE_SIZE, LIFETIME_TYPE_SIZE,
-    PACKET_BYTES_COUNT,
+    ADDRESS_TYPE_SIZE, CHECKSUM_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, FLAGS_TYPE_SIZE,
+    ID_TYPE_SIZE, LIFETIME_TYPE_SIZE, MULTICAST_RESERVED_IDENTIFIER, PACKET_BYTES_COUNT,
 };
 
 use self::types::{ChecksumType, FlagsType};
 
-pub use self::types::{
-    DeviceIdentifier, IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes,
-};
+pub use self::types::{AddressType, IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
 pub use types::PacketState;
 
 #[derive(Clone)]
 pub struct Packet {
-    source_device_identifier: DeviceIdentifier,
-    destination_device_identifier: DeviceIdentifier,
+    source_device_identifier: AddressType,
+    destination_device_identifier: AddressType,
     id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
@@ -41,8 +38,8 @@ pub struct Packet {
 
 impl Packet {
     fn new(
-        source_device_identifier: DeviceIdentifier,
-        destination_device_identifier: DeviceIdentifier,
+        source_device_identifier: AddressType,
+        destination_device_identifier: AddressType,
         id: IdType,
         lifetime: LifeTimeType,
         spec_state: PacketState,
@@ -66,8 +63,8 @@ impl Packet {
     }
 
     pub const fn size_of_bytes() -> usize {
-        DEVICE_IDENTIFIER_TYPE_SIZE  // source_device_identifier
-        + DEVICE_IDENTIFIER_TYPE_SIZE  // destination_device_identifier
+        ADDRESS_TYPE_SIZE               // source_device_identifier
+        + ADDRESS_TYPE_SIZE             // destination_device_identifier
         + ID_TYPE_SIZE
         + LIFETIME_TYPE_SIZE
         + FLAGS_TYPE_SIZE

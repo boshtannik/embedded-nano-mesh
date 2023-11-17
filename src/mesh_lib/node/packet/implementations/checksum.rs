@@ -20,12 +20,10 @@ impl Packet {
         let result: ChecksumType = 0;
 
         // Calculate source_device_identifier
-        let result = result.overflowing_add(self.source_device_identifier.0).0;
+        let result = result.overflowing_add(self.source_device_identifier).0;
 
         // Calculate destination_device_identifier
-        let mut result = result
-            .overflowing_add(self.destination_device_identifier.0)
-            .0;
+        let mut result = result.overflowing_add(self.destination_device_identifier).0;
 
         // Calculate id
         for byte in self.id.to_be_bytes() {

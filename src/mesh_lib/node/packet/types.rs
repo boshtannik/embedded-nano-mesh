@@ -37,6 +37,3 @@ pub enum PacketState {
     InitTransaction,
     FinishTransaction,
 }
-
-#[derive(Clone, PartialEq, Eq)]
-pub struct DeviceIdentifier(pub AddressType);

@@ -1,10 +1,10 @@
-use super::super::{DeviceIdentifier, IdType};
+use super::super::{AddressType, IdType};
 
 #[derive(PartialEq, Eq, Clone)]
-pub struct UniqueId(DeviceIdentifier, IdType);
+pub struct UniqueId(AddressType, IdType);
 
 impl UniqueId {
-    pub fn new(source_device_identifier: DeviceIdentifier, id: IdType) -> UniqueId {
+    pub fn new(source_device_identifier: AddressType, id: IdType) -> UniqueId {
         UniqueId(source_device_identifier, id)
     }
 }

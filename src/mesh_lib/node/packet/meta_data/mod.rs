@@ -1,4 +1,4 @@
-use super::super::DeviceIdentifier;
+use super::super::AddressType;
 use super::super::LifeTimeType;
 use super::super::PacketDataBytes;
 use super::super::PacketState;
@@ -8,8 +8,8 @@ use super::types::IdType;
 #[derive(Clone)]
 pub struct PacketMetaData {
     pub data: PacketDataBytes,
-    pub source_device_identifier: DeviceIdentifier,
-    pub destination_device_identifier: DeviceIdentifier,
+    pub source_device_identifier: AddressType,
+    pub destination_device_identifier: AddressType,
     pub lifetime: LifeTimeType,
     pub filter_out_duplication: bool,
     pub spec_state: PacketState,
@@ -26,8 +26,8 @@ impl PacketMetaData {
             self.source_device_identifier,
             self.destination_device_identifier,
         ) = (
-            DeviceIdentifier(self.destination_device_identifier.0),
-            DeviceIdentifier(self.source_device_identifier.0),
+            self.destination_device_identifier,
+            self.source_device_identifier,
         );
     }
     pub fn deacrease_lifetime(mut self) -> Result<Self, PacketMetaDataError> {
@@ -40,8 +40,8 @@ impl PacketMetaData {
         }
     }
 
-    pub fn is_destination_identifier_reached(&self, identifier: &DeviceIdentifier) -> bool {
-        self.destination_device_identifier == *identifier
+    pub fn is_destination_identifier_reached(&self, identifier: AddressType) -> bool {
+        self.destination_device_identifier == identifier
     }
 }
 

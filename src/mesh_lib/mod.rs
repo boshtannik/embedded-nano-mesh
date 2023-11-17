@@ -6,14 +6,14 @@ pub mod serial;
 use avr_device::atmega328p::TC0;
 
 pub use millis::{millis, millis_init, ms};
-pub use node::{DeviceIdentifier, LifeTimeType, Node, NodeError, NodeString, PacketMetaData};
+pub use node::{AddressType, LifeTimeType, Node, NodeError, NodeString, PacketMetaData};
 pub use serial::Usart;
 
 pub struct NodeConfig {
     /// This is the identifier, that representds the device within the network.
     /// It is made in `DeviceIdentifier` type in order to simplify usage and reading
     /// of the value.
-    pub device_identifier: DeviceIdentifier,
+    pub device_identifier: AddressType,
 
     /// The period, during which the `Node` will be in listen only mode.
     /// This prevents the `Node` from constantly speaking into the ether
