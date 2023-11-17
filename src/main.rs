@@ -34,7 +34,7 @@ fn main() -> ! {
 
         now_time = millis();
 
-        if now_time > (last_send_time + 210 as ms) {
+        if now_time > (last_send_time + 310 as ms) {
             let mut message = NodeString::new();
             uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
 
