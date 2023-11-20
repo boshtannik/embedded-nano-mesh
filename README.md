@@ -19,22 +19,27 @@ The code potentially can use radio modules with similar UART interface, that dev
 - HC-12
 - LC12S
 - GT-38
+- LoRa modules
   
 The following functionalities of protocol have been tested and verified:
 - Sending data
 - Receiving data
-- Sending data with duplications being ignored by the nodes (to make less net load)
-- Sending with limit of hops (lifetime) (to make less net load)
+- Sending data with flag for ignoring the duplications by the nodes (to make less net load)
+- Sending data with limit of number of hops (lifetime) (to make data sent with range limit)
 - Multicasting
-- Message transit
+- Message transit (Done automatically, when node catches the message, that needs to be re-transmitted)
 - Ping-Pong sending (recommended to use `ignore_duplications`)
 - Transaction sending (loads net a lot, it is highly recommended to use `ignore_duplications`)
 
-### Note: The more nodes in the network leads to the more chance of the message to be reached to it's destination. So, more devices you have within the network - the less need of use `transactions` for sending data. And otherwise: The less devices are in the network - the more reason for you to use `transaction` or `ping-pong` way of sending of data, to get guaranteed knowledge that the message was reached it's destination or not.
+### Note: The more nodes in the network leads to the more network stability. In the stable networks - there is almost no need to use `transactions` or `ping_pong` sending, unless, you send something very important.
 
 ## Warning
 
 This protocol does not provide data encryption. To secure your data from being stolen, you should implement encryption and decryption mechanisms independently.
+
+## Note
+
+It is recommended to set `listen_period` value on multiple devices different from each other, like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 250 ms - in order to reduce chance of the network to sychronize, and multiple device being speak in the same period of time. It will lead to packet collisions.
 
 ## Usage
 ### Receiver
@@ -273,7 +278,7 @@ To initialize a `Node`, you need to provide two values:
 1. `AddressType`: Represents the device's identification address in the node pool.
 2. `Listen period`: A value in milliseconds that determines how long the device will wait before transmitting on the network to prevent network congestion.
 
-You can regulate the range of packets by configuring the `lifetime` parameter. For example, setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
+You can regulate the number of hops that the packet will be able to make - by configuring the `lifetime` parameter. For example, setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
 
 The term "echoed message" refers to a duplicated message that has been re-transmitted into the ether by an intermediate device.
 
