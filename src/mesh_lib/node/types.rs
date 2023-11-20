@@ -3,7 +3,7 @@ use heapless::{Deque, String};
 use super::packet::{Packet, PACKET_BYTES_COUNT};
 use super::PacketMetaData;
 
-use super::config::{PACKET_START_BYTES_COUNT, QUEUE_SIZE};
+use super::constants::{PACKET_START_BYTES_COUNT, QUEUE_SIZE};
 
 pub type PacketQueue = Deque<Packet, QUEUE_SIZE>;
 pub type PacketDataQueue = Deque<PacketMetaData, 10>;

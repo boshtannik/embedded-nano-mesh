@@ -1,6 +1,6 @@
 use crate::serial_write_byte;
 
-use super::config::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
+use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{DataPacker, IdType, Packet, PacketFlagOps, Serializer};
 use super::{PacketMetaData, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE};
 

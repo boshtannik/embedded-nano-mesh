@@ -3,7 +3,7 @@ use heapless::Vec;
 use crate::mesh_lib::{
     millis::{millis, ms},
     node::{
-        config::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
+        constants::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
         packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
     },
 };

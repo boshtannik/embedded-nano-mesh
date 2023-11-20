@@ -3,7 +3,7 @@ use crate::mesh_lib::node::{
     types::PacketBytesBuffer,
 };
 
-use super::super::config::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
+use super::super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 
 pub struct PacketBytesParser {
     parsed_packet: Option<Packet>,

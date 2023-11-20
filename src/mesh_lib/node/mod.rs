@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 
-mod config;
+mod constants;
 mod packet;
 mod receiver;
 mod router;
