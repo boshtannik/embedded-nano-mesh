@@ -39,7 +39,7 @@ This protocol does not provide data encryption. To secure your data from being s
 
 ## Note
 
-It is recommended to set `listen_period` value on multiple devices different from each other, like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 250 ms - in order to reduce chance of the network to sychronize, and multiple device being speak in the same period of time. It will lead to packet collisions.
+It is recommended to set `listen_period` value on multiple devices different from each other, like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 250 ms - in order to reduce chance of the network to sychronize, which will lead to packet collisions.
 
 ## Usage
 ### Receiver
