@@ -2,7 +2,7 @@
 
 ## Goal
 
-The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components. This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
+The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components (Arduino with atmega 328p chip, and any radio module with usart interface, which allows duplex data transfer). This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
@@ -22,16 +22,16 @@ The code potentially can use radio modules with similar UART interface, that dev
 - LoRa modules
   
 The following functionalities of protocol have been tested and verified:
-- Sending data
-- Receiving data
-- Sending data with flag for ignoring the duplications by the nodes (to make less net load)
-- Sending data with limit of number of hops (lifetime) (to make data sent with range limit)
-- Multicasting
-- Message transit (Done automatically, when node catches the message, that needs to be re-transmitted)
-- Ping-Pong sending (recommended to use `ignore_duplications`)
-- Transaction sending (loads net a lot, it is highly recommended to use `ignore_duplications`)
+- Send data
+- Receive data
+- Send data with ignorance of duplicated packets
+- Send data with limited of number of hops
+- Multicast
+- Message transit
+- Ping send and receive pong message
+- Transaction send and receive packet about transaction being finished
 
-### Note: The more nodes in the network leads to the more network stability. In the stable networks - there is almost no need to use `transactions` or `ping_pong` sending, unless, you send something very important.
+### Note: The more nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
 
 ## Warning
 
