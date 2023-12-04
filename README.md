@@ -2,7 +2,7 @@
 
 ## Goal
 
-The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components (Arduino with atmega 328p chip, and any radio module with usart interface, which allows duplex data transfer). This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
+The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components (Arduino with atmega 328p chip, and any radio module with USART interface, which allows duplex data transfer). This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
