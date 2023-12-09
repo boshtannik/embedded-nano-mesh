@@ -20,7 +20,6 @@ use arduino_hal::prelude::_embedded_hal_serial_Read;
 pub struct Receiver {
     packet_filter: Filter,
     packet_bytes_parser: PacketBytesParser,
-    millis_ptr: fn() -> ms,
 }
 
 enum ReceiverError {
@@ -29,11 +28,10 @@ enum ReceiverError {
 }
 
 impl Receiver {
-    pub fn new(millis_ptr: fn() -> ms) -> Receiver {
+    pub fn new(millis_fn_ptr: fn() -> ms) -> Receiver {
         Receiver {
-            packet_filter: Filter::new(millis_ptr),
+            packet_filter: Filter::new(millis_fn_ptr),
             packet_bytes_parser: PacketBytesParser::new(),
-            millis_ptr,
         }
     }
 
