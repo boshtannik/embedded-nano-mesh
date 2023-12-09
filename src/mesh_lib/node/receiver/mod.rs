@@ -1,7 +1,7 @@
 mod packet_bytes_parser;
 mod packet_filter;
 
-use crate::serial_try_read_byte;
+use crate::{mesh_lib::ms, serial_try_read_byte};
 use avr_device::interrupt::Mutex;
 use core::cell::Cell;
 
@@ -20,6 +20,7 @@ use arduino_hal::prelude::_embedded_hal_serial_Read;
 pub struct Receiver {
     packet_filter: Filter,
     packet_bytes_parser: PacketBytesParser,
+    millis_ptr: fn() -> ms,
 }
 
 enum ReceiverError {
@@ -28,10 +29,11 @@ enum ReceiverError {
 }
 
 impl Receiver {
-    pub fn new() -> Receiver {
+    pub fn new(millis_ptr: fn() -> ms) -> Receiver {
         Receiver {
-            packet_filter: Filter::new(),
+            packet_filter: Filter::new(millis_ptr),
             packet_bytes_parser: PacketBytesParser::new(),
+            millis_ptr,
         }
     }
 

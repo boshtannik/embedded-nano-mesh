@@ -1,7 +1,7 @@
 use heapless::Vec;
 
 use crate::mesh_lib::{
-    millis::{millis, ms},
+    millis::ms,
     node::{
         constants::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
         packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
@@ -25,12 +25,14 @@ type RegistrationEntryVec = Vec<PacketIgnorancePeriod, RECEIVER_FILTER_REGISTRAT
 pub struct Filter {
     // Should be better use hashmaps, but it didn't succeed.
     entry_registration_vec: RegistrationEntryVec,
+    millis_fn_ptr: fn() -> ms,
 }
 
 impl Filter {
-    pub fn new() -> Filter {
+    pub fn new(millis_fn_ptr: fn() -> ms) -> Filter {
         Filter {
             entry_registration_vec: RegistrationEntryVec::new(),
+            millis_fn_ptr,
         }
     }
 
@@ -47,7 +49,7 @@ impl Filter {
     }
 
     pub fn update(&mut self) {
-        let current_timme = millis();
+        let current_timme = { self.millis_fn_ptr }();
 
         let mut index_to_remove: Option<usize> = None;
 
@@ -76,7 +78,7 @@ impl Filter {
 
         let new_entry = PacketIgnorancePeriod {
             packet_id,
-            timeout: millis() + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD,
+            timeout: { self.millis_fn_ptr }() + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD,
         };
 
         match self.entry_registration_vec.push(new_entry) {

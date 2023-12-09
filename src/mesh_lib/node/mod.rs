@@ -20,7 +20,7 @@ use self::{
     types::{PacketDataQueue, PacketQueue},
 };
 
-use super::millis::{self, ms};
+use super::millis::ms;
 
 pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
@@ -32,6 +32,7 @@ pub struct Node {
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
     packet_router: PacketRouter,
+    millis_fn_ptr: fn() -> ms,
 }
 
 pub enum NodeError {
@@ -50,14 +51,15 @@ pub enum SpecialSendError {
 }
 
 impl Node {
-    pub fn new(my_address: AddressType, listen_period: ms) -> Node {
+    pub fn new(my_address: AddressType, listen_period: ms, millis_fn_ptr: fn() -> ms) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
-            receiver: receiver::Receiver::new(),
+            receiver: receiver::Receiver::new(millis_fn_ptr),
             my_address: my_address.clone(),
-            timer: timer::Timer::new(listen_period),
+            timer: timer::Timer::new(listen_period, millis_fn_ptr),
             received_packet_meta_data_queue: PacketDataQueue::new(),
             packet_router: PacketRouter::new(my_address),
+            millis_fn_ptr,
         }
     }
 
@@ -98,7 +100,7 @@ impl Node {
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = millis::millis();
+        let mut current_time = { self.millis_fn_ptr }();
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -130,7 +132,7 @@ impl Node {
                 }
                 return Ok(());
             }
-            current_time = millis::millis();
+            current_time = { self.millis_fn_ptr }();
         }
 
         Err(SpecialSendError::Timeout)
@@ -172,7 +174,8 @@ impl Node {
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = millis::millis();
+        let mut current_time = { self.millis_fn_ptr }();
+
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -204,7 +207,8 @@ impl Node {
                 }
                 return Ok(());
             }
-            current_time = millis::millis();
+
+            current_time = { self.millis_fn_ptr }();
         }
 
         Err(SpecialSendError::Timeout)

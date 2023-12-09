@@ -3,7 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
+use mesh_lib::{init_node, millis_init, AddressType, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -18,21 +18,28 @@ fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
+    // These two lines are needed for configuring timers to be
+    // able to calculate milliseconds since controller start.
+    millis_init(dp.TC0);
+    unsafe { avr_device::interrupt::enable() };
+
+    let millis_fn_ptr = || millis();
+
     let mut mesh_node = init_node(NodeConfig {
         device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
-        millis_timer: dp.TC0,
+        millis_fn_ptr,
     });
 
-    let mut last_send_time: ms = millis();
+    let mut last_send_time: ms = { millis_fn_ptr }();
     let mut now_time: ms;
     let mut packet_counter: u32 = 0;
 
     loop {
         let _ = mesh_node.update();
 
-        now_time = millis();
+        now_time = { millis_fn_ptr }();
 
         if now_time > (last_send_time + 310 as ms) {
             let mut message = NodeString::new();
