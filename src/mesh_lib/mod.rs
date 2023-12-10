@@ -27,9 +27,6 @@ pub struct NodeConfig {
     // will be connected to the current MCU to provide communication
     // between `Node`s
     pub usart: Usart,
-
-    // A closure for calculating millis
-    pub millis_fn_ptr: fn() -> ms,
 }
 
 /// Receives `NodeConfig` instance as instance,
@@ -38,10 +35,5 @@ pub struct NodeConfig {
 /// instance.
 pub fn init_node(config: NodeConfig) -> Node {
     serial::init(config.usart);
-    unsafe { avr_device::interrupt::enable() };
-    Node::new(
-        config.device_identifier,
-        config.listen_period,
-        config.millis_fn_ptr,
-    )
+    Node::new(config.device_identifier, config.listen_period)
 }

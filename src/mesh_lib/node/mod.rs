@@ -20,7 +20,8 @@ use self::{
     types::{PacketDataQueue, PacketQueue},
 };
 
-use super::millis::ms;
+use super::millis::{ms, PlatformTime};
+use crate::platform_specific_millis_timer::PlatformMillisCounter;
 
 pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
@@ -32,7 +33,6 @@ pub struct Node {
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
     packet_router: PacketRouter,
-    millis_fn_ptr: fn() -> ms,
 }
 
 pub enum NodeError {
@@ -51,15 +51,14 @@ pub enum SpecialSendError {
 }
 
 impl Node {
-    pub fn new(my_address: AddressType, listen_period: ms, millis_fn_ptr: fn() -> ms) -> Node {
+    pub fn new(my_address: AddressType, listen_period: ms) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
-            receiver: receiver::Receiver::new(millis_fn_ptr),
+            receiver: receiver::Receiver::new(),
             my_address: my_address.clone(),
-            timer: timer::Timer::new(listen_period, millis_fn_ptr),
+            timer: timer::Timer::new(listen_period),
             received_packet_meta_data_queue: PacketDataQueue::new(),
             packet_router: PacketRouter::new(my_address),
-            millis_fn_ptr,
         }
     }
 
@@ -100,7 +99,7 @@ impl Node {
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = { self.millis_fn_ptr }();
+        let mut current_time = PlatformMillisCounter::millis();
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -132,7 +131,7 @@ impl Node {
                 }
                 return Ok(());
             }
-            current_time = { self.millis_fn_ptr }();
+            current_time = PlatformMillisCounter::millis();
         }
 
         Err(SpecialSendError::Timeout)
@@ -174,7 +173,7 @@ impl Node {
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = { self.millis_fn_ptr }();
+        let mut current_time = PlatformMillisCounter::millis();
 
         let wait_end_time = current_time + timeout;
 
@@ -208,7 +207,7 @@ impl Node {
                 return Ok(());
             }
 
-            current_time = { self.millis_fn_ptr }();
+            current_time = PlatformMillisCounter::millis();
         }
 
         Err(SpecialSendError::Timeout)

@@ -16,7 +16,7 @@ use ufmt::uwrite;
 
 use mesh_lib::millis::PlatformTime;
 use platform_specific_millis_timer::init_timer;
-use platform_specific_millis_timer::Timer;
+use platform_specific_millis_timer::PlatformMillisCounter;
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -25,23 +25,20 @@ fn main() -> ! {
 
     init_timer(dp.TC0);
 
-    let millis_fn_ptr = || Timer::millis();
-
     let mut mesh_node = init_node(NodeConfig {
         device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
-        millis_fn_ptr,
     });
 
-    let mut last_send_time: ms = { millis_fn_ptr }();
+    let mut last_send_time: ms = PlatformMillisCounter::millis();
     let mut now_time: ms;
     let mut packet_counter: u32 = 0;
 
     loop {
         let _ = mesh_node.update();
 
-        now_time = { millis_fn_ptr }();
+        now_time = PlatformMillisCounter::millis();
 
         if now_time > (last_send_time + 310 as ms) {
             let mut message = NodeString::new();

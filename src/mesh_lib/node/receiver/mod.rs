@@ -28,9 +28,9 @@ enum ReceiverError {
 }
 
 impl Receiver {
-    pub fn new(millis_fn_ptr: fn() -> ms) -> Receiver {
+    pub fn new() -> Receiver {
         Receiver {
-            packet_filter: Filter::new(millis_fn_ptr),
+            packet_filter: Filter::new(),
             packet_bytes_parser: PacketBytesParser::new(),
         }
     }
