@@ -2,7 +2,7 @@ pub mod millis;
 pub mod node;
 pub mod serial;
 
-pub use millis::{millis_init, ms};
+pub use millis::ms;
 pub use node::{AddressType, LifeTimeType, Node, NodeError, NodeString, PacketMetaData};
 pub use serial::Usart;
 
