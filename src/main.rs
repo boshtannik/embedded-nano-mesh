@@ -6,7 +6,7 @@ use arduino_hal::default_serial;
 use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
-mod atmega328p_timer;
+mod atmega328p_time;
 mod mesh_lib;
 
 use mesh_lib::millis::ms;
@@ -14,8 +14,8 @@ use mesh_lib::millis::ms;
 use mesh_lib::NodeString;
 use ufmt::uwrite;
 
-use atmega328p_timer::init_timer;
-use atmega328p_timer::AvrTime;
+use atmega328p_time::init_timer;
+use atmega328p_time::Atmega328pTime;
 use mesh_lib::millis::PlatformTime;
 
 #[arduino_hal::entry]
@@ -25,7 +25,7 @@ fn main() -> ! {
 
     init_timer(dp.TC0);
 
-    let platform_specific_millis_timer = AvrTime;
+    let platform_specific_millis_timer = Atmega328pTime;
 
     let mut mesh_node = init_node(NodeConfig {
         device_identifier: 1 as AddressType,
