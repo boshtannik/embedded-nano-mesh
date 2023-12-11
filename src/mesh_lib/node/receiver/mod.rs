@@ -39,8 +39,15 @@ impl Receiver {
     // that tells that that packet needs do be filtered out by the
     // fact of duplication..
     // Raises the error if so, or returns packet Otherwise.
-    fn filter_out_duplicated(&mut self, packet: Packet) -> Result<Packet, ReceiverError> {
-        match self.packet_filter.filter_out_duplicated(packet) {
+    fn filter_out_duplicated(
+        &mut self,
+        packet: Packet,
+        current_time: ms,
+    ) -> Result<Packet, ReceiverError> {
+        match self
+            .packet_filter
+            .filter_out_duplicated(packet, current_time)
+        {
             Err(RegistrationError::DuplicationFound) => {
                 return Err(ReceiverError::PacketDuplication);
             }
@@ -51,18 +58,18 @@ impl Receiver {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, current_time: ms) {
         self._receive_byte();
-        self.packet_filter.update();
+        self.packet_filter.update(current_time);
     }
 
-    pub fn receive(&mut self) -> Option<PacketMetaData> {
+    pub fn receive(&mut self, current_time: ms) -> Option<PacketMetaData> {
         let packet = match self.packet_bytes_parser.get_packet() {
             None => return None,
             Some(packet) => packet,
         };
 
-        match self.filter_out_duplicated(packet) {
+        match self.filter_out_duplicated(packet, current_time) {
             Ok(packet) => Some(<Packet as DataPacker>::unpack(packet)),
             Err(_) => None,
         }

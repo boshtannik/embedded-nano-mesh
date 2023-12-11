@@ -1,5 +1,4 @@
-use crate::mesh_lib::millis::{ms, PlatformTime};
-use crate::platform_specific_millis_timer::PlatformMillisCounter;
+use crate::mesh_lib::millis::ms;
 
 pub struct Timer {
     listen_period: ms,
@@ -14,13 +13,13 @@ impl Timer {
         }
     }
 
-    pub fn is_time_to_speak(&self) -> bool {
-        let current_time = PlatformMillisCounter::millis();
+    pub fn is_time_to_speak(&self, current_time: ms) -> bool {
+        let current_time = current_time;
         current_time > { self.last_speak_time + self.listen_period }
     }
 
-    pub fn record_speak_time(&mut self) {
-        let current_time = PlatformMillisCounter::millis();
+    pub fn record_speak_time(&mut self, current_time: ms) {
+        let current_time = current_time;
         self.last_speak_time = current_time;
     }
 }

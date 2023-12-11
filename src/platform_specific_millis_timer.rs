@@ -50,10 +50,10 @@ pub fn init_timer(timer: arduino_hal::pac::TC0) {
     unsafe { avr_device::interrupt::enable() };
 }
 
-pub struct PlatformMillisCounter;
+pub struct AvrTime;
 
-impl PlatformTime for PlatformMillisCounter {
-    fn millis() -> ms {
+impl PlatformTime for AvrTime {
+    fn millis(&self) -> ms {
         avr_device::interrupt::free(|cs| MILLIS_COUNTER.borrow(cs).get())
     }
 }

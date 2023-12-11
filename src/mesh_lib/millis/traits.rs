@@ -1,5 +1,5 @@
 use super::ms;
 
 pub trait PlatformTime {
-    fn millis() -> ms;
+    fn millis(&self) -> ms;
 }
