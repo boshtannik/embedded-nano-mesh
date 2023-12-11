@@ -53,7 +53,7 @@ pub fn init_timer(timer: arduino_hal::pac::TC0) {
 pub struct Atmega328pTime;
 
 impl PlatformTime for Atmega328pTime {
-    fn millis(&self) -> ms {
+    fn millis() -> ms {
         avr_device::interrupt::free(|cs| MILLIS_COUNTER.borrow(cs).get())
     }
 }

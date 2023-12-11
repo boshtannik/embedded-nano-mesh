@@ -25,17 +25,13 @@ use super::millis::{ms, PlatformTime};
 pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
 
-pub struct Node<'t, TIMER>
-where
-    TIMER: PlatformTime,
-{
+pub struct Node {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
     my_address: AddressType,
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
     packet_router: PacketRouter,
-    millis_timer: &'t TIMER,
 }
 
 pub enum NodeError {
@@ -53,11 +49,8 @@ pub enum SpecialSendError {
     Timeout,
 }
 
-impl<'t, TIMER> Node<'t, TIMER>
-where
-    TIMER: PlatformTime,
-{
-    pub fn new(my_address: AddressType, listen_period: ms, millis_timer: &'t TIMER) -> Node<TIMER> {
+impl Node {
+    pub fn new(my_address: AddressType, listen_period: ms) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
             receiver: receiver::Receiver::new(),
@@ -65,7 +58,6 @@ where
             timer: timer::Timer::new(listen_period),
             received_packet_meta_data_queue: PacketDataQueue::new(),
             packet_router: PacketRouter::new(my_address),
-            millis_timer,
         }
     }
 
@@ -95,7 +87,7 @@ where
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send_ping_pong(
+    pub fn send_ping_pong<TIMER: PlatformTime>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -106,7 +98,8 @@ where
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = self.millis_timer.millis();
+
+        let mut current_time = TIMER::millis();
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -127,7 +120,7 @@ where
         };
 
         while current_time < wait_end_time {
-            let _ = self.update();
+            let _ = self.update::<TIMER>();
 
             if let Some(answer) = self.receive() {
                 if !(answer.spec_state == PacketState::Pong) {
@@ -138,7 +131,7 @@ where
                 }
                 return Ok(());
             }
-            current_time = self.millis_timer.millis();
+            current_time = TIMER::millis();
         }
 
         Err(SpecialSendError::Timeout)
@@ -169,7 +162,7 @@ where
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send_with_transaction(
+    pub fn send_with_transaction<TIMER: PlatformTime>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -180,8 +173,7 @@ where
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = self.millis_timer.millis();
-
+        let mut current_time = TIMER::millis();
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -202,7 +194,7 @@ where
         };
 
         while current_time < wait_end_time {
-            let _ = self.update();
+            let _ = self.update::<TIMER>();
 
             if let Some(answer) = self.receive() {
                 if !(answer.spec_state == PacketState::FinishTransaction) {
@@ -214,7 +206,7 @@ where
                 return Ok(());
             }
 
-            current_time = self.millis_timer.millis();
+            current_time = TIMER::millis();
         }
 
         Err(SpecialSendError::Timeout)
@@ -250,7 +242,7 @@ where
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send(
+    pub fn send<TIMER: PlatformTime>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -288,8 +280,8 @@ where
     /// * Receives packets from ether, and manages their further life.
     ///     ** Data of other devices are going to be send back into ether.
     ///     ** Data addressed to current device, will be unpacked and stored.
-    pub fn update(&mut self) -> Result<(), NodeUpdateError> {
-        let current_time = self.millis_timer.millis();
+    pub fn update<TIMER: PlatformTime>(&mut self) -> Result<(), NodeUpdateError> {
+        let current_time = TIMER::millis();
 
         if self.timer.is_time_to_speak(current_time) {
             self.transmitter.update();

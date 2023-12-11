@@ -25,30 +25,27 @@ fn main() -> ! {
 
     init_timer(dp.TC0);
 
-    let platform_specific_millis_timer = Atmega328pTime;
-
     let mut mesh_node = init_node(NodeConfig {
         device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
         usart: default_serial!(dp, pins, 9600),
-        millis_timer: &platform_specific_millis_timer,
     });
 
-    let mut last_send_time: ms = platform_specific_millis_timer.millis();
+    let mut last_send_time: ms = Atmega328pTime::millis();
     let mut now_time: ms;
     let mut packet_counter: u32 = 0;
 
     loop {
-        let _ = mesh_node.update();
+        let _ = mesh_node.update::<Atmega328pTime>();
 
-        now_time = platform_specific_millis_timer.millis();
+        now_time = Atmega328pTime::millis();
 
         if now_time > (last_send_time + 310 as ms) {
             let mut message = NodeString::new();
             uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
 
             mesh_node
-                .send_with_transaction(
+                .send_with_transaction::<Atmega328pTime>(
                     message.clone().into_bytes(),
                     2 as AddressType,
                     10 as LifeTimeType,
