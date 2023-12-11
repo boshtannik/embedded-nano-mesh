@@ -1,14 +1,12 @@
 use heapless::Vec;
 
 use crate::mesh_lib::{
-    millis::{ms, PlatformTime},
+    millis::ms,
     node::{
         constants::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
         packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
     },
 };
-
-use crate::platform_specific_millis_timer::AvrTime;
 
 pub struct PacketLifetimeEndedError;
 
