@@ -6,17 +6,12 @@ use arduino_hal::default_serial;
 use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
 use panic_halt as _;
 
-mod atmega328p_time;
 mod mesh_lib;
-
-use mesh_lib::millis::ms;
 
 use mesh_lib::NodeString;
 use ufmt::uwrite;
 
-use atmega328p_time::init_timer;
-use atmega328p_time::Atmega328pTime;
-use mesh_lib::millis::PlatformTime;
+use platform_millis_atmega328p::{init_timer, ms, Atmega328pTime, PlatformTime};
 
 #[arduino_hal::entry]
 fn main() -> ! {

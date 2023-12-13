@@ -1,4 +1,4 @@
-use crate::mesh_lib::millis::ms;
+use platform_millis_atmega328p::ms;
 
 pub const QUEUE_SIZE: usize = 5;
 pub const PACKET_START_BYTES_COUNT: usize = 3;

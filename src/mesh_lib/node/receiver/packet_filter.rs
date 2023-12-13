@@ -1,11 +1,9 @@
 use heapless::Vec;
+use platform_millis_atmega328p::ms;
 
-use crate::mesh_lib::{
-    millis::ms,
-    node::{
-        constants::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
-        packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
-    },
+use crate::mesh_lib::node::{
+    constants::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
+    packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
 };
 
 pub struct PacketLifetimeEndedError;
