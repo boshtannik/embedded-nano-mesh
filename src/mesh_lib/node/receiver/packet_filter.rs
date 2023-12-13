@@ -1,5 +1,5 @@
 use heapless::Vec;
-use platform_millis_atmega328p::ms;
+use platform_millis::ms;
 
 use crate::mesh_lib::node::{
     constants::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},

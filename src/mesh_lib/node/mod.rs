@@ -20,7 +20,7 @@ use self::{
     types::{PacketDataQueue, PacketQueue},
 };
 
-use platform_millis_atmega328p::{ms, PlatformTime};
+use platform_millis::{ms, PlatformTime};
 
 pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));

@@ -1,6 +1,6 @@
 pub mod node;
 pub mod serial;
-use platform_millis_atmega328p::ms;
+use platform_millis::ms;
 
 pub use node::{AddressType, LifeTimeType, Node, NodeString};
 pub use serial::Usart;

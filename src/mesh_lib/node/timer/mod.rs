@@ -1,4 +1,4 @@
-use platform_millis_atmega328p::ms;
+use platform_millis::ms;
 
 pub struct Timer {
     listen_period: ms,
