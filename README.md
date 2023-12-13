@@ -345,3 +345,7 @@ You can choose the license that best suits your preferences.
 ## Contribution
 
 Unless you specify otherwise, any contributions submitted for inclusion in this project, as defined in the Apache-2.0 license, will be dual-licensed under both licenses without additional terms or conditions.
+
+## Donation
+Also you can support the project by donating few
+cents on the bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
