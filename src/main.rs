@@ -11,7 +11,7 @@ mod mesh_lib;
 use mesh_lib::NodeString;
 use ufmt::uwrite;
 
-use platform_millis_atmega328p::{init_timer, ms, Atmega328pTime, PlatformTime};
+use platform_millis_arduino_nano::{init_timer, ms, Atmega328pTime, PlatformTime};
 
 #[arduino_hal::entry]
 fn main() -> ! {
