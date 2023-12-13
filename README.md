@@ -1,4 +1,4 @@
-# Arduino Nano Mesh
+# Arduino Nano Mesh Network Protocol
 
 ## Goal
 
