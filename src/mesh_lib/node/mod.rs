@@ -20,7 +20,7 @@ use self::{
     types::{PacketDataQueue, PacketQueue},
 };
 
-use super::millis::{self, ms};
+use platform_millis::{ms, PlatformTime};
 
 pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
@@ -87,7 +87,7 @@ impl Node {
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send_ping_pong(
+    pub fn send_ping_pong<TIMER: PlatformTime>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -98,7 +98,8 @@ impl Node {
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = millis::millis();
+
+        let mut current_time = TIMER::millis();
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -119,7 +120,7 @@ impl Node {
         };
 
         while current_time < wait_end_time {
-            let _ = self.update();
+            let _ = self.update::<TIMER>();
 
             if let Some(answer) = self.receive() {
                 if !(answer.spec_state == PacketState::Pong) {
@@ -130,7 +131,7 @@ impl Node {
                 }
                 return Ok(());
             }
-            current_time = millis::millis();
+            current_time = TIMER::millis();
         }
 
         Err(SpecialSendError::Timeout)
@@ -161,7 +162,7 @@ impl Node {
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send_with_transaction(
+    pub fn send_with_transaction<TIMER: PlatformTime>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -172,7 +173,7 @@ impl Node {
         if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
             return Err(SpecialSendError::MulticastAddressForbidden);
         }
-        let mut current_time = millis::millis();
+        let mut current_time = TIMER::millis();
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -193,7 +194,7 @@ impl Node {
         };
 
         while current_time < wait_end_time {
-            let _ = self.update();
+            let _ = self.update::<TIMER>();
 
             if let Some(answer) = self.receive() {
                 if !(answer.spec_state == PacketState::FinishTransaction) {
@@ -204,7 +205,8 @@ impl Node {
                 }
                 return Ok(());
             }
-            current_time = millis::millis();
+
+            current_time = TIMER::millis();
         }
 
         Err(SpecialSendError::Timeout)
@@ -240,7 +242,7 @@ impl Node {
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send(
+    pub fn send<TIMER: PlatformTime>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -278,14 +280,16 @@ impl Node {
     /// * Receives packets from ether, and manages their further life.
     ///     ** Data of other devices are going to be send back into ether.
     ///     ** Data addressed to current device, will be unpacked and stored.
-    pub fn update(&mut self) -> Result<(), NodeUpdateError> {
-        if self.timer.is_time_to_speak() {
-            self.transmitter.update();
-            self.timer.record_speak_time();
-        }
-        self.receiver.update();
+    pub fn update<TIMER: PlatformTime>(&mut self) -> Result<(), NodeUpdateError> {
+        let current_time = TIMER::millis();
 
-        let packet_to_handle = match self.receiver.receive() {
+        if self.timer.is_time_to_speak(current_time) {
+            self.transmitter.update();
+            self.timer.record_speak_time(current_time);
+        }
+        self.receiver.update(current_time);
+
+        let packet_to_handle = match self.receiver.receive(current_time) {
             Some(packet_to_handle) => packet_to_handle,
             None => return Ok(()),
         };

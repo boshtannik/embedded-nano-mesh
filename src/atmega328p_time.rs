@@ -1,17 +1,6 @@
-/*!
- * A basic implementation of the `millis()` function from Arduino:
- *
- *     https://www.arduino.cc/reference/en/language/functions/time/millis/
- *
- * Uses timer TC0 and one of its interrupts to update a global millisecond
- * counter.  A walkthough of this code is available here:
- *
- *     https://blog.rahix.de/005-avr-hal-millis/
- */
+use crate::mesh_lib::millis::ms;
+use crate::mesh_lib::millis::traits::PlatformTime;
 use core::cell;
-use panic_halt as _;
-
-use super::ms;
 
 // Possible Values:
 //
@@ -29,28 +18,8 @@ const TIMER_COUNTS: ms = 125;
 
 const MILLIS_INCREMENT: ms = PRESCALER * TIMER_COUNTS / 16000;
 
-static MILLIS_COUNTER: avr_device::interrupt::Mutex<cell::Cell<ms>> =
+pub static MILLIS_COUNTER: avr_device::interrupt::Mutex<cell::Cell<ms>> =
     avr_device::interrupt::Mutex::new(cell::Cell::new(0));
-
-pub fn millis_init(tc0: arduino_hal::pac::TC0) {
-    // Configure the timer for the above interval (in CTC mode)
-    // and enable its interrupt.
-    tc0.tccr0a.write(|w| w.wgm0().ctc());
-    tc0.ocr0a.write(|w| w.bits(TIMER_COUNTS as u8));
-    tc0.tccr0b.write(|w| match PRESCALER {
-        8 => w.cs0().prescale_8(),
-        64 => w.cs0().prescale_64(),
-        256 => w.cs0().prescale_256(),
-        1024 => w.cs0().prescale_1024(),
-        _ => panic!(),
-    });
-    tc0.timsk0.write(|w| w.ocie0a().set_bit());
-
-    // Reset the global millisecond counter
-    avr_device::interrupt::free(|cs| {
-        MILLIS_COUNTER.borrow(cs).set(0);
-    });
-}
 
 #[avr_device::interrupt(atmega328p)]
 fn TIMER0_COMPA() {
@@ -61,9 +30,30 @@ fn TIMER0_COMPA() {
     })
 }
 
-pub fn millis() -> ms {
-    avr_device::interrupt::free(|cs| MILLIS_COUNTER.borrow(cs).get())
+pub fn init_timer(timer: arduino_hal::pac::TC0) {
+    timer.tccr0a.write(|w| w.wgm0().ctc());
+    timer.ocr0a.write(|w| w.bits(TIMER_COUNTS as u8));
+    timer.tccr0b.write(|w| match PRESCALER {
+        8 => w.cs0().prescale_8(),
+        64 => w.cs0().prescale_64(),
+        256 => w.cs0().prescale_256(),
+        1024 => w.cs0().prescale_1024(),
+        _ => panic!(),
+    });
+    timer.timsk0.write(|w| w.ocie0a().set_bit());
+
+    // Reset the global millisecond counter
+    avr_device::interrupt::free(|cs| {
+        MILLIS_COUNTER.borrow(cs).set(0);
+    });
+
+    unsafe { avr_device::interrupt::enable() };
 }
 
-// ----------------------------------------------------------------------------
-// This file was got and modified from https://github.com/Rahix/avr-hal/blob/main/examples/arduino-uno/src/bin/uno-millis.rs
+pub struct Atmega328pTime;
+
+impl PlatformTime for Atmega328pTime {
+    fn millis() -> ms {
+        avr_device::interrupt::free(|cs| MILLIS_COUNTER.borrow(cs).get())
+    }
+}

@@ -1,12 +1,8 @@
-pub mod millis;
 pub mod node;
 pub mod serial;
+use platform_millis::ms;
 
-// TODO: Allow set dynamically, or conditionally depending on target architecture.
-use avr_device::atmega328p::TC0;
-
-pub use millis::{millis, millis_init, ms};
-pub use node::{AddressType, LifeTimeType, Node, NodeError, NodeString, PacketMetaData};
+pub use node::{AddressType, LifeTimeType, Node, NodeString};
 pub use serial::Usart;
 
 /// This structure is made to group the required settings,
@@ -30,10 +26,6 @@ pub struct NodeConfig {
     // will be connected to the current MCU to provide communication
     // between `Node`s
     pub usart: Usart,
-
-    // The hardware abstraction library timer, which will be used for
-    // counting of milliseconds.
-    pub millis_timer: TC0,
 }
 
 /// Receives `NodeConfig` instance as instance,
@@ -41,8 +33,6 @@ pub struct NodeConfig {
 /// Makes all necessarry preparations, and returns `Node`
 /// instance.
 pub fn init_node(config: NodeConfig) -> Node {
-    millis_init(config.millis_timer);
     serial::init(config.usart);
-    unsafe { avr_device::interrupt::enable() };
     Node::new(config.device_identifier, config.listen_period)
 }
