@@ -242,7 +242,7 @@ impl Node {
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send<TIMER: PlatformTime>(
+    pub fn send(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
