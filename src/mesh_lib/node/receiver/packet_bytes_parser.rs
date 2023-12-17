@@ -1,6 +1,9 @@
-use crate::mesh_lib::node::{
-    packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
-    types::PacketBytesBuffer,
+use crate::{
+    mesh_lib::node::{
+        packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
+        types::PacketBytesBuffer,
+    },
+    serial_debug,
 };
 
 use super::super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
@@ -54,7 +57,9 @@ impl PacketBytesParser {
         if self.bytes_buffer.is_full() {
             self.bytes_buffer.pop_front();
         }
-        self.bytes_buffer.push_back(byte).unwrap_or_else(|_| {});
+        self.bytes_buffer
+            .push_back(byte)
+            .unwrap_or_else(|_| serial_debug!("Failed to push byte into packet parser"));
         self.try_parse_packet();
     }
 

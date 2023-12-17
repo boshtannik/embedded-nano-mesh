@@ -3,12 +3,11 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
+use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig, NodeString};
 use panic_halt as _;
 
 mod mesh_lib;
 
-use mesh_lib::NodeString;
 use ufmt::uwrite;
 
 use platform_millis_arduino_nano::{init_timer, ms, Atmega328pTime, PlatformTime};

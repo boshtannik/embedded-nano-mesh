@@ -6,8 +6,6 @@ use crate::mesh_lib::node::{
     packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
 };
 
-pub struct PacketLifetimeEndedError;
-
 pub enum RegistrationError {
     RegistrationLimitExceeded,
     DuplicationFound,

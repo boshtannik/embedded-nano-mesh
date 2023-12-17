@@ -1,5 +1,8 @@
 pub use super::packet::PacketState;
 
+// TODO: deacrease_lifetime is called in every place. It shal be called only once in only one place
+// in order to reduce the amount of code.
+
 use super::{
     packet::{
         DataPacker, Packet, PacketMetaData, PacketMetaDataError, StateMutator,
@@ -47,7 +50,7 @@ impl PacketRouter {
         return Ok(OkCase::Received(packet_meta_data));
     }
 
-    fn handle_broadcast(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
+    fn handle_multicast(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         let original_packet_meta_data = packet_meta_data.clone();
         let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
             Ok(packet_meta_data) => packet_meta_data,
@@ -122,7 +125,7 @@ impl PacketRouter {
             }
         } else if packet_meta_data.is_destination_identifier_reached(MULTICAST_RESERVED_IDENTIFIER)
         {
-            self.handle_broadcast(packet_meta_data)
+            self.handle_multicast(packet_meta_data)
         } else {
             let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
                 Ok(packet_decreased_lifettime) => packet_decreased_lifettime,
