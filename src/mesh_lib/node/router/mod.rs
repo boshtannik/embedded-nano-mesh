@@ -1,6 +1,6 @@
 pub use super::packet::PacketState;
 
-// TODO: deacrease_lifetime is called in every place. It shal be called only once in only one place
+// TODO: deacrease_lifetime is called in every place. It shall be called only once in only one place
 // in order to reduce the amount of code.
 
 use super::{

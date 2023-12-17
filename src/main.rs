@@ -46,7 +46,7 @@ fn main() -> ! {
                     true,
                     3000 as ms,
                 )
-                .unwrap_or_else(|_| serial_debug!("Transaction failed"));
+                .unwrap_or_else(|_| serial_debug!("Transaction failed."));
 
             last_send_time = now_time;
             packet_counter = packet_counter.overflowing_add(1).0;
