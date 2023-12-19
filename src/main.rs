@@ -38,15 +38,16 @@ fn main() -> ! {
             let mut message = NodeString::new();
             uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
 
-            mesh_node
-                .send_with_transaction::<Atmega328pTime>(
-                    message.clone().into_bytes(),
-                    2 as AddressType,
-                    10 as LifeTimeType,
-                    true,
-                    3000 as ms,
-                )
-                .unwrap_or_else(|_| serial_debug!("Transaction failed."));
+            match mesh_node.send_with_transaction::<Atmega328pTime>(
+                message.clone().into_bytes(),
+                2 as AddressType,
+                10 as LifeTimeType,
+                true,
+                3000 as ms,
+            ) {
+                Ok(_) => serial_println!("Transaction done."),
+                Err(_) => serial_println!("Transaction failed."),
+            }
 
             last_send_time = now_time;
             packet_counter = packet_counter.overflowing_add(1).0;

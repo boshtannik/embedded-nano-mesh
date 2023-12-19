@@ -165,7 +165,6 @@ version = "0.0.1"
 dependencies = [
  "arduino-hal",
  "avr-device",
- "embedded-hal",
  "heapless",
  "nb 0.1.3",
  "panic-halt",

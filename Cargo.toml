@@ -15,7 +15,6 @@ path = "src/main.rs"
 panic-halt = "0.2.0"
 ufmt = "0.1.0"
 nb = "0.1.2"
-embedded-hal = "0.2.3"
 heapless = { version = "0.7.0", features = ["serde", "ufmt-impl"] }
 avr-device = "0.5.1"
 platform-millis = { git = "https://github.com/boshtannik/platform-millis.git" }

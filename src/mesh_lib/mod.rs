@@ -17,7 +17,7 @@ pub struct NodeConfig {
     /// The period, during which the `Node` will be in listen only mode.
     /// This prevents the `Node` from constantly speaking into the ether
     /// in order to reduce the ethter being jammed by immediate answers
-    /// from `Nodess, that have just received the messages.
+    /// from `Node`s, that have just received the messages.
     pub listen_period: ms,
 
     // It is the `Usart` interface, which `Node` is using to send packed
