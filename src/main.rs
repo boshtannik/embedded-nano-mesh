@@ -3,7 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 use arduino_hal::default_serial;
-use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig, NodeString};
+use mesh_lib::{AddressType, LifeTimeType, Node, NodeString};
 use panic_halt as _;
 
 mod mesh_lib;
@@ -21,10 +21,7 @@ fn main() -> ! {
     init_timer(dp.TC0);
     init_serial(default_serial!(dp, pins, 9600));
 
-    let mut mesh_node = init_node(NodeConfig {
-        device_identifier: 1 as AddressType,
-        listen_period: 150 as ms,
-    });
+    let mut mesh_node = Node::new(1 as AddressType, 150 as ms);
 
     let mut last_send_time: ms = Atmega328pTime::millis();
     let mut now_time: ms;
@@ -46,9 +43,9 @@ fn main() -> ! {
                 true,
                 3000 as ms,
             ) {
-                Ok(_) => uwrite!(&mut ArduinoNanoSerial::default(), "Transaction done!")
+                Ok(_) => uwrite!(&mut ArduinoNanoSerial::default(), "Transaction done!\n")
                     .unwrap_or_else(|_| {}),
-                Err(_) => uwrite!(&mut ArduinoNanoSerial::default(), "Transaction falied!")
+                Err(_) => uwrite!(&mut ArduinoNanoSerial::default(), "Transaction falied!\n")
                     .unwrap_or_else(|_| {}),
             }
 
