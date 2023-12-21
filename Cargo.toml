@@ -20,8 +20,8 @@ avr-device = "0.5.1"
 embedded-hal = "0.2.7"
 platform-millis = { git = "https://github.com/boshtannik/platform-millis.git" }
 platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git" }
-platform-serial = { path = "../platform-serial" }
-platform-serial-arduino-nano = { path = "../platform-serial-arduino-nano" }
+platform-serial = { git = "https://github.com/boshtannik/platform-serial.git" }
+platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git" }
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"

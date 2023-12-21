@@ -221,6 +221,7 @@ dependencies = [
 [[package]]
 name = "platform-serial"
 version = "0.1.0"
+source = "git+https://github.com/boshtannik/platform-serial.git#2f941e132841ec404ecb45ae84176b54ef4f341b"
 dependencies = [
  "embedded-hal",
  "nb 1.1.0",
@@ -229,6 +230,7 @@ dependencies = [
 [[package]]
 name = "platform-serial-arduino-nano"
 version = "0.1.0"
+source = "git+https://github.com/boshtannik/platform-serial-arduino-nano.git#b452f43ebbd29ee30a63652ec7b1720e8c077a05"
 dependencies = [
  "arduino-hal",
  "avr-device",
