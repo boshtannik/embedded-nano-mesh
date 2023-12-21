@@ -11,8 +11,6 @@ use super::super::types::{
     PacketSerializedBytes,
 };
 
-use platform_serial_arduino_nano::serial_debug;
-
 use super::super::traits::FromBytes;
 use core::slice::Iter;
 
@@ -22,57 +20,57 @@ impl Serializer for Packet {
         // source_device_identifier: Deviceidentifier,
         for b in self.source_device_identifier.to_be_bytes() {
             result.push(b).unwrap_or_else(|_| {
-                serial_debug!("Could not serialize byte of source_device_identifier field")
+                // serial_debug!("Could not serialize byte of source_device_identifier field")
             });
         }
 
         // destination_device_identifier: Deviceidentifier,
         for b in self.destination_device_identifier.to_be_bytes() {
             result.push(b).unwrap_or_else(|_| {
-                serial_debug!("Could not serialize byte of destination_device_identifier field")
+                // serial_debug!("Could not serialize byte of destination_device_identifier field")
             });
         }
 
         // id: IdType
         for b in self.id.to_be_bytes() {
-            result
-                .push(b)
-                .unwrap_or_else(|_| serial_debug!("Could not serialize byte of id field"));
+            result.push(b).unwrap_or_else(|_| {
+                //serial_debug!("Could not serialize byte of id field")
+            })
         }
 
         // lifetime: LifeTimeType
         for b in self.lifetime.to_be_bytes() {
-            result
-                .push(b)
-                .unwrap_or_else(|_| serial_debug!("Could not serialize byte of lifetime field"));
+            result.push(b).unwrap_or_else(|_| {
+                // serial_debug!("Could not serialize byte of lifetime field")
+            });
         }
 
         // flags: FlagsType,
         for b in self.flags.to_be_bytes() {
-            result
-                .push(b)
-                .unwrap_or_else(|_| serial_debug!("Could not serialize byte of flags field"));
+            result.push(b).unwrap_or_else(|_| {
+                // serial_debug!("Could not serialize byte of flags field")
+            });
         }
 
         // data_length: usize,
         for b in self.data_length.to_be_bytes() {
-            result
-                .push(b)
-                .unwrap_or_else(|_| serial_debug!("Could not serialize byte of data_length field"));
+            result.push(b).unwrap_or_else(|_| {
+                // serial_debug!("Could not serialize byte of data_length field")
+            });
         }
 
         // data: PacketDataBytes,
         for b in self.data {
-            result
-                .push(b)
-                .unwrap_or_else(|_| serial_debug!("Could not serialize byte of data field"));
+            result.push(b).unwrap_or_else(|_| {
+                //serial_debug!("Could not serialize byte of data field")
+            });
         }
 
         // checksum: ChecksumType,
         for b in self.checksum.to_be_bytes() {
-            result
-                .push(b)
-                .unwrap_or_else(|_| serial_debug!("Could not serialize byte of checksum field"));
+            result.push(b).unwrap_or_else(|_| {
+                // serial_debug!("Could not serialize byte of checksum field")
+            });
         }
         result
     }
@@ -95,11 +93,11 @@ impl Serializer for Packet {
         let mut data: PacketDataBytes = PacketDataBytes::new();
         for _ in 0..DATA_TYPE_SIZE {
             data.push(*bytes_iterator.next().unwrap_or_else(|| {
-                serial_debug!("Could not take byte for deserialization of data");
+                // serial_debug!("Could not take byte for deserialization of data");
                 &0u8
             }))
             .unwrap_or_else(|_| {
-                serial_debug!("Could not push byte of serialized data");
+                // serial_debug!("Could not push byte of serialized data");
             });
         }
         let checksum = deserialize_field::<ChecksumType, CHECKSUM_TYPE_SIZE>(&mut bytes_iterator);
@@ -123,7 +121,7 @@ where
     let mut field: [u8; GENERIC_TYPE_SIZE] = [0; GENERIC_TYPE_SIZE];
     for entry in field.iter_mut() {
         *entry = *bytes_iterator.next().unwrap_or_else(|| {
-            serial_debug!("Could not deserialize byte of field");
+            // serial_debug!("Could not deserialize byte of field");
             &0u8
         });
     }

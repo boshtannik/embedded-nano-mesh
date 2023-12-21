@@ -1,5 +1,3 @@
-use platform_serial_arduino_nano::serial_debug;
-
 use crate::mesh_lib::node::{
     packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
     types::PacketBytesBuffer,
@@ -56,9 +54,7 @@ impl PacketBytesParser {
         if self.bytes_buffer.is_full() {
             self.bytes_buffer.pop_front();
         }
-        self.bytes_buffer
-            .push_back(byte)
-            .unwrap_or_else(|_| serial_debug!("Failed to push byte into packet parser"));
+        self.bytes_buffer.push_back(byte).unwrap_or_else(|_| {});
         self.try_parse_packet();
     }
 
