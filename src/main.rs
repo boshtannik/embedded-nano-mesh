@@ -11,6 +11,7 @@ mod mesh_lib;
 use ufmt::uwrite;
 
 use platform_millis_arduino_nano::{init_timer, ms, Atmega328pTime, PlatformTime};
+use platform_serial_arduino_nano::{init_serial, ArduinoNanoSerial};
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -18,11 +19,11 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     init_timer(dp.TC0);
+    init_serial(default_serial!(dp, pins, 9600));
 
     let mut mesh_node = init_node(NodeConfig {
         device_identifier: 1 as AddressType,
         listen_period: 150 as ms,
-        usart: default_serial!(dp, pins, 9600),
     });
 
     let mut last_send_time: ms = Atmega328pTime::millis();
@@ -30,7 +31,7 @@ fn main() -> ! {
     let mut packet_counter: u32 = 0;
 
     loop {
-        let _ = mesh_node.update::<Atmega328pTime>();
+        let _ = mesh_node.update::<Atmega328pTime, ArduinoNanoSerial>();
 
         now_time = Atmega328pTime::millis();
 
@@ -38,15 +39,17 @@ fn main() -> ! {
             let mut message = NodeString::new();
             uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
 
-            match mesh_node.send_with_transaction::<Atmega328pTime>(
+            match mesh_node.send_with_transaction::<Atmega328pTime, ArduinoNanoSerial>(
                 message.clone().into_bytes(),
                 2 as AddressType,
                 10 as LifeTimeType,
                 true,
                 3000 as ms,
             ) {
-                Ok(_) => serial_println!("Transaction done."),
-                Err(_) => serial_println!("Transaction failed."),
+                Ok(_) => uwrite!(&mut ArduinoNanoSerial::new(), "Transaction done!")
+                    .unwrap_or_else(|_| {}),
+                Err(_) => uwrite!(&mut ArduinoNanoSerial::new(), "Transaction falied!")
+                    .unwrap_or_else(|_| {}),
             }
 
             last_send_time = now_time;

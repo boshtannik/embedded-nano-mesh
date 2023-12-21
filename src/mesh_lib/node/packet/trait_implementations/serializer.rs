@@ -11,7 +11,7 @@ use super::super::types::{
     PacketSerializedBytes,
 };
 
-use crate::serial_debug;
+use platform_serial_arduino_nano::serial_debug;
 
 use super::super::traits::FromBytes;
 use core::slice::Iter;

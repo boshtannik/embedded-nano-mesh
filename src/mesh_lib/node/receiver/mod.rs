@@ -1,9 +1,10 @@
 mod packet_bytes_parser;
 mod packet_filter;
 
-use crate::{mesh_lib::ms, serial_try_read_byte};
-use avr_device::interrupt::Mutex;
-use core::cell::Cell;
+use crate::mesh_lib::ms;
+use embedded_hal::serial::Read;
+
+use platform_serial_arduino_nano::ArduinoNanoSerial;
 
 use self::{
     packet_bytes_parser::PacketBytesParser,
@@ -14,8 +15,6 @@ use super::{
     packet::{DataPacker, Packet},
     PacketMetaData,
 };
-
-use arduino_hal::prelude::_embedded_hal_serial_Read;
 
 pub struct Receiver {
     packet_filter: Filter,
@@ -76,10 +75,7 @@ impl Receiver {
     }
 
     fn _receive_byte(&mut self) {
-        let mut mutexed_celled_option_byte: Mutex<Cell<Option<u8>>> = Mutex::new(Cell::new(None));
-        serial_try_read_byte!(mutexed_celled_option_byte);
-
-        if let Some(byte) = mutexed_celled_option_byte.get_mut().take() {
+        if let Ok(byte) = ArduinoNanoSerial::new().read() {
             self.packet_bytes_parser.push_byte(byte);
         }
     }

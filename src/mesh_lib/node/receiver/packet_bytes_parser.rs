@@ -1,9 +1,8 @@
-use crate::{
-    mesh_lib::node::{
-        packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
-        types::PacketBytesBuffer,
-    },
-    serial_debug,
+use platform_serial_arduino_nano::serial_debug;
+
+use crate::mesh_lib::node::{
+    packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
+    types::PacketBytesBuffer,
 };
 
 use super::super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};

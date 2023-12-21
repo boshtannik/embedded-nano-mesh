@@ -10,6 +10,7 @@ mod types;
 
 use avr_device::interrupt::Mutex;
 pub use packet::{AddressType, MULTICAST_RESERVED_IDENTIFIER};
+use platform_serial::PlatformSerial;
 pub use router::PacketState;
 pub use types::NodeString;
 
@@ -87,7 +88,7 @@ impl Node {
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send_ping_pong<TIMER: PlatformTime>(
+    pub fn send_ping_pong<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -120,7 +121,7 @@ impl Node {
         };
 
         while current_time < wait_end_time {
-            let _ = self.update::<TIMER>();
+            let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
                 if !(answer.spec_state == PacketState::Pong) {
@@ -162,7 +163,7 @@ impl Node {
     /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send_with_transaction<TIMER: PlatformTime>(
+    pub fn send_with_transaction<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: AddressType,
@@ -194,7 +195,7 @@ impl Node {
         };
 
         while current_time < wait_end_time {
-            let _ = self.update::<TIMER>();
+            let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
                 if !(answer.spec_state == PacketState::FinishTransaction) {
@@ -280,7 +281,9 @@ impl Node {
     /// * Receives packets from ether, and manages their further life.
     ///     ** Data of other devices are going to be send back into ether.
     ///     ** Data addressed to current device, will be unpacked and stored.
-    pub fn update<TIMER: PlatformTime>(&mut self) -> Result<(), NodeUpdateError> {
+    pub fn update<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
+        &mut self,
+    ) -> Result<(), NodeUpdateError> {
         let current_time = TIMER::millis();
 
         if self.timer.is_time_to_speak(current_time) {

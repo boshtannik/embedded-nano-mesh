@@ -17,8 +17,11 @@ ufmt = "0.1.0"
 nb = "0.1.2"
 heapless = { version = "0.7.0", features = ["serde", "ufmt-impl"] }
 avr-device = "0.5.1"
+embedded-hal = "0.2.7"
 platform-millis = { git = "https://github.com/boshtannik/platform-millis.git" }
 platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git" }
+platform-serial = { path = "../platform-serial" }
+platform-serial-arduino-nano = { path = "../platform-serial-arduino-nano" }
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"

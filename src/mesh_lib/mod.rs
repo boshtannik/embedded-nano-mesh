@@ -1,9 +1,7 @@
 pub mod node;
-pub mod serial;
 use platform_millis::ms;
 
 pub use node::{AddressType, LifeTimeType, Node, NodeString};
-pub use serial::Usart;
 
 /// This structure is made to group the required settings,
 /// which are need to be provided to let mesh `Node` to be
@@ -19,13 +17,6 @@ pub struct NodeConfig {
     /// in order to reduce the ethter being jammed by immediate answers
     /// from `Node`s, that have just received the messages.
     pub listen_period: ms,
-
-    // It is the `Usart` interface, which `Node` is using to send packed
-    // messages and receive packed messages.
-    // It is expected that the modules of radio transmitter and receiver
-    // will be connected to the current MCU to provide communication
-    // between `Node`s
-    pub usart: Usart,
 }
 
 /// Receives `NodeConfig` instance as instance,
@@ -33,6 +24,5 @@ pub struct NodeConfig {
 /// Makes all necessarry preparations, and returns `Node`
 /// instance.
 pub fn init_node(config: NodeConfig) -> Node {
-    serial::init(config.usart);
     Node::new(config.device_identifier, config.listen_period)
 }
