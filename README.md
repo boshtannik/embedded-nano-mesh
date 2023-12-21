@@ -348,4 +348,4 @@ Unless you specify otherwise, any contributions submitted for inclusion in this 
 
 ## Donation
 Also you can support the project by donating few
-cents on the bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
+bucks on the bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
