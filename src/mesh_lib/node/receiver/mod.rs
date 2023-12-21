@@ -2,9 +2,8 @@ mod packet_bytes_parser;
 mod packet_filter;
 
 use crate::mesh_lib::ms;
-use embedded_hal::serial::Read;
 
-use platform_serial_arduino_nano::ArduinoNanoSerial;
+use platform_serial::PlatformSerial;
 
 use self::{
     packet_bytes_parser::PacketBytesParser,
@@ -57,8 +56,8 @@ impl Receiver {
         }
     }
 
-    pub fn update(&mut self, current_time: ms) {
-        self._receive_byte();
+    pub fn update<SERIAL: PlatformSerial<u8>>(&mut self, current_time: ms) {
+        self._receive_byte::<SERIAL>();
         self.packet_filter.update(current_time);
     }
 
@@ -74,8 +73,8 @@ impl Receiver {
         }
     }
 
-    fn _receive_byte(&mut self) {
-        if let Ok(byte) = ArduinoNanoSerial::new().read() {
+    fn _receive_byte<SERIAL: PlatformSerial<u8>>(&mut self) {
+        if let Ok(byte) = SERIAL::default().read() {
             self.packet_bytes_parser.push_byte(byte);
         }
     }

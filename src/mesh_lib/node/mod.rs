@@ -290,7 +290,7 @@ impl Node {
             self.transmitter.update();
             self.timer.record_speak_time(current_time);
         }
-        self.receiver.update(current_time);
+        self.receiver.update::<SERIAL>(current_time);
 
         let packet_to_handle = match self.receiver.receive(current_time) {
             Some(packet_to_handle) => packet_to_handle,

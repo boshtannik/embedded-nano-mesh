@@ -1,10 +1,10 @@
-use embedded_hal::serial::Write;
-
 use platform_serial_arduino_nano::{serial_write_byte, ArduinoNanoSerial};
 
 use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{DataPacker, IdType, Packet, PacketFlagOps, Serializer};
 use super::{PacketMetaData, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE};
+
+use embedded_hal::serial::Write;
 
 use super::types::PacketQueue;
 
@@ -44,7 +44,8 @@ impl Transmitter {
 
     fn send_start_byte_sequence(&self) {
         for _ in 0..PACKET_START_BYTES_COUNT {
-            serial_write_byte!(ArduinoNanoSerial::new(), PACKET_START_BYTE).unwrap_or_else(|_| {});
+            serial_write_byte!(ArduinoNanoSerial::default(), PACKET_START_BYTE)
+                .unwrap_or_else(|_| {});
         }
     }
 
@@ -58,7 +59,7 @@ impl Transmitter {
             {
                 self.send_start_byte_sequence();
                 for serialized_byte in packet.summarized().serialize() {
-                    serial_write_byte!(ArduinoNanoSerial::new(), serialized_byte)
+                    serial_write_byte!(ArduinoNanoSerial::default(), serialized_byte)
                         .unwrap_or_else(|_| {});
                 }
                 return;
@@ -69,7 +70,7 @@ impl Transmitter {
         while let Some(packet) = self.packet_queue.pop_front() {
             self.send_start_byte_sequence();
             for serialized_byte in packet.summarized().serialize() {
-                serial_write_byte!(ArduinoNanoSerial::new(), serialized_byte)
+                serial_write_byte!(ArduinoNanoSerial::default(), serialized_byte)
                     .unwrap_or_else(|_| {});
             }
             return;
