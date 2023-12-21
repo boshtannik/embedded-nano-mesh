@@ -287,7 +287,7 @@ impl Node {
         let current_time = TIMER::millis();
 
         if self.timer.is_time_to_speak(current_time) {
-            self.transmitter.update();
+            self.transmitter.update::<SERIAL>();
             self.timer.record_speak_time(current_time);
         }
         self.receiver.update::<SERIAL>(current_time);

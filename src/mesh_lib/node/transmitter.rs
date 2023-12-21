@@ -1,10 +1,8 @@
-use platform_serial_arduino_nano::{serial_write_byte, ArduinoNanoSerial};
+use platform_serial::PlatformSerial;
 
 use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{DataPacker, IdType, Packet, PacketFlagOps, Serializer};
 use super::{PacketMetaData, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE};
-
-use embedded_hal::serial::Write;
 
 use super::types::PacketQueue;
 
@@ -42,14 +40,15 @@ impl Transmitter {
         }
     }
 
-    fn send_start_byte_sequence(&self) {
+    fn send_start_byte_sequence<SERIAL: PlatformSerial<u8>>(&self) {
         for _ in 0..PACKET_START_BYTES_COUNT {
-            serial_write_byte!(ArduinoNanoSerial::default(), PACKET_START_BYTE)
+            SERIAL::default()
+                .write(PACKET_START_BYTE)
                 .unwrap_or_else(|_| {});
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update<SERIAL: PlatformSerial<u8>>(&mut self) {
         // Send transit queue
         avr_device::interrupt::free(|cs| {
             while let Some(packet) = GLOBAL_MUTEXED_CELLED_PACKET_QUEUE
@@ -57,9 +56,10 @@ impl Transmitter {
                 .borrow_mut()
                 .pop_front()
             {
-                self.send_start_byte_sequence();
+                self.send_start_byte_sequence::<SERIAL>();
                 for serialized_byte in packet.summarized().serialize() {
-                    serial_write_byte!(ArduinoNanoSerial::default(), serialized_byte)
+                    SERIAL::default()
+                        .write(serialized_byte)
                         .unwrap_or_else(|_| {});
                 }
                 return;
@@ -68,10 +68,11 @@ impl Transmitter {
 
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
-            self.send_start_byte_sequence();
+            self.send_start_byte_sequence::<SERIAL>();
             for serialized_byte in packet.summarized().serialize() {
-                serial_write_byte!(ArduinoNanoSerial::default(), serialized_byte)
-                    .unwrap_or_else(|_| {});
+                SERIAL::default()
+                    .write(serialized_byte)
+                    .unwrap_or_else(|_| {})
             }
             return;
         }
