@@ -43,9 +43,9 @@ fn main() -> ! {
                 true,
                 3000 as ms,
             ) {
-                Ok(_) => uwrite!(&mut ArduinoNanoSerial::default(), "Transaction done!\n")
+                Ok(_) => uwrite!(&mut ArduinoNanoSerial::default(), "- Transaction done!\n")
                     .unwrap_or_else(|_| {}),
-                Err(_) => uwrite!(&mut ArduinoNanoSerial::default(), "Transaction falied!\n")
+                Err(_) => uwrite!(&mut ArduinoNanoSerial::default(), "- Transaction falied!\n")
                     .unwrap_or_else(|_| {}),
             }
 

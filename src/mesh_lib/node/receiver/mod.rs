@@ -61,6 +61,9 @@ impl Receiver {
         self.packet_filter.update(current_time);
     }
 
+    /// Checks, if parser has packet being parsed, and then
+    /// cheks if packet is not duplicated.
+    /// Returns packet if all checks were passed, or None otherwise.
     pub fn receive(&mut self, current_time: ms) -> Option<PacketMetaData> {
         let packet = match self.packet_bytes_parser.get_packet() {
             None => return None,

@@ -39,11 +39,13 @@ pub enum NodeError {
     SendingQueueIsFull,
 }
 
+/// Error that can be returned by `Node` `update` method.
 pub enum NodeUpdateError {
     ReceivingQueueIsFull,
     TransitQueueIsFull,
 }
 
+/// Error that can be returned by `Node` `send` method.
 pub enum SpecialSendError {
     MulticastAddressForbidden,
     TryAgainLater,
@@ -51,6 +53,14 @@ pub enum SpecialSendError {
 }
 
 impl Node {
+    /// Creates new instance of `Node`.
+    ///
+    /// parameters:
+    /// * `my_address` - Address of this device. Instance of `AddressType`.
+    /// * `listen_period` - Instance of `ms` type. The time period of time in
+    ///   milliseconds that this device will listen for incoming packets
+    ///   from other devices. It is made to void
+    ///   packet collisions in the ether.
     pub fn new(my_address: AddressType, listen_period: ms) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
@@ -66,6 +76,7 @@ impl Node {
     /// be forsed to make answer back. The answer from receiving device
     /// will tell if sending was successful.
     ///
+    /// parameters:
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
     /// heapless vector of bytes of special size. This size is configured in the
     /// node/packet/config.rs file, and can be adjusted for case of other data size is needed.
@@ -73,21 +84,30 @@ impl Node {
     /// be able to correctly to communicate with each other.
     ///
     /// * `destination_device_identifier` is instance of AddressType,
-    /// That type is made for simplicity of reading the code, and to strict possible mess-ups
-    /// during the usage of methods. It is made to present device id within the network.
-    /// Multicast trough this method - is prohibited due to keep the network clean from special packets.
-    /// In case if you will try to multicast it,
-    /// you will get Error with proper reason.
+    /// This is made to presend device's address within the network.
+    /// `Note!`, that you are prohibited to send message to all devices at once.
+    /// Otherwise it will jam the network.
     ///
-    /// `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
+    /// *`lifetime` - is the instance of `LifeTimeType`. This value configures the count of
     /// how many nodes - the packet will be able to pass. Also this value is needed
     /// to void the ether being jammed by packets, that in theory might be echoed
     /// by the nodes to the infinity...
-    /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
     ///
-    /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// *`filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
+    ///
+    /// * `timeout` - Is the period of time in milliseconds that
+    /// this device will listen for incoming packets
+    /// from other devices. In case if no response was caught during that
+    /// period of time, the method will return `Err(SpecialSendError::Timeout)`.
+    ///
+    /// * Call of this method also requires the general types to be passed in.
+    /// As the process relies onto timing countings and onto serial stream,
+    ///
+    /// That parts can be platform dependent, so general trait bound types are made to
+    /// be able to use this method in any platform, by just providing platform specific
+    /// types.
     pub fn send_ping_pong<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
@@ -154,15 +174,27 @@ impl Node {
     /// In case if you will try to multicast it,
     /// you will get Error with proper reason.
     ///
-    /// `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
+    /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
     /// how many nodes - the packet will be able to pass. Also this value is needed
     /// to void the ether being jammed by packets, that in theory might be echoed
     /// by the nodes to the infinity...
     /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
     ///
-    /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// * `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
+    ///
+    /// * `timeout` - Is the period of time in milliseconds that
+    /// this device will wait until packet that finishes the transaction - arrives.
+    /// In case if no response was caught during that period of time, the method will
+    /// return `Err(SpecialSendError::Timeout)`.
+    ///
+    /// * Call of this method also requires the general types to be passed in.
+    /// As the process relies onto timing countings and onto serial stream,
+    ///
+    /// That parts can be platform dependent, so general trait bound types are made to
+    /// be able to use this method in any platform, by just providing platform specific
+    /// types.
     pub fn send_with_transaction<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
@@ -234,13 +266,13 @@ impl Node {
     /// to be able to recognize this identifier as it's own identifier. In other words, every node
     /// will receive the multicast message.
     ///
-    /// `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
+    /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
     /// how many nodes - the packet will be able to pass. Also this value is needed
     /// to void the ether being jammed by packets, that in theory might be echoed
     /// by the nodes to the infinity...
     /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
     ///
-    /// `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// * `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
     pub fn send(
@@ -281,6 +313,13 @@ impl Node {
     /// * Receives packets from ether, and manages their further life.
     ///     ** Data of other devices are going to be send back into ether.
     ///     ** Data addressed to current device, will be unpacked and stored.
+    ///
+    /// * Call of this method also requires the general types to be passed in.
+    /// As the process relies onto timing countings and onto serial stream,
+    ///
+    /// That parts can be platform dependent, so general trait bound types are made to
+    /// be able to use this method in any platform, by just providing platform specific
+    /// types with all required traits implemented.
     pub fn update<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
     ) -> Result<(), NodeUpdateError> {
