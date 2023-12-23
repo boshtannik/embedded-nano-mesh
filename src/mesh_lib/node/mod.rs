@@ -52,23 +52,29 @@ pub enum SpecialSendError {
     Timeout,
 }
 
+pub struct NodeConfig {
+    /// Address of this device. Instance of `AddressType`.
+    pub device_address: AddressType,
+
+    /// Instance of `ms` type. The time period in
+    /// milliseconds that this device will listen for incoming packets
+    /// before speaking back into the ether.
+    pub listen_period: ms,
+}
+
 impl Node {
     /// Creates new instance of `Node`.
     ///
     /// parameters:
-    /// * `my_address` - Address of this device. Instance of `AddressType`.
-    /// * `listen_period` - Instance of `ms` type. The time period of time in
-    ///   milliseconds that this device will listen for incoming packets
-    ///   from other devices. It is made to void
-    ///   packet collisions in the ether.
-    pub fn new(my_address: AddressType, listen_period: ms) -> Node {
+    /// * `config` - Instance of `NodeConfig`.
+    pub fn new(config: NodeConfig) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
             receiver: receiver::Receiver::new(),
-            my_address: my_address.clone(),
-            timer: timer::Timer::new(listen_period),
+            my_address: config.device_address.clone(),
+            timer: timer::Timer::new(config.listen_period),
             received_packet_meta_data_queue: PacketDataQueue::new(),
-            packet_router: PacketRouter::new(my_address),
+            packet_router: PacketRouter::new(config.device_address),
         }
     }
 
@@ -311,7 +317,7 @@ impl Node {
 
     /// Does all necessary internal work of mesh node:
     /// * Receives packets from ether, and manages their further life.
-    ///     ** Data of other devices are going to be send back into ether.
+    ///     ** Data that is addressed to other devices are going to be send back into ether.
     ///     ** Data addressed to current device, will be unpacked and stored.
     ///
     /// * Call of this method also requires the general types to be passed in.
