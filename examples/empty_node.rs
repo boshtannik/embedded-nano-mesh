@@ -5,7 +5,7 @@
 extern crate embedded_nano_mesh;
 
 use arduino_hal::default_serial;
-use embedded_nano_mesh::{AddressType, Node, NodeConfig, NodeString};
+use embedded_nano_mesh::{AddressType, Node, NodeConfig};
 use panic_halt as _;
 
 use platform_millis_arduino_nano::{init_timer, ms, Atmega328pTime};
@@ -20,24 +20,11 @@ fn main() -> ! {
     init_serial(default_serial!(dp, pins, 9600));
 
     let mut mesh_node = Node::new(NodeConfig {
-        device_address: 1 as AddressType,
-        listen_period: 150 as ms,
+        device_address: 2 as AddressType,
+        listen_period: 100 as ms,
     });
 
     loop {
         let _ = mesh_node.update::<Atmega328pTime, ArduinoNanoSerial>();
-        if let Some(packet) = mesh_node.receive() {
-            ufmt::uwriteln!(
-                &mut ArduinoNanoSerial::default(),
-                "Packet from: {}",
-                packet.source_device_identifier
-            )
-            .unwrap();
-
-            for character in packet.data {
-                ufmt::uwrite!(&mut ArduinoNanoSerial::default(), "{}", character).unwrap();
-            }
-            ufmt::uwriteln!(&mut ArduinoNanoSerial::default(), "").unwrap();
-        }
     }
 }

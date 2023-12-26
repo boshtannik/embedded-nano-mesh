@@ -26,6 +26,26 @@ use platform_millis::{ms, PlatformTime};
 pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
     Mutex::new(RefCell::new(PacketQueue::new()));
 
+/// The main structure of the library to use communication
+/// in the mesh network. The node works in the manner of listening
+/// of ether for some time, which is called `listen_period`, and
+/// then sending out packets.
+///
+/// Also node resends caught packets, that were addressed to other
+/// nodes.
+///
+/// It has next methods:
+/// * `new` - Creates new instance of `Node`.
+/// * `send` - Sends the `data` to exact device. Call of this method does not provide any
+/// response back.
+/// * `send_ping_pong` - Sends the `data` to exact device, and the receiving device will
+/// be forsed to make answer back. The answer from receiving device
+/// may tell if sending was successful.
+/// * `send_with_transaction` - Sends the `data` to exact device, and the receiving device will
+/// be forsed to make answer back. The answer from receiving device
+/// will tell if sending was successful.
+/// * `update` - Updates the state of the node. This method should be called in
+/// every loop iteration.
 pub struct Node {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
