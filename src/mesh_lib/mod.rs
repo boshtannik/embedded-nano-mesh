@@ -1,4 +1,7 @@
-pub mod node;
-use platform_millis::ms;
+mod node;
 
-pub use node::{AddressType, LifeTimeType, Node, NodeConfig, NodeString};
+pub use node::{
+    AddressType, LifeTimeType, Node, NodeConfig, NodeString, NodeUpdateError, SendError,
+    SpecialSendError,
+};
+pub use platform_millis::ms;

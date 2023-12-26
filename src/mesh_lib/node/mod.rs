@@ -35,10 +35,6 @@ pub struct Node {
     packet_router: PacketRouter,
 }
 
-pub enum NodeError {
-    SendingQueueIsFull,
-}
-
 /// Error that can be returned by `Node` `update` method.
 pub enum NodeUpdateError {
     ReceivingQueueIsFull,
@@ -46,10 +42,22 @@ pub enum NodeUpdateError {
 }
 
 /// Error that can be returned by `Node` `send` method.
+pub enum SendError {
+    SendingQueueIsFull,
+}
+
 pub enum SpecialSendError {
-    MulticastAddressForbidden,
-    TryAgainLater,
     Timeout,
+    MulticastAddressForbidden,
+    SendingQueueIsFull,
+}
+
+impl From<SendError> for SpecialSendError {
+    fn from(value: SendError) -> Self {
+        match value {
+            SendError::SendingQueueIsFull => SpecialSendError::SendingQueueIsFull,
+        }
+    }
 }
 
 pub struct NodeConfig {
@@ -131,7 +139,7 @@ impl Node {
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
 
-        match self._send(PacketMetaData {
+        if let Err(any_err) = self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone(),
             destination_device_identifier: destination_device_identifier.clone(),
@@ -140,11 +148,8 @@ impl Node {
             spec_state: PacketState::Ping,
             packet_id: 0,
         }) {
-            Ok(_) => (),
-            Err(NodeError::SendingQueueIsFull) => {
-                return Err(SpecialSendError::TryAgainLater);
-            }
-        };
+            return Err(any_err.into());
+        }
 
         while current_time < wait_end_time {
             let _ = self.update::<TIMER, SERIAL>();
@@ -217,7 +222,7 @@ impl Node {
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
 
-        match self._send(PacketMetaData {
+        if let Err(any_err) = self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone(),
             destination_device_identifier: destination_device_identifier.clone(),
@@ -226,11 +231,8 @@ impl Node {
             spec_state: PacketState::SendTransaction,
             packet_id: 0,
         }) {
-            Ok(_) => (),
-            Err(NodeError::SendingQueueIsFull) => {
-                return Err(SpecialSendError::TryAgainLater);
-            }
-        };
+            return Err(any_err.into());
+        }
 
         while current_time < wait_end_time {
             let _ = self.update::<TIMER, SERIAL>();
@@ -287,7 +289,7 @@ impl Node {
         destination_device_identifier: AddressType,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
-    ) -> Result<(), NodeError> {
+    ) -> Result<(), SendError> {
         self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone(),
@@ -299,11 +301,11 @@ impl Node {
         })
     }
 
-    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), NodeError> {
+    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), SendError> {
         match self.transmitter.send(packet_meta_data) {
             Ok(_) => Ok(()),
             Err(transmitter::TransmitterError::PacketQueueIsFull) => {
-                Err(NodeError::SendingQueueIsFull)
+                Err(SendError::SendingQueueIsFull)
             }
         }
     }

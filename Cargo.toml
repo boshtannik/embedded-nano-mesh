@@ -1,20 +1,20 @@
 [package]
-name = "nano-mesh"
+name = "embedded-nano-mesh"
 version = "0.0.1"
 authors = ["Yevhen Shevchenko (boshtannik) <boshtannik@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
-[[bin]]
-name = "nano_mesh"
+# as a library
+[lib]
+name = "embedded_nano_mesh"
+path = "src/lib.rs"
 test = false
-bench = false
-path = "src/main.rs"
 
 [dependencies]
 panic-halt = "0.2.0"
-ufmt = "0.1.0"
-nb = "0.1.2"
+ufmt = "0.2.0"
+nb = "1.1.0"
 heapless = { version = "0.7.0", features = ["serde", "ufmt-impl"] }
 avr-device = "0.5.1"
 embedded-hal = "0.2.7"
