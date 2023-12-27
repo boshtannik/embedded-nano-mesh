@@ -125,7 +125,8 @@ communicate effectively. Different device implementations of the
 
 ## Getting Started
 
-You can use this either as a library or by modification of code of example.
+You can use this either as a library or by modification of code of example
+in the exmaples directory.
 
 ## Original instructions from [avr-hal](https://github.com/Rahix/avr-hal#readme)
 
