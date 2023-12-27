@@ -1,4 +1,4 @@
-# Arduino Nano Mesh Network Protocol
+# Mesh Network Protocol for embedded devices
 
 ## Goal
 
