@@ -1,9 +1,9 @@
 mod packet_bytes_parser;
 mod packet_filter;
 
-use crate::{mesh_lib::ms, serial_try_read_byte};
-use avr_device::interrupt::Mutex;
-use core::cell::Cell;
+use crate::mesh_lib::ms;
+
+use platform_serial::PlatformSerial;
 
 use self::{
     packet_bytes_parser::PacketBytesParser,
@@ -14,8 +14,6 @@ use super::{
     packet::{DataPacker, Packet},
     PacketMetaData,
 };
-
-use arduino_hal::prelude::_embedded_hal_serial_Read;
 
 pub struct Receiver {
     packet_filter: Filter,
@@ -58,11 +56,14 @@ impl Receiver {
         }
     }
 
-    pub fn update(&mut self, current_time: ms) {
-        self._receive_byte();
+    pub fn update<SERIAL: PlatformSerial<u8>>(&mut self, current_time: ms) {
+        self._receive_byte::<SERIAL>();
         self.packet_filter.update(current_time);
     }
 
+    /// Checks, if parser has packet being parsed, and then
+    /// cheks if packet is not duplicated.
+    /// Returns packet if all checks were passed, or None otherwise.
     pub fn receive(&mut self, current_time: ms) -> Option<PacketMetaData> {
         let packet = match self.packet_bytes_parser.get_packet() {
             None => return None,
@@ -75,11 +76,8 @@ impl Receiver {
         }
     }
 
-    fn _receive_byte(&mut self) {
-        let mut mutexed_celled_option_byte: Mutex<Cell<Option<u8>>> = Mutex::new(Cell::new(None));
-        serial_try_read_byte!(mutexed_celled_option_byte);
-
-        if let Some(byte) = mutexed_celled_option_byte.get_mut().take() {
+    fn _receive_byte<SERIAL: PlatformSerial<u8>>(&mut self) {
+        if let Ok(byte) = SERIAL::default().read() {
             self.packet_bytes_parser.push_byte(byte);
         }
     }

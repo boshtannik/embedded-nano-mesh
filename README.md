@@ -2,13 +2,20 @@
 
 ## Goal
 
-The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components (Arduino with atmega 328p chip, and any radio module with USART interface, which allows duplex data transfer). This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
+The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components (Arduino with atmega 328p chip, but not only, and any radio module with USART interface, which allows duplex data transfer). This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
 - Decentralized messaging
 
-While initially designed for Atmega328p chips, the code is tied to this platform but can be forked and ported to other platforms.
+While initially designed to be able to run on Atmega328p chips,
+so as well as it runs on this platform - it shall run everywhere.
+the code is no moret tied to Atmega328p and but can be forked and ported to other platforms.
+
+Potentially this protocol can be run on other platforms. (Not tested yet, instead of Atmega328p)
+It is done by generic behaviour being moved out of implementation
+to make it interchangable with implementations of PlatformTime and PlatformSerial traits for
+each other platform.
 
 ## Status
 The code is designed to utilize UART rx/tx pins of your MCU and has been tested with popular radio modules JDY-40.
@@ -22,265 +29,51 @@ The code potentially can use radio modules with similar UART interface, that dev
 - LoRa modules
   
 The following functionalities of protocol have been tested and verified:
-- Send data
-- Receive data
-- Send data with ignorance of duplicated packets
-- Send data with limited of number of hops
-- Multicast
-- Message transit
-- Ping send and receive pong message
-- Transaction send and receive packet about transaction being finished
+- Send data.
+- Receive data.
+- Send data with ignorance of duplicated packets.
+- Send data with limited of number of hops.
+- Multicast.
+- Message transition by the intermediate nodes.
+- Send message with ping flag, and receive message with pong flag set.
+- Transaction send and receive packet about transaction being finished.
 
 ### Note: The more nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
 
 ## Warning
 
-This protocol does not provide data encryption. To secure your data from being stolen, you should implement encryption and decryption mechanisms independently.
+This protocol does not provide data encryption. To secure your data from being stolen, you should implement (de/en)cryption mechanisms independently.
 
 ## Note
 
-It is recommended to set `listen_period` value on multiple devices different from each other, like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 250 ms - in order to reduce chance of the network to sychronize, which will lead to packet collisions.
+It is recommended to set `listen_period` value on multiple devices different from each other,
+like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 250 ms - in order to reduce chance of
+the network to sychronize, which will lead to packet collisions.
 
-## Usage
-### Receiver
-```
-#![no_std]
-#![no_main]
-#![feature(abi_avr_interrupt)]
-
-use arduino_hal::default_serial;
-use mesh_lib::{init_node, AddressType, NodeConfig};
-use panic_halt as _;
-
-mod mesh_lib;
-
-use mesh_lib::millis::ms;
-
-#[arduino_hal::entry]
-fn main() -> ! {
-    let dp = arduino_hal::Peripherals::take().unwrap();
-    let pins = arduino_hal::pins!(dp);
-
-    let mut mesh_node = init_node(NodeConfig {
-        device_identifier: 2,
-        listen_period: 150 as ms,
-        usart: default_serial!(dp, pins, 9600),
-        millis_timer: dp.TC0,
-    });
-
-    loop {
-        let _ = mesh_node.update();
-
-        if let Some(got_message) = mesh_node.receive() {
-          for byte in got_message.data {
-            /* Do your job here */
-          }
-        }
-    }
-}
-```
-
-### Send from device 1 to device 2 (allow packet do 10 hops)
-```
-#![no_std]
-#![no_main]
-#![feature(abi_avr_interrupt)]
-
-use arduino_hal::default_serial;
-use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
-use panic_halt as _;
-
-mod mesh_lib;
-
-use mesh_lib::millis::{millis, ms};
-
-use mesh_lib::NodeString;
-use ufmt::uwrite;
-
-#[arduino_hal::entry]
-fn main() -> ! {
-    let dp = arduino_hal::Peripherals::take().unwrap();
-    let pins = arduino_hal::pins!(dp);
-
-    let mut mesh_node = init_node(NodeConfig {
-        device_identifier: 1 as AddressType,
-        listen_period: 150 as ms,
-        usart: default_serial!(dp, pins, 9600),
-        millis_timer: dp.TC0,
-    });
-
-    let mut last_send_time: ms = millis();
-    let mut now_time: ms;
-    let mut packet_counter: u32 = 0;
-
-    loop {
-        let _ = mesh_node.update();
-
-        now_time = millis();
-
-        if now_time > (last_send_time + 210 as ms) {
-            let mut message = NodeString::new();
-            uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
-
-            mesh_node
-                .send(
-                    message.into_bytes(),
-                    2 as AddressType,
-                    10 as LifeTimeType,
-                    true,
-                )
-                .unwrap_or_else(|_| serial_debug!("Not sent!"));
-
-            last_send_time = now_time;
-            packet_counter = packet_counter.overflowing_add(1).0;
-        }
-    }
-}
-```
-### Multicast message to all near devices (1 hop)
-Number of hops, or (`lifetime`), sets ammount - for how many devices the packet will be able to jump trough.
-In that case, the packet will travel only to the nearest devices.
-`MULTICAST_RESERVED_IDENTIFIER` - is the identifier, that is reserved by the protocol
-                                  for every device in the network to be treated as it's own.
-```
-#![no_std]
-#![no_main]
-#![feature(abi_avr_interrupt)]
-
-use arduino_hal::default_serial;
-use mesh_lib::node::MULTICAST_RESERVED_IDENTIFIER;
-use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
-use panic_halt as _;
-
-mod mesh_lib;
-
-use mesh_lib::millis::{millis, ms};
-
-use mesh_lib::NodeString;
-use ufmt::uwrite;
-
-#[arduino_hal::entry]
-fn main() -> ! {
-    let dp = arduino_hal::Peripherals::take().unwrap();
-    let pins = arduino_hal::pins!(dp);
-
-    let mut mesh_node = init_node(NodeConfig {
-        device_identifier: 1 as AddressType,
-        listen_period: 150 as ms,
-        usart: default_serial!(dp, pins, 9600),
-        millis_timer: dp.TC0,
-    });
-
-    let mut last_send_time: ms = millis();
-    let mut now_time: ms;
-    let mut packet_counter: u32 = 0;
-
-    loop {
-        let _ = mesh_node.update();
-
-        now_time = millis();
-
-        if now_time > (last_send_time + 210 as ms) {
-            let mut message = NodeString::new();
-            uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
-
-            mesh_node
-                .send(
-                    message.into_bytes(),
-                    MULTICAST_RESERVED_IDENTIFIER as AddressType,
-                    1 as LifeTimeType,
-                    true,
-                )
-                .unwrap_or_else(|_| serial_debug!("Not sent!"));
-
-            last_send_time = now_time;
-            packet_counter = packet_counter.overflowing_add(1).0;
-        }
-    }
-}
-```
-### Sending transaction from device 1 to device 2
-The transaction initialtor will wait for 3 seconds to get transaction done.
-In case of transcation is not done in that period of time - error result will be returned.
-It is better to use `ignore_duplication` flag in order to void ether being jammed by
-transaction packets.
-```
-#![no_std]
-#![no_main]
-#![feature(abi_avr_interrupt)]
-
-use arduino_hal::default_serial;
-use mesh_lib::{init_node, AddressType, LifeTimeType, NodeConfig};
-use panic_halt as _;
-
-mod mesh_lib;
-
-use mesh_lib::millis::{millis, ms};
-
-use mesh_lib::NodeString;
-use ufmt::uwrite;
-
-#[arduino_hal::entry]
-fn main() -> ! {
-    let dp = arduino_hal::Peripherals::take().unwrap();
-    let pins = arduino_hal::pins!(dp);
-
-    let mut mesh_node = init_node(NodeConfig {
-        device_identifier: 1 as AddressType,
-        listen_period: 150 as ms,
-        usart: default_serial!(dp, pins, 9600),
-        millis_timer: dp.TC0,
-    });
-
-    let mut last_send_time: ms = millis();
-    let mut now_time: ms;
-    let mut packet_counter: u32 = 0;
-
-    loop {
-        let _ = mesh_node.update();
-
-        now_time = millis();
-
-        if now_time > (last_send_time + 210 as ms) {
-            let mut message = NodeString::new();
-            uwrite!(&mut message, "Packet #: {}", packet_counter).unwrap();
-
-            mesh_node
-                .send_with_transaction(
-                    message.into_bytes(),
-                    2 as AddressType,
-                    10 as LifeTimeType,
-                    true,
-                    3000 as ms,
-                )
-                .unwrap_or_else(|_| serial_debug!("Transaction failed"));
-
-            last_send_time = now_time;
-            packet_counter = packet_counter.overflowing_add(1).0;
-        }
-    }
-}
-```
-### Send Ping-Pong
-The call - is pretty the same as send transaction. The only difference is in that, that receiving device sends
-the answering packet only once.
-
-## Possible Use Case
-
-You can multicast encrypted messages to the entire network, allowing devices capable of decryption to react to these messages. In other words, it resembles a "Publisher/Subscriber" pattern.
+Number of hops, or (`lifetime`),    - sets ammount - for how many devices the packet will be able to jump trough.
+`MULTICAST_RESERVED_IDENTIFIER`     - is the identifier, that is reserved by the protocol
+                                    for every device in the network to be treated as it's own.
 
 ## Main Components
 
-The central component of this protocol is the `Node` structure, which offers a user-friendly interface for actions like sending, receiving, multicasting, ping-ponging, and handling message transactions. The `Node` should be constantly updated by calling its `update` method.
+The central component of this protocol is the `Node` structure, which offers a
+user-friendly interface for actions like sending, receiving, multicast, ping-pong,
+and handling message transactions. The `Node` should be constantly updated by
+calling its `update` method.
 
 To initialize a `Node`, you need to provide two values:
 
 1. `AddressType`: Represents the device's identification address in the node pool.
-2. `Listen period`: A value in milliseconds that determines how long the device will wait before transmitting on the network to prevent network congestion.
+2. `listen_period`: A value in milliseconds that determines how long the device
+will wait before transmitting on the network to prevent network congestion.
 
-You can regulate the number of hops that the packet will be able to make - by configuring the `lifetime` parameter. For example, setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
+You can regulate the number of hops that the packet will be able to
+make - by configuring the `lifetime` parameter. For example,
+setting `lifetime` to 1 will limit the message's reach to
+the nearest devices in the network.
 
-The term "echoed message" refers to a duplicated message that has been re-transmitted into the ether by an intermediate device.
+The term "echoed message" refers to a duplicated message that has
+been re-transmitted into the ether by an intermediate device.
 
 ### Send Method
 
@@ -297,7 +90,9 @@ The `receive` method optionally returns received data in a `PacketDataBytes` ins
 
 ### Send Ping-Pong Method
 
-The `send_ping_pong` method sends a message with a "ping" flag to the destination node and waits for the same message with a "pong" flag. It returns an error if the ping-pong exchange fails. The following arguments are required:
+The `send_ping_pong` method sends a message with a "ping" flag to the destination node and
+waits for the same message with a "pong" flag. It returns an error if the ping-pong exchange fails.
+The following arguments are required:
 
 - `data`: A `PacketDataBytes` instance.
 - `destination_device_identifier`: A `AddressType` instance.
@@ -307,7 +102,9 @@ The `send_ping_pong` method sends a message with a "ping" flag to the destinatio
 
 ### Send with Transaction Method
 
-The `send_with_transaction` method sends a message and handles all further work to ensure the target device responds. It returns an error if the transaction fails. The required arguments are:
+The `send_with_transaction` method sends a message and handles all further work to
+ensure the target device responds. It returns an error if the transaction failed.
+The required arguments are:
 
 - `data`: A `PacketDataBytes` instance.
 - `destination_device_identifier`: A `AddressType` instance.
@@ -317,13 +114,20 @@ The `send_with_transaction` method sends a message and handles all further work 
 
 ## Note
 
-Under the hood, data is packed into a `Packet` instance. You can configure the `Packet` data fields in `src/Node/packet/config.rs` and `src/Node/packet/types.rs`.
+Under the hood, data is packed into a `Packet` instance. 
+If you need customized packets - you can configure the `Packet`
+fields in `src/Node/packet/config.rs` and `src/Node/packet/types.rs`.
 
-## Compatibility
-
-All nodes must have the same version of the protocol installed to communicate effectively. Different device implementations of the `Packet` structure may lead to communication issues.
+Important!!!
+All nodes must have the same version of the protocol installed to
+communicate effectively. Different device implementations of the
+`Packet` structure may lead to communication issues.
 
 ## Getting Started
+
+You can use this either as a library or by modification of code of example.
+
+## Original instructions from [avr-hal](https://github.com/Rahix/avr-hal#readme)
 
 1. Install the required prerequisites, as described in the [`avr-hal` README](https://github.com/Rahix/avr-hal#readme) (avr-gcc, avr-libc, avrdude, [`ravedude`](https://crates.io/crates/ravedude)).
 

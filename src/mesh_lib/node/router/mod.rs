@@ -1,8 +1,5 @@
 pub use super::packet::PacketState;
 
-// TODO: deacrease_lifetime is called in every place. It shall be called only once in only one place
-// in order to reduce the amount of code.
-
 use super::{
     packet::{
         DataPacker, Packet, PacketMetaData, PacketMetaDataError, StateMutator,
@@ -11,6 +8,13 @@ use super::{
     AddressType, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE,
 };
 
+/// Structure which keeps logic of routing of the packets
+/// of the network.
+///
+/// * It handles has the `lifeteime` of the packet.
+/// * It hangles packets of different special purposes, like ping-pong, transactions, and handles
+/// their further processing.
+/// * It transits packets, that were sent to other devices.
 pub struct PacketRouter {
     current_device_identifier: AddressType,
 }
@@ -46,10 +50,20 @@ impl PacketRouter {
         Ok(OkCase::Handled)
     }
 
+    /// This method is used to handle the packet, as the packet
+    /// that have reached it's final destination.
     fn handle_normal(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         return Ok(OkCase::Received(packet_meta_data));
     }
 
+    /// This method is used to handle the packet, that was sent to the all
+    /// devices of the network.
+    ///
+    /// It does few things:
+    /// * It saves the copy of the packet to treat it as the packet that was
+    /// reached it's destination, and
+    /// * Checks if packet can be transferred further, and if so - transfers it further into the
+    /// network.
     fn handle_multicast(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         let original_packet_meta_data = packet_meta_data.clone();
         let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
@@ -62,6 +76,12 @@ impl PacketRouter {
         }
     }
 
+    /// This method is used to handle the ping packet, that was sent to the
+    /// current device.
+    ///
+    /// It does:
+    /// * Gets the packet, that was sent to the current device.
+    /// * Decreases lifetime of the packet, and transfers it back to the sender.
     fn handle_ping(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         let original_packet_meta_data = packet_meta_data.clone();
         let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
@@ -73,10 +93,14 @@ impl PacketRouter {
         Ok(OkCase::Received(original_packet_meta_data))
     }
 
+    /// This method is used to handle the pong packet, that was sent to the
+    /// current device.
     fn handle_pong(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         self.handle_normal(packet_meta_data)
     }
 
+    /// This method is used to handle the send transaction packet, that was sent to the
+    /// current device.
     fn handle_send_transaction(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
             Ok(packet) => packet,
@@ -86,6 +110,8 @@ impl PacketRouter {
         self.push_to_transit_queue(mutated_decreased_packet)
     }
 
+    /// This method is used to handle the accept transaction packet, that was sent to the
+    /// current device.
     fn handle_accept_transaction(
         &self,
         packet_meta_data: PacketMetaData,
@@ -98,6 +124,8 @@ impl PacketRouter {
         self.push_to_transit_queue(mutated_decreased_packet)
     }
 
+    /// This method is used to handle the accept transaction packet, that was sent to the
+    /// current device.
     fn handle_init_transaction(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         let original_packet_meta_data = packet_meta_data.clone();
         let mutated_packet_meta_data = packet_meta_data.mutated();
@@ -105,6 +133,8 @@ impl PacketRouter {
         Ok(OkCase::Received(original_packet_meta_data))
     }
 
+    /// This method is used to handle the finish transaction packet, that was sent to the
+    /// current device.
     fn handle_finish_transaction(
         &self,
         packet_meta_data: PacketMetaData,
@@ -112,6 +142,12 @@ impl PacketRouter {
         Ok(OkCase::Received(packet_meta_data))
     }
 
+    /// This method is used to route the packet.
+    /// It does:
+    /// * Checks if the packet is for the current device, or multicast and handles it.
+    /// or
+    /// * Checks if the packet can be transferred further, and if so - transfers it further into
+    /// the transit queue.
     pub fn route(&self, packet_meta_data: PacketMetaData) -> Result<OkCase, ErrCase> {
         if packet_meta_data.is_destination_identifier_reached(self.current_device_identifier) {
             match packet_meta_data.spec_state {
