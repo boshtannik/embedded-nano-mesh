@@ -5,14 +5,16 @@ use super::super::Packet;
 
 impl DataPacker for Packet {
     fn pack(packet_meta_data: PacketMetaData) -> Self {
-        Packet::new(
+        let mut result = Packet::new(
             packet_meta_data.source_device_identifier,
             packet_meta_data.destination_device_identifier,
             packet_meta_data.packet_id,
             packet_meta_data.lifetime,
             packet_meta_data.spec_state,
             packet_meta_data.data,
-        )
+        );
+        result.set_ignore_duplication_flag(packet_meta_data.filter_out_duplication);
+        result
     }
 
     fn unpack(self) -> PacketMetaData {
