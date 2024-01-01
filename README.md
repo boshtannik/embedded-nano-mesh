@@ -132,7 +132,7 @@ in the exmaples directory.
 
 This project is licensed under:
 
-- GNU General Public License, Version 2.0 ([LICENSE-GPL](LICENSE-GPL) or [GPL License](http://www.gnu.org/licenses/gpl.html))
+- GNU General Public License, Version 3.0 ([LICENSE-GPL](LICENSE-GPL) or [GPL License](https://www.gnu.org/licenses/gpl-3.0.html))
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0))
 - MIT License ([LICENSE-MIT](LICENSE-MIT) or [MIT License](http://opensource.org/licenses/MIT))
 
