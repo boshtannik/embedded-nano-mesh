@@ -392,12 +392,12 @@ impl Node {
         }
 
         if (!is_send_queue_full) && (!is_transit_queue_full) {
-            return Ok(());
+            Ok(())
+        } else {
+            Err(NodeUpdateError {
+                is_send_queue_full,
+                is_transit_queue_full,
+            })
         }
-
-        Err(NodeUpdateError {
-            is_send_queue_full,
-            is_transit_queue_full,
-        })
     }
 }
