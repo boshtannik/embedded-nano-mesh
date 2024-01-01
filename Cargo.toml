@@ -3,7 +3,12 @@ name = "embedded-nano-mesh"
 version = "0.1.0"
 authors = ["Yevhen Shevchenko (boshtannik) <boshtannik@gmail.com>"]
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "GPL-3.0-or-later"
+description = "Lightweight mesh communication protocol for embedded devices"
+readme = "README.md"
+repository = "https://github.com/boshtannik/NanoMesh/"
+keywords = ["serial", "mesh", "protocol", "network", "embedded"]
+categories = ["embedded", "no-std", "networking"]
 
 # as a library
 [lib]
