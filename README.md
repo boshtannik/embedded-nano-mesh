@@ -9,8 +9,8 @@ The goal of this project is to create easy to use, mesh like, data transferring 
 - Decentralized messaging
 
 While initially designed to be able to run on Atmega328p chips,
-so as well as it runs on this platform - it shall run everywhere.
-the code is no moret tied to Atmega328p and but can be forked and ported to other platforms.
+so as well as it runs on this platform - it can be ported to
+many other platforms, which are supported by embedded-hal.
 
 Potentially this protocol can be run on other platforms. (Not tested yet, instead of Atmega328p)
 It is done by generic behaviour being moved out of implementation
