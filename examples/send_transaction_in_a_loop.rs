@@ -38,7 +38,7 @@ fn main() -> ! {
             3000 as ms,
         ) {
             Ok(()) => {
-                ufmt::uwriteln!(&mut ArduinoNanoSerial::default(), "Transaction sent").unwrap();
+                ufmt::uwriteln!(&mut ArduinoNanoSerial::default(), "Transaction done").unwrap();
             }
             Err(_) => {
                 ufmt::uwriteln!(&mut ArduinoNanoSerial::default(), "Transaction failed").unwrap()

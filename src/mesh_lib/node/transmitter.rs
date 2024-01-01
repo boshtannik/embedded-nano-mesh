@@ -1,42 +1,64 @@
 use platform_serial::PlatformSerial;
 
 use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
-use super::packet::{DataPacker, IdType, Packet, PacketFlagOps, Serializer};
-use super::{PacketMetaData, GLOBAL_MUTEXED_CELLED_PACKET_QUEUE};
+use super::packet::{DataPacker, IdType, Packet, Serializer};
+use super::PacketMetaData;
 
 use super::types::PacketQueue;
 
 pub struct Transmitter {
     packet_queue: PacketQueue,
+    transit_queue: PacketQueue,
     id_counter: IdType,
 }
 
-pub enum TransmitterError {
-    PacketQueueIsFull,
-}
+pub struct PacketQueueIsFull;
+pub struct PacketTransitQueueIsFull;
+
+struct QueuePushError;
 
 impl Transmitter {
     pub fn new() -> Transmitter {
         Transmitter {
             packet_queue: PacketQueue::new(),
+            transit_queue: PacketQueue::new(),
             id_counter: IdType::default(),
         }
     }
 
-    pub fn send(&mut self, mut packet_meta_data: PacketMetaData) -> Result<(), TransmitterError> {
-        let (new_val, _) = self.id_counter.overflowing_add(1);
-        self.id_counter = new_val;
+    pub fn send_transit(
+        &mut self,
+        packet_meta_data: PacketMetaData,
+    ) -> Result<(), PacketTransitQueueIsFull> {
+        match self._send(packet_meta_data, false) {
+            Ok(_) => Ok(()),
+            Err(QueuePushError) => Err(PacketTransitQueueIsFull),
+        }
+    }
 
-        packet_meta_data.packet_id = self.id_counter;
+    pub fn send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), PacketQueueIsFull> {
+        match self._send(packet_meta_data, true) {
+            Ok(_) => Ok(()),
+            Err(QueuePushError) => Err(PacketQueueIsFull),
+        }
+    }
 
-        let filter_out_duplication = packet_meta_data.filter_out_duplication;
-        let mut packed_data = <Packet as DataPacker>::pack(packet_meta_data);
+    fn _send(
+        &mut self,
+        mut packet_meta_data: PacketMetaData,
+        update_id_counter: bool,
+    ) -> Result<(), QueuePushError> {
+        if update_id_counter {
+            let (new_val, _) = self.id_counter.overflowing_add(1);
+            self.id_counter = new_val;
+            packet_meta_data.packet_id = self.id_counter;
+        }
 
-        packed_data.set_ignore_duplication_flag(filter_out_duplication);
+        let packed_data = <Packet as DataPacker>::pack(packet_meta_data);
 
         match self.packet_queue.push_back(packed_data) {
             Ok(_) => Ok(()),
-            Err(_) => Err(TransmitterError::PacketQueueIsFull),
+            Err(_) => Err(QueuePushError),
         }
     }
 
@@ -49,22 +71,16 @@ impl Transmitter {
     }
 
     pub fn update<SERIAL: PlatformSerial<u8>>(&mut self) {
-        // Send transit queue
-        avr_device::interrupt::free(|cs| {
-            while let Some(packet) = GLOBAL_MUTEXED_CELLED_PACKET_QUEUE
-                .borrow(cs)
-                .borrow_mut()
-                .pop_front()
-            {
-                self.send_start_byte_sequence::<SERIAL>();
-                for serialized_byte in packet.summarized().serialize() {
-                    SERIAL::default()
-                        .write(serialized_byte)
-                        .unwrap_or_else(|_| {});
-                }
-                return;
+        // Send transit queue.
+        while let Some(packet) = self.transit_queue.pop_front() {
+            self.send_start_byte_sequence::<SERIAL>();
+            for serialized_byte in packet.summarized().serialize() {
+                SERIAL::default()
+                    .write(serialized_byte)
+                    .unwrap_or_else(|_| {})
             }
-        });
+            return;
+        }
 
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {

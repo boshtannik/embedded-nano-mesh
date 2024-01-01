@@ -1,5 +1,3 @@
-use core::cell::RefCell;
-
 mod constants;
 mod packet;
 mod receiver;
@@ -8,7 +6,6 @@ mod timer;
 mod transmitter;
 mod types;
 
-use avr_device::interrupt::Mutex;
 pub use packet::{AddressType, MULTICAST_RESERVED_IDENTIFIER};
 use platform_serial::PlatformSerial;
 pub use router::PacketState;
@@ -17,14 +14,11 @@ pub use types::NodeString;
 pub use packet::{meta_data::PacketMetaData, LifeTimeType, PacketDataBytes};
 
 use self::{
-    router::{ErrCase, OkCase, PacketRouter},
-    types::{PacketDataQueue, PacketQueue},
+    router::{PacketLifetimeEnded, PacketRouter, RouteResult},
+    types::PacketDataQueue,
 };
 
 use platform_millis::{ms, PlatformTime};
-
-pub static GLOBAL_MUTEXED_CELLED_PACKET_QUEUE: Mutex<RefCell<PacketQueue>> =
-    Mutex::new(RefCell::new(PacketQueue::new()));
 
 /// The main structure of the library to use communication
 /// in the mesh network. The node works in the manner of listening
@@ -56,9 +50,9 @@ pub struct Node {
 }
 
 /// Error that can be returned by `Node` `update` method.
-pub enum NodeUpdateError {
-    ReceivingQueueIsFull,
-    TransitQueueIsFull,
+pub struct NodeUpdateError {
+    pub is_send_queue_full: bool,
+    pub is_transit_queue_full: bool,
 }
 
 /// Error that can be returned by `Node` `send` method.
@@ -324,9 +318,7 @@ impl Node {
     fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), SendError> {
         match self.transmitter.send(packet_meta_data) {
             Ok(_) => Ok(()),
-            Err(transmitter::TransmitterError::PacketQueueIsFull) => {
-                Err(SendError::SendingQueueIsFull)
-            }
+            Err(transmitter::PacketQueueIsFull) => Err(SendError::SendingQueueIsFull),
         }
     }
 
@@ -364,23 +356,48 @@ impl Node {
             None => return Ok(()),
         };
 
-        let reached_destination_packet = match self.packet_router.route(packet_to_handle) {
-            Ok(ok_case) => match ok_case {
-                OkCase::Handled => return Ok(()),
-                OkCase::Received(packet) => packet,
-            },
-            Err(err_case) => match err_case {
-                ErrCase::TransitQueueIsFull => return Err(NodeUpdateError::TransitQueueIsFull),
-                ErrCase::PacketLifetimeEnded => return Ok(()),
-            },
-        };
+        let (received_packet, transit_packet): (Option<PacketMetaData>, Option<PacketMetaData>) =
+            match self.packet_router.route(packet_to_handle) {
+                Ok(ok_case) => match ok_case {
+                    RouteResult::Received(packet) => (Some(packet), None),
+                    RouteResult::Transit(transit) => (None, Some(transit)),
+                    RouteResult::ReceivedAndTransit { received, transit } => {
+                        (Some(received), Some(transit))
+                    }
+                },
+                Err(PacketLifetimeEnded) => (None, None),
+            };
 
-        match self
-            .received_packet_meta_data_queue
-            .push_back(reached_destination_packet)
-        {
-            Ok(()) => Ok(()),
-            Err(_) => Err(NodeUpdateError::ReceivingQueueIsFull),
+        let (mut is_send_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
+
+        if let Some(received_packet) = received_packet {
+            match self
+                .received_packet_meta_data_queue
+                .push_back(received_packet)
+            {
+                Ok(()) => (),
+                Err(_) => {
+                    is_send_queue_full = true;
+                }
+            }
+        }
+
+        if let Some(transit_packet) = transit_packet {
+            match self.transmitter.send_transit(transit_packet) {
+                Ok(_) => (),
+                Err(transmitter::PacketTransitQueueIsFull) => {
+                    is_transit_queue_full = true;
+                }
+            }
+        }
+
+        if (!is_send_queue_full) && (!is_transit_queue_full) {
+            Ok(())
+        } else {
+            Err(NodeUpdateError {
+                is_send_queue_full,
+                is_transit_queue_full,
+            })
         }
     }
 }
