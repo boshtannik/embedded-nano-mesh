@@ -60,9 +60,19 @@ pub enum SendError {
     SendingQueueIsFull,
 }
 
+/// Errors, that may occur during the call
+/// call of `Node` `send_with_transaction`
+/// or `send_ping_pong` method.
 pub enum SpecialSendError {
+    /// Case when expected response was not received.
     Timeout,
+
+    /// Case, when the destination address is
+    /// reserved for multicast address.
     MulticastAddressForbidden,
+
+    /// Case, when the limit of number of
+    /// packets to send isreached.
     SendingQueueIsFull,
 }
 
@@ -74,6 +84,7 @@ impl From<SendError> for SpecialSendError {
     }
 }
 
+/// User-friendly `Node` configuration structure.
 pub struct NodeConfig {
     /// Address of this device. Instance of `AddressType`.
     pub device_address: AddressType,
