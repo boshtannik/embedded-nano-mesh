@@ -163,7 +163,6 @@ name = "embedded-nano-mesh"
 version = "0.0.1"
 dependencies = [
  "arduino-hal 0.1.0 (git+https://github.com/rahix/avr-hal?rev=7dfa6d322b9df98b2d98afe0e14a97afe0187ac1)",
- "avr-device",
  "embedded-hal",
  "heapless",
  "nb 0.1.3",
