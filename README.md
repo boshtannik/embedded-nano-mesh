@@ -128,20 +128,11 @@ communicate effectively. Different device implementations of the
 You can use this either as a library or by modification of code of example
 in the exmaples directory.
 
-## Original instructions from [avr-hal](https://github.com/Rahix/avr-hal#readme)
-
-1. Install the required prerequisites, as described in the [`avr-hal` README](https://github.com/Rahix/avr-hal#readme) (avr-gcc, avr-libc, avrdude, [`ravedude`](https://crates.io/crates/ravedude)).
-
-2. Build the firmware with `cargo build`.
-
-3. Flash the firmware to a connected board with `cargo run`. If `ravedude` fails to detect your board, consult its documentation at [crates.io](https://crates.io/crates/ravedude).
-
-4. `ravedude` will open a console session after flashing for UART console interaction.
-
 ## License
 
 This project is licensed under:
 
+- GNU General Public License, Version 2.0 ([LICENSE-GPL](LICENSE-GPL) or [GPL License](http://www.gnu.org/licenses/gpl.html))
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0))
 - MIT License ([LICENSE-MIT](LICENSE-MIT) or [MIT License](http://opensource.org/licenses/MIT))
 
