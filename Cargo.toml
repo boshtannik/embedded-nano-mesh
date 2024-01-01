@@ -8,7 +8,7 @@ description = "Lightweight mesh communication protocol for embedded devices"
 readme = "README.md"
 repository = "https://github.com/boshtannik/NanoMesh/"
 keywords = ["serial", "mesh", "protocol", "network", "embedded"]
-categories = ["embedded", "no-std", "networking"]
+categories = ["embedded", "no-std", "network-programming"]
 
 # as a library
 [lib]
