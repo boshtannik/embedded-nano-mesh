@@ -97,7 +97,7 @@ of the message. For example:
 - setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
 
 If you need to send the message to all nodes in the network, you can
-send it with standard `send` method, and put MULTICAST_RESERVED_IDENTIFIER as the
+send it with standard `send` method, and put `MULTICAST_RESERVED_IDENTIFIER` as the
 `destination_device_identifier`. Every device will treat `MULTICAST_RESERVED_IDENTIFIER`
 as it's own address, will keep the message and will transit that message further.
 Note! That you are not allowed to use `MULTICAST_RESERVED_IDENTIFIER` in the
