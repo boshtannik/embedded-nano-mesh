@@ -46,8 +46,8 @@ The following functionalities of protocol have been tested and verified:
 This library uses two generic interfaces, that should be
 implemented for your platform, these are: `PlatformTime` and `PlatformSerial`.
 
-The library uses `PlatformSerial` interface to communicate with radio module over USART.
-The library uses `PlatformTime` interface to be able to keep track of time.
+- The library uses `PlatformSerial` interface to communicate with radio module over USART.
+- The library uses `PlatformTime` interface to be able to keep track of time.
 
 So in order to let this library work on other platforms, you should
 have `PlatformSerial` and `PlatformTime` interfaces implemented or included
@@ -63,8 +63,12 @@ The implementation of PlatformTime for Arduino nano board is done by:
 ## Reduce packet collisions
 
 It is recommended to set `listen_period` value on multiple devices different from each other,
-like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 130 ms - in order to reduce chance of
-the network to sychronize, which will lead to packet collisions.
+like:
+- device 1 - 130 ms,
+- device 2 - 150 ms,
+- device 3 - 140 ms
+this will reduce chance of the network to sychronize,
+which will lead to packet collisions.
 
 ### Note: The more nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
 
