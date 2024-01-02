@@ -2,7 +2,11 @@
 
 ## Goal
 
-The goal of this project is to create easy to use, mesh like, data transferring protocol using cheap and simple components (Arduino with atmega 328p chip, but not only, and any radio module with USART interface, which allows duplex data transfer). This protocol allows you to build a reliable and easy-to-use mesh-like network for various applications, such as:
+The goal of this project is to create easy to use, mesh like, data transferring
+protocol using cheap components (Arduino with atmega 328p chip, but not only, and
+any radio module with USART interface, which allows duplex data transfer).
+This protocol allows you to build a reliable and easy-to-use mesh-like
+network for various applications, such as:
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
@@ -33,44 +37,69 @@ The following functionalities of protocol have been tested and verified:
 - Receive data.
 - Send data with ignorance of duplicated packets.
 - Send data with limited of number of hops.
-- Multicast.
+- Multicast data to all nodes.
 - Message transition by the intermediate nodes.
 - Send message with ping flag, and receive message with pong flag set.
 - Transaction send and receive packet about transaction being finished.
+
+## Porting to other platforms
+This library uses two generic interfaces, that should be
+implemented for your platform, these are: `PlatformTime` and `PlatformSerial`.
+
+The library uses `PlatformSerial` interface to communicate with radio module over USART.
+The library uses `PlatformTime` interface to be able to keep track of time.
+
+So in order to let this library work on other platforms, you should
+have `PlatformSerial` and `PlatformTime` interfaces implemented or included
+into your project.
+
+## PlatformSerial and PlatformTime interfaces implemented for Arduino nano board.
+The implementation of PlatformSerial for Arduino nano board is done by:
+- [platform-serial-arduino-nano](https://github.com/boshtannik/platform-serial-arduino-nano)
+
+The implementation of PlatformTime for Arduino nano board is done by:
+- [platform-millis-arduino-nano](https://github.com/boshtannik/platform-millis-arduino-nano)
+
+## Reduce packet collisions
+
+It is recommended to set `listen_period` value on multiple devices different from each other,
+like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 130 ms - in order to reduce chance of
+the network to sychronize, which will lead to packet collisions.
 
 ### Note: The more nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
 
 ## Warning
 
-This protocol does not provide data encryption. To secure your data from being stolen, you should implement (de/en)cryption mechanisms independently.
-
-## Note
-
-It is recommended to set `listen_period` value on multiple devices different from each other,
-like: device 1 - 150 ms, device 2 - 200 ms, device 3 - 250 ms - in order to reduce chance of
-the network to sychronize, which will lead to packet collisions.
-
-Number of hops, or (`lifetime`),    - sets ammount - for how many devices the packet will be able to jump trough.
-`MULTICAST_RESERVED_IDENTIFIER`     - is the identifier, that is reserved by the protocol
-                                    for every device in the network to be treated as it's own.
+This protocol does not provide data encryption. To secure your data from
+being stolen, you should implement (de/en)cryption mechanisms independently.
 
 ## Main Components
 
 The central component of this protocol is the `Node` structure, which offers a
 user-friendly interface for actions like sending, receiving, multicast, ping-pong,
 and handling message transactions. The `Node` should be constantly updated by
-calling its `update` method.
+calling its `update` method. Call `update` method - does all internal work
+like send packets from queue, routing transit packets, handling special packets
+and so on.
 
 To initialize a `Node`, you need to provide two values:
-
-1. `AddressType`: Represents the device's identification address in the node pool.
-2. `listen_period`: A value in milliseconds that determines how long the device
-will wait before transmitting on the network to prevent network congestion.
+- `AddressType`: Represents the device's identification address in the node pool.
+- `listen_period`: A value in milliseconds that determines how long the device will wait before transmitting on the network to prevent network congestion.
 
 You can regulate the number of hops that the packet will be able to
-make - by configuring the `lifetime` parameter. For example,
-setting `lifetime` to 1 will limit the message's reach to
-the nearest devices in the network.
+make - by configuring the `lifetime` during making the send
+of the message. For example:
+- setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
+- setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
+
+If you need to send the message to all nodes in the network, you can
+send it with standard `send` method, and put MULTICAST_RESERVED_IDENTIFIER as the
+`destination_device_identifier`. Every device will treat `MULTICAST_RESERVED_IDENTIFIER`
+as it's own address, will keep the message and will transit that message further.
+Note! That you are not allowed to use `MULTICAST_RESERVED_IDENTIFIER` in the
+`send_ping_pong` or `send_with_transaction` methods, as it may jam your
+network with packets. In case of doing so - you will get an error, which is
+described in the documentation.
 
 The term "echoed message" refers to a duplicated message that has
 been re-transmitted into the ether by an intermediate device.
@@ -81,7 +110,7 @@ The `send` method requires the following arguments:
 
 - `data`: A `PacketDataBytes` instance to hold the message bytes.
 - `destination_device_identifier`: A `AddressType` instance indicating the target device.
-- `lifetime`: A `LifeTimeType` instance to control the message's travel distance.
+- `lifetime`: A `LifeTimeType` instance to control for how long the message can travel.
 - `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
 
 ### Receive Method
@@ -118,10 +147,10 @@ Under the hood, data is packed into a `Packet` instance.
 If you need customized packets - you can configure the `Packet`
 fields in `src/Node/packet/config.rs` and `src/Node/packet/types.rs`.
 
-Important!!!
+## Compatibility
 All nodes must have the same version of the protocol installed to
-communicate effectively. Different device implementations of the
-`Packet` structure may lead to communication issues.
+communicate. Different implementations of the `Packet` structure
+will lead to communication issues.
 
 ## Getting Started
 
