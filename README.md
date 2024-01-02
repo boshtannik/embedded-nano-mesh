@@ -99,7 +99,7 @@ of the message. For example:
 If you need to send the message to all nodes in the network, you can
 send it with standard `send` method, and put `MULTICAST_RESERVED_IDENTIFIER` as the
 `destination_device_identifier`. Every device will treat `MULTICAST_RESERVED_IDENTIFIER`
-as it's own address, will keep the message and will transit that message further.
+as it's own address, will keep the message as received and will transit copy of that message further.
 Note! That you are not allowed to use `MULTICAST_RESERVED_IDENTIFIER` in the
 `send_ping_pong` or `send_with_transaction` methods, as it may jam your
 network with packets. In case of doing so - you will get an error, which is
