@@ -21,7 +21,6 @@ It is done by generic behaviour being moved out of implementation
 to make it interchangable with implementations of PlatformTime and PlatformSerial traits for
 each other platform.
 
-## Status
 The code is designed to utilize UART rx/tx pins of your MCU and has been tested with popular radio modules JDY-40.
 The code potentially can use radio modules with similar UART interface, that devices, such as:
 - JDY-41
@@ -32,6 +31,7 @@ The code potentially can use radio modules with similar UART interface, that dev
 - GT-38
 - LoRa modules
   
+## Status
 The following functionalities of protocol have been tested and verified:
 - Send data.
 - Receive data.
@@ -43,15 +43,17 @@ The following functionalities of protocol have been tested and verified:
 - Transaction send and receive packet about transaction being finished.
 
 ## Porting to other platforms
-This library uses two generic interfaces, that should be
-implemented for your platform, these are: `PlatformTime` and `PlatformSerial`.
+This library is relatively easy to be ported to other platforms.
+To port this library to your platform - you just have to
+implement `PlatformTime` and `PlatformSerial` traits for your platform.
+
+These are two generic interfaces.
 
 - The library uses `PlatformSerial` interface to communicate with radio module over USART.
 - The library uses `PlatformTime` interface to be able to keep track of time.
 
-So in order to let this library work on other platforms, you should
-have `PlatformSerial` and `PlatformTime` interfaces implemented or included
-into your project.
+In case, if implementations are already present for platform, you need -
+you just simply include those and use them into your project.
 
 ## PlatformSerial and PlatformTime interfaces implemented for Arduino nano board.
 The implementation of PlatformSerial for Arduino nano board is done by:
@@ -70,7 +72,7 @@ like:
 this will reduce chance of the network to sychronize,
 which will lead to packet collisions.
 
-### Note: The more nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
+### Note: The higher count of nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
 
 ## Warning
 
@@ -80,10 +82,13 @@ being stolen, you should implement (de/en)cryption mechanisms independently.
 ## Main Components
 
 The central component of this protocol is the `Node` structure, which offers a
-user-friendly interface for actions like sending, receiving, multicast, ping-pong,
-and handling message transactions. The `Node` should be constantly updated by
-calling its `update` method. Call `update` method - does all internal work
-like send packets from queue, routing transit packets, handling special packets
+user-friendly interface for actions like send, receive, multicast, ping-pong, and
+send message with transaction.
+The `Node` should be constantly updated by
+call its `update` method, it - does all internal work:
+- routes packets
+- transits packets that were sent to other devices
+- handling special packets like `ping` and `pong`, or any kind of transaction one.
 and so on.
 
 To initialize a `Node`, you need to provide two values:
@@ -96,14 +101,13 @@ of the message. For example:
 - setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
 - setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
 
-If you need to send the message to all nodes in the network, you can
+To send the message to all nodes in the network, you can
 send it with standard `send` method, and put `MULTICAST_RESERVED_IDENTIFIER` as the
 `destination_device_identifier`. Every device will treat `MULTICAST_RESERVED_IDENTIFIER`
 as it's own address, will keep the message as received and will transit copy of that message further.
 Note! That you are not allowed to use `MULTICAST_RESERVED_IDENTIFIER` in the
-`send_ping_pong` or `send_with_transaction` methods, as it may jam your
-network with packets. In case of doing so - you will get an error, which is
-described in the documentation.
+`send_ping_pong` or `send_with_transaction` methods, it will jam your
+network with packets.
 
 The term "echoed message" refers to a duplicated message that has
 been re-transmitted into the ether by an intermediate device.
@@ -136,7 +140,7 @@ The following arguments are required:
 ### Send with Transaction Method
 
 The `send_with_transaction` method sends a message and handles all further work to
-ensure the target device responds. It returns an error if the transaction failed.
+ensure the target device have received it correctly. It returns an error if the transaction failed.
 The required arguments are:
 
 - `data`: A `PacketDataBytes` instance.
@@ -148,12 +152,14 @@ The required arguments are:
 ## Note
 
 Under the hood, data is packed into a `Packet` instance. 
-If you need customized packets - you can configure the `Packet`
+If you need customize packets - you can configure the `Packet`
 fields in `src/Node/packet/config.rs` and `src/Node/packet/types.rs`.
+Also serialization and deserealization part will be touched too.
 
 ## Compatibility
 All nodes must have the same version of the protocol installed to
-communicate. Different implementations of the `Packet` structure
+communicate. Different implementations of the `Packet` structure, or
+serialization or deserealization methods
 will lead to communication issues.
 
 ## Getting Started
@@ -172,7 +178,6 @@ This project is licensed under:
 You can choose the license that best suits your preferences.
 
 ## Contribution
-
 Unless you specify otherwise, any contributions submitted for inclusion in this project, as defined in the Apache-2.0 license, will be dual-licensed under both licenses without additional terms or conditions.
 
 ## Donation
