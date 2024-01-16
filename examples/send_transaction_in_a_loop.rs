@@ -20,7 +20,7 @@ fn main() -> ! {
     init_serial(default_serial!(dp, pins, 9600));
 
     let mut mesh_node = Node::new(NodeConfig {
-        device_address: 1 as AddressType,
+        device_address: 2 as AddressType,
         listen_period: 150 as ms,
     });
 
@@ -32,7 +32,7 @@ fn main() -> ! {
 
         match mesh_node.send_with_transaction::<Atmega328pTime, ArduinoNanoSerial>(
             message.clone().into_bytes(),
-            2 as AddressType,
+            1 as AddressType,
             10 as LifeTimeType,
             true,
             3000 as ms,

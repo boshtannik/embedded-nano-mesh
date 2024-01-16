@@ -1,5 +1,5 @@
 use super::{
-    types::{AddressType, ChecksumType, FlagsType, IdType, LifeTimeType},
+    types::{AddressType, ChecksumType, DataLengthType, FlagsType, IdType, LifeTimeType},
     Packet,
 };
 use core::mem::size_of;
@@ -54,6 +54,6 @@ pub const ADDRESS_TYPE_SIZE: usize = size_of::<AddressType>();
 pub const ID_TYPE_SIZE: usize = size_of::<IdType>();
 pub const LIFETIME_TYPE_SIZE: usize = size_of::<LifeTimeType>();
 pub const FLAGS_TYPE_SIZE: usize = size_of::<FlagsType>();
-pub const DATA_LENGTH_TYPE_SIZE: usize = size_of::<usize>();
+pub const DATA_LENGTH_TYPE_SIZE: usize = size_of::<DataLengthType>();
 pub const DATA_TYPE_SIZE: usize = CONTENT_SIZE;
 pub const CHECKSUM_TYPE_SIZE: usize = size_of::<ChecksumType>();

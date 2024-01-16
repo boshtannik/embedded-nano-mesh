@@ -18,7 +18,7 @@ pub use constants::{
     ID_TYPE_SIZE, LIFETIME_TYPE_SIZE, MULTICAST_RESERVED_IDENTIFIER, PACKET_BYTES_COUNT,
 };
 
-use self::types::{ChecksumType, FlagsType};
+use self::types::{ChecksumType, DataLengthType, FlagsType};
 
 pub use self::types::{AddressType, IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
 
@@ -31,7 +31,7 @@ pub struct Packet {
     id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
-    data_length: usize,
+    data_length: DataLengthType,
     data: PacketDataBytes,
     checksum: ChecksumType,
 }
@@ -54,7 +54,7 @@ impl Packet {
             id,
             lifetime,
             flags: FlagsType::MIN,
-            data_length: data.len(),
+            data_length: data.len() as DataLengthType,
             data,
             checksum: ChecksumType::MIN,
         };

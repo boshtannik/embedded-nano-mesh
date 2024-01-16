@@ -35,6 +35,7 @@ fn main() -> ! {
             .unwrap();
 
             for character in packet.data {
+                let character = char::from(character);
                 ufmt::uwrite!(&mut ArduinoNanoSerial::default(), "{}", character).unwrap();
             }
             ufmt::uwriteln!(&mut ArduinoNanoSerial::default(), "").unwrap();

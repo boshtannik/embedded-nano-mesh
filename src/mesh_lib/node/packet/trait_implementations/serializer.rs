@@ -1,3 +1,5 @@
+use crate::mesh_lib::node::packet::types::DataLengthType;
+
 use super::super::traits::Serializer;
 use super::super::Packet;
 
@@ -87,7 +89,8 @@ impl Serializer for Packet {
         let id = deserialize_field::<IdType, ID_TYPE_SIZE>(&mut bytes_iterator);
         let lifetime = deserialize_field::<LifeTimeType, LIFETIME_TYPE_SIZE>(&mut bytes_iterator);
         let flags = deserialize_field::<FlagsType, FLAGS_TYPE_SIZE>(&mut bytes_iterator);
-        let data_length = deserialize_field::<usize, DATA_LENGTH_TYPE_SIZE>(&mut bytes_iterator);
+        let data_length =
+            deserialize_field::<DataLengthType, DATA_LENGTH_TYPE_SIZE>(&mut bytes_iterator);
 
         // data: PacketDataBytes, // Is vector of bytes.
         let mut data: PacketDataBytes = PacketDataBytes::new();

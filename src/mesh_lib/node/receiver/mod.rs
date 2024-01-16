@@ -77,7 +77,8 @@ impl Receiver {
     }
 
     fn _receive_byte<SERIAL: PlatformSerial<u8>>(&mut self) {
-        if let Ok(byte) = SERIAL::default().read() {
+        let mut serial = SERIAL::default();
+        while let Ok(byte) = serial.read() {
             self.packet_bytes_parser.push_byte(byte);
         }
     }

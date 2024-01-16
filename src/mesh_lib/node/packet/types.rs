@@ -18,9 +18,15 @@ pub type AddressType = u8;
 /// Type alias for packet checksum.
 pub type ChecksumType = u8;
 
+/// Type alias for packet data length.
+pub type DataLengthType = u16;
+
 /// Type alias for packet lifetime. This value contains the information,
 /// about for how many times the packet can be re-sent.
-pub type LifeTimeType = u8;
+/// It has sense to contain same capacity of possible values same
+/// as `AddressType` - in order to make the packet possible
+/// to pass all the nodes of the network.
+pub type LifeTimeType = AddressType;
 
 /// Type alias for data contained in the packet.
 pub type PacketDataBytes = Vec<u8, { CONTENT_SIZE }>;
@@ -34,7 +40,7 @@ impl FromBytes<ADDRESS_TYPE_SIZE> for AddressType {
     }
 }
 
-impl FromBytes<DATA_LENGTH_TYPE_SIZE> for usize {
+impl FromBytes<DATA_LENGTH_TYPE_SIZE> for DataLengthType {
     fn from_be_bytes(bytes: [u8; DATA_LENGTH_TYPE_SIZE]) -> Self {
         Self::from_be_bytes(bytes)
     }
