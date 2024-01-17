@@ -66,12 +66,16 @@ The implementation of PlatformSerial for Arduino nano board is done by:
 The implementation of PlatformTime for Arduino nano board is done by:
 - [platform-millis-arduino-nano](https://github.com/boshtannik/platform-millis-arduino-nano)
 
+Sometimes code binary might not fit onto your arduino board memory, in order to
+reduce the size of final binary - it is recommended to compile it with
+--release flag.
+
 ## PlatformSerial and PlatformTime interface for Linux.
 The implementation of PlatformSerial for Linux is done by:
-- [platform-serial-linux](https://github.com/boshtannik/platform-serial-linux)
+- [platform-serial-linux](https://crates.io/crates/platform-serial-linux)
 
 The implementation of PlatformTime for Linux is done by:
-- [platform-millis-linux](https://github.com/boshtannik/platform-millis-linux)
+- [platform-millis-linux](https://crates.io/crates/platform-millis-linux)
 
 ## Reduce packet collisions
 
