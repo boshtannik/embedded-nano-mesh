@@ -42,6 +42,10 @@ The following functionalities of protocol have been tested and verified:
 - Send message with ping flag, and receive message with pong flag set.
 - Transaction send and receive packet about transaction being finished.
 
+## Cross-platform compatibility
+The library runs natively on Arduino nano board and Linux.
+The communication is tested with Arduino nano board and Linux.
+
 ## Porting to other platforms
 This library is relatively easy to be ported to other platforms.
 To port this library to your platform - you just have to
@@ -61,6 +65,13 @@ The implementation of PlatformSerial for Arduino nano board is done by:
 
 The implementation of PlatformTime for Arduino nano board is done by:
 - [platform-millis-arduino-nano](https://github.com/boshtannik/platform-millis-arduino-nano)
+
+## PlatformSerial and PlatformTime interface for Linux.
+The implementation of PlatformSerial for Linux is done by:
+- [platform-serial-linux](https://github.com/boshtannik/platform-serial-linux)
+
+The implementation of PlatformTime for Linux is done by:
+- [platform-millis-linux](https://github.com/boshtannik/platform-millis-linux)
 
 ## Reduce packet collisions
 
