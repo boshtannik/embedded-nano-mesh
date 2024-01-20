@@ -24,28 +24,3 @@ heapless = { version = "0.7.0", features = ["serde", "ufmt-impl"] }
 embedded-hal = "0.2.7"
 platform-millis = "1.0.0"
 platform-serial = "1.0.1"
-
-# platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git" }
-# platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git" }
-
-# [dependencies.arduino-hal]
-# git = "https://github.com/rahix/avr-hal"
-# rev = "190f2c3cb8d29e10f71119352b912369dc5a1fb7"
-# features = ["arduino-nano"]
-
-# Configure the build for minimal size - AVRs have very little program memory
-[profile.dev]
-panic = "abort"
-lto = true
-opt-level = "s"
-
-[profile.release]
-panic = "abort"
-codegen-units = 1
-debug = true
-lto = true
-opt-level = "s"
-
-[features]
-serial_debug = []
-# default = ["serial_debug"]
