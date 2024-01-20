@@ -70,12 +70,18 @@ Sometimes code binary might not fit onto your arduino board memory, in order to
 reduce the size of final binary - it is recommended to compile it with
 --release flag.
 
+Examples can be found here:
+- [arduino-nano](https://github.com/boshtannik/nano-mesh-arduino-nano-example)
+
 ## PlatformSerial and PlatformTime interface for Linux.
 The implementation of PlatformSerial for Linux is done by:
 - [platform-serial-linux](https://crates.io/crates/platform-serial-linux)
 
 The implementation of PlatformTime for Linux is done by:
 - [platform-millis-linux](https://crates.io/crates/platform-millis-linux)
+
+Examples can be found here:
+- [linux](https://github.com/boshtannik/nano-mesh-linux-example)
 
 ## Reduce packet collisions
 
