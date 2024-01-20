@@ -1,11 +1,11 @@
 use super::super::{AddressType, IdType};
 
 #[derive(PartialEq, Eq, Clone)]
-pub struct UniqueId(AddressType, IdType);
+pub struct PacketUniqueId(AddressType, IdType);
 
-impl UniqueId {
-    pub fn new(source_device_identifier: AddressType, id: IdType) -> UniqueId {
-        UniqueId(source_device_identifier, id)
+impl PacketUniqueId {
+    pub fn new(source_device_identifier: AddressType, id: IdType) -> PacketUniqueId {
+        PacketUniqueId(source_device_identifier, id)
     }
 }
 
@@ -14,6 +14,6 @@ impl UniqueId {
 /// be extremely rare to be accidentally occurred.
 /// Is used to identify same packet in the network.
 pub trait UniqueIdExtractor {
-    /// builds and returns UniquePacketId of packet.
-    fn get_unique_id(&self) -> UniqueId;
+    /// builds and returns PacketUniqueId of packet.
+    fn get_unique_id(&self) -> PacketUniqueId;
 }

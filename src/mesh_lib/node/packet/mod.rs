@@ -10,7 +10,8 @@ pub mod trait_implementations;
 pub use meta_data::{PacketMetaData, PacketMetaDataError};
 
 pub use traits::{
-    DataPacker, FromBytes, PacketFlagOps, Serializer, StateMutator, UniqueId, UniqueIdExtractor,
+    DataPacker, FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator,
+    UniqueIdExtractor,
 };
 
 pub use constants::{

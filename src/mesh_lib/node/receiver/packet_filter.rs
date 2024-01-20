@@ -3,7 +3,7 @@ use platform_millis::ms;
 
 use crate::mesh_lib::node::{
     constants::{RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_REGISTRATION_SIZE},
-    packet::{Packet, PacketFlagOps, UniqueId, UniqueIdExtractor},
+    packet::{Packet, PacketFlagOps, PacketUniqueId, UniqueIdExtractor},
 };
 
 pub enum RegistrationError {
@@ -12,7 +12,7 @@ pub enum RegistrationError {
 }
 
 struct PacketIgnorancePeriod {
-    pub packet_id: UniqueId,
+    pub packet_unique_id: PacketUniqueId,
     pub timeout: ms,
 }
 
@@ -52,7 +52,7 @@ impl Filter {
         let mut index_to_remove: Option<usize> = None;
 
         for (index, entry) in self.entry_registration_vec.iter().enumerate() {
-            if entry.timeout > current_time {
+            if current_time > entry.timeout {
                 index_to_remove.replace(index);
                 break;
             }
@@ -63,23 +63,23 @@ impl Filter {
         }
     }
 
-    fn _is_entry_present(&self, packet_id: UniqueId) -> bool {
+    fn _is_entry_present(&self, packet_id: PacketUniqueId) -> bool {
         self.entry_registration_vec
             .iter()
-            .any(|entry| entry.packet_id == packet_id)
+            .any(|entry| entry.packet_unique_id == packet_id)
     }
 
     fn _register_packet_entry(
         &mut self,
-        packet_id: UniqueId,
+        packet_unique_identifier: PacketUniqueId,
         current_time: ms,
     ) -> Result<(), RegistrationError> {
-        if self._is_entry_present(packet_id.clone()) {
+        if self._is_entry_present(packet_unique_identifier.clone()) {
             return Err(RegistrationError::DuplicationFound);
         }
 
         let new_entry = PacketIgnorancePeriod {
-            packet_id,
+            packet_unique_id: packet_unique_identifier,
             timeout: current_time + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD,
         };
 
