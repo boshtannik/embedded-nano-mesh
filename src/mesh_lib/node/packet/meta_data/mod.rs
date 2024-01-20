@@ -43,16 +43,24 @@ impl PacketMetaData {
     pub fn is_destination_identifier_reached(&self, identifier: AddressType) -> bool {
         self.destination_device_identifier == identifier
     }
+
+    pub fn increase_packet_id(&mut self) {
+        (self.packet_id, _) = self.packet_id.overflowing_add(1);
+    }
 }
 
 impl StateMutator for PacketMetaData {
     fn mutated(mut self) -> Self {
         let old_state = self.spec_state.clone();
         match old_state {
-            PacketState::Ping
-            | PacketState::SendTransaction
-            | PacketState::AcceptTransaction
-            | PacketState::InitTransaction => self.swap_source_destination(),
+            PacketState::Ping => self.swap_source_destination(),
+            PacketState::SendTransaction | PacketState::InitTransaction => {
+                self.swap_source_destination();
+            }
+            PacketState::AcceptTransaction => {
+                self.increase_packet_id();
+                self.swap_source_destination();
+            }
             _ => (),
         }
         self.spec_state = old_state.mutated();

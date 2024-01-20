@@ -5,3 +5,4 @@
 0.1.4 - Add new platform support for Linux
 0.1.5 - README update, hint how to shrink binary size for Arduino's
 0.1.6 - Fix bug of non working ignore duplication flag feature
+0.1.7 - Fix bug of non working transactions with ignore duplication flag set
