@@ -16,7 +16,7 @@ While initially designed to be able to run on Atmega328p chips,
 so as well as it runs on this platform - it can be ported to
 many other platforms, which are supported by embedded-hal.
 
-Potentially this protocol can be run on other platforms. (Not tested yet, instead of Atmega328p)
+Potentially this protocol can be run on other platforms. (arduino nano, linux are supported)
 It is done by generic behaviour being moved out of implementation
 to make it interchangable with implementations of PlatformTime and PlatformSerial traits for
 each other platform.
@@ -44,7 +44,7 @@ The following functionalities of protocol have been tested and verified:
 
 ## Cross-platform compatibility
 The library runs natively on Arduino nano board and Linux.
-The communication is tested with Arduino nano board and Linux.
+The communication is tested between Arduino nano board and Linux.
 
 ## Porting to other platforms
 This library is relatively easy to be ported to other platforms.
@@ -103,7 +103,7 @@ The `Node` should be constantly updated by
 call its `update` method, it - does all internal work:
 - routes packets
 - transits packets that were sent to other devices
-- handling special packets like `ping` and `pong`, or any kind of transaction one.
+- handles special packets like `ping` and `pong`, or any kind of transaction one.
 and so on.
 
 To initialize a `Node`, you need to provide two values:
@@ -149,7 +149,7 @@ The following arguments are required:
 - `data`: A `PacketDataBytes` instance.
 - `destination_device_identifier`: A `AddressType` instance.
 - `lifetime`: A `LifeTimeType` instance.
-- `filter_out_duplication`: A boolean flag.
+- `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
 - `timeout`: An `ms` instance specifying how long to wait for a response.
 
 ### Send with Transaction Method
@@ -161,7 +161,7 @@ The required arguments are:
 - `data`: A `PacketDataBytes` instance.
 - `destination_device_identifier`: A `AddressType` instance.
 - `lifetime`: A `LifeTimeType` instance.
-- `filter_out_duplication`: A boolean flag.
+- `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
 - `timeout`: An `ms` instance to specify the response wait time.
 
 ## Note
