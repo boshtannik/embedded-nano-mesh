@@ -12,13 +12,13 @@ use super::{
 /// * It hangles packets of different special purposes, like ping-pong, transactions, and handles
 /// their further processing.
 /// * It transits packets, that were sent to other devices.
-pub struct PacketRouter {
+pub struct Router {
     current_device_identifier: AddressType,
 }
 
 pub enum RouteResult {
-    Received(PacketMetaData),
-    Transit(PacketMetaData),
+    ReceivedOnly(PacketMetaData),
+    TransitOnly(PacketMetaData),
     ReceivedAndTransit {
         received: PacketMetaData,
         transit: PacketMetaData,
@@ -27,7 +27,7 @@ pub enum RouteResult {
 
 pub struct PacketLifetimeEnded;
 
-impl PacketRouter {
+impl Router {
     pub fn new(current_device_identifier: AddressType) -> Self {
         Self {
             current_device_identifier,
@@ -54,7 +54,7 @@ impl PacketRouter {
         if let Some(transit) = transit {
             return Ok(RouteResult::ReceivedAndTransit { received, transit });
         }
-        return Ok(RouteResult::Received(received));
+        return Ok(RouteResult::ReceivedOnly(received));
     }
 
     fn keep_copy_and_prepare_transit(
@@ -78,19 +78,19 @@ impl PacketRouter {
     ) -> Result<RouteResult, PacketLifetimeEnded> {
         if packet_meta_data.is_destination_identifier_reached(self.current_device_identifier) {
             match packet_meta_data.spec_state {
-                PacketState::Normal => Ok(RouteResult::Received(packet_meta_data)), // No need
+                PacketState::Normal => Ok(RouteResult::ReceivedOnly(packet_meta_data)), // No need
                 PacketState::Ping => self.keep_copy_and_prepare_transit(packet_meta_data),
-                PacketState::Pong => Ok(RouteResult::Received(packet_meta_data)),
+                PacketState::Pong => Ok(RouteResult::ReceivedOnly(packet_meta_data)),
                 PacketState::SendTransaction => {
-                    Ok(RouteResult::Transit(packet_meta_data.mutated()))
+                    Ok(RouteResult::TransitOnly(packet_meta_data.mutated()))
                 }
                 PacketState::AcceptTransaction => {
-                    Ok(RouteResult::Transit(packet_meta_data.mutated()))
+                    Ok(RouteResult::TransitOnly(packet_meta_data.mutated()))
                 }
                 PacketState::InitTransaction => {
                     self.keep_copy_and_prepare_transit(packet_meta_data)
                 }
-                PacketState::FinishTransaction => Ok(RouteResult::Received(packet_meta_data)),
+                PacketState::FinishTransaction => Ok(RouteResult::ReceivedOnly(packet_meta_data)),
             }
         } else if packet_meta_data.is_destination_identifier_reached(MULTICAST_RESERVED_IDENTIFIER)
         {
@@ -100,7 +100,7 @@ impl PacketRouter {
                 Ok(packet_decreased_lifettime) => packet_decreased_lifettime,
                 Err(PacketMetaDataError::PacketLifetimeEnded) => return Err(PacketLifetimeEnded), // Shit happens.
             };
-            Ok(RouteResult::Transit(packet_decreased_lifettime))
+            Ok(RouteResult::TransitOnly(packet_decreased_lifettime))
         }
     }
 }

@@ -74,10 +74,8 @@ impl Transmitter {
         // Send transit queue.
         while let Some(packet) = self.transit_queue.pop_front() {
             self.send_start_byte_sequence::<SERIAL>();
-            for serialized_byte in packet.summarized().serialize() {
-                SERIAL::default()
-                    .write(serialized_byte)
-                    .unwrap_or_else(|_| {})
+            for byte in packet.summarized().serialized() {
+                SERIAL::default().write(byte).unwrap_or_else(|_| {})
             }
             return;
         }
@@ -85,10 +83,8 @@ impl Transmitter {
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
             self.send_start_byte_sequence::<SERIAL>();
-            for serialized_byte in packet.summarized().serialize() {
-                SERIAL::default()
-                    .write(serialized_byte)
-                    .unwrap_or_else(|_| {})
+            for byte in packet.summarized().serialized() {
+                SERIAL::default().write(byte).unwrap_or_else(|_| {})
             }
             return;
         }

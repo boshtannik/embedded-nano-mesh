@@ -14,7 +14,7 @@ pub use types::NodeString;
 pub use packet::{meta_data::PacketMetaData, LifeTimeType, PacketDataBytes};
 
 use self::{
-    router::{PacketLifetimeEnded, PacketRouter, RouteResult},
+    router::{PacketLifetimeEnded, RouteResult, Router},
     types::PacketDataQueue,
 };
 
@@ -46,7 +46,7 @@ pub struct Node {
     my_address: AddressType,
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
-    packet_router: PacketRouter,
+    router: Router,
 }
 
 /// Error that can be returned by `Node` `update` method.
@@ -107,7 +107,7 @@ impl Node {
             my_address: config.device_address.clone(),
             timer: timer::Timer::new(config.listen_period),
             received_packet_meta_data_queue: PacketDataQueue::new(),
-            packet_router: PacketRouter::new(config.device_address),
+            router: Router::new(config.device_address),
         }
     }
 
@@ -368,10 +368,10 @@ impl Node {
         };
 
         let (received_packet, transit_packet): (Option<PacketMetaData>, Option<PacketMetaData>) =
-            match self.packet_router.route(packet_to_handle) {
+            match self.router.route(packet_to_handle) {
                 Ok(ok_case) => match ok_case {
-                    RouteResult::Received(packet) => (Some(packet), None),
-                    RouteResult::Transit(transit) => (None, Some(transit)),
+                    RouteResult::ReceivedOnly(packet) => (Some(packet), None),
+                    RouteResult::TransitOnly(transit) => (None, Some(transit)),
                     RouteResult::ReceivedAndTransit { received, transit } => {
                         (Some(received), Some(transit))
                     }
