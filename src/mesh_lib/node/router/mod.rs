@@ -66,12 +66,17 @@ impl Router {
         Ok(RouteResult::ReceivedAndTransit { received, transit })
     }
 
-    /// This method is routes the packet.
+    /// This method makes the packet routing.
     /// It does:
-    /// * Checks if the packet is addressed current device, or is multicast - and handles it.
-    /// or
-    /// * Checks if the packet can be transferred further, and if so - transfers it further into
-    /// the transit queue.
+    /// * In case, if the packet is addressed to the current device only - handles it.
+    /// * In case, if the packet is addressed to the multicast:
+    ///     - Saves the copy of the packet to treat it as the packet that was
+    ///     reached it's destination
+    ///     - Checks if packet can be transferred further, and if so - transfers it further into
+    ///     the network.
+    /// * In case, if the packet is addressed to the other device:
+    ///     - Reduces lifetime of packet, and in case if packet is still live - sends it
+    ///     back into the network.
     pub fn route(
         &self,
         packet_meta_data: PacketMetaData,
