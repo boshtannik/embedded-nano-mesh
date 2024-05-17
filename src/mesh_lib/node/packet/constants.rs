@@ -4,8 +4,11 @@ use super::{
 };
 use core::mem::size_of;
 
+/// Size of the content of the packet.
 pub const CONTENT_SIZE: usize = 32;
-pub const PACKET_BYTES_COUNT: usize = Packet::size_of_bytes();
+
+/// Size of the packet in bytes.
+pub const PACKET_BYTES_SIZE: usize = Packet::size_of_bytes();
 
 pub const MULTICAST_RESERVED_IDENTIFIER: AddressType = 0;
 

@@ -1,6 +1,4 @@
-use super::constants::{
-    ADDRESS_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, PACKET_BYTES_COUNT,
-};
+use super::constants::{ADDRESS_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, PACKET_BYTES_SIZE};
 
 use heapless::Vec;
 
@@ -32,7 +30,7 @@ pub type LifeTimeType = AddressType;
 pub type PacketDataBytes = Vec<u8, { CONTENT_SIZE }>;
 
 /// Type alias that represents serialized packet bytes sequence.
-pub type PacketSerializedBytes = Vec<u8, { PACKET_BYTES_COUNT }>;
+pub type PacketSerializedBytes = Vec<u8, { PACKET_BYTES_SIZE }>;
 
 impl FromBytes<ADDRESS_TYPE_SIZE> for AddressType {
     fn from_be_bytes(bytes: [u8; ADDRESS_TYPE_SIZE]) -> Self {

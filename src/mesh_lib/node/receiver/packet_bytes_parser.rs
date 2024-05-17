@@ -1,5 +1,5 @@
 use crate::mesh_lib::node::{
-    packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_COUNT},
+    packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_SIZE},
     types::PacketBytesBuffer,
 };
 
@@ -19,7 +19,7 @@ impl PacketBytesParser {
     }
 
     fn try_parse_packet(&mut self) {
-        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_COUNT) {
+        if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_SIZE) {
             return;
         }
 
