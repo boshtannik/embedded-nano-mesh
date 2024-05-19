@@ -1,4 +1,7 @@
-use super::constants::{ADDRESS_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, PACKET_BYTES_SIZE};
+use super::constants::{
+    ADDRESS_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, MULTICAST_RESERVED_IDENTIFIER,
+    PACKET_BYTES_SIZE,
+};
 
 use heapless::Vec;
 
@@ -9,6 +12,35 @@ pub type IdType = u8;
 
 /// Type alias for packet bit flags.
 pub type FlagsType = u8;
+
+pub type ExactDeviceAddressType = core::num::NonZeroU8;
+
+/// Type to strict interaction with addressing during use of the library.
+pub enum GeneralAddressType {
+    /// Sends the packet to exact device with this address.
+    Exact(ExactDeviceAddressType),
+
+    /// Sends the packet to all devices it can reach.
+    Multicast,
+}
+
+impl Into<AddressType> for GeneralAddressType {
+    fn into(self) -> AddressType {
+        match self {
+            Self::Exact(address) => address.get(),
+            Self::Multicast => MULTICAST_RESERVED_IDENTIFIER,
+        }
+    }
+}
+
+impl From<AddressType> for GeneralAddressType {
+    fn from(address: AddressType) -> Self {
+        match core::num::NonZeroU8::new(address) {
+            Some(address) => Self::Exact(address),
+            None => Self::Multicast,
+        }
+    }
+}
 
 /// Type alias for packet address identification number.
 pub type AddressType = u8;

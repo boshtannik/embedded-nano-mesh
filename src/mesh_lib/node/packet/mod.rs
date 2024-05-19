@@ -21,7 +21,10 @@ pub use constants::{
 
 use self::types::{ChecksumType, DataLengthType, FlagsType};
 
-pub use self::types::{AddressType, IdType, LifeTimeType, PacketDataBytes, PacketSerializedBytes};
+pub use self::types::{
+    AddressType, ExactDeviceAddressType, GeneralAddressType, IdType, LifeTimeType, PacketDataBytes,
+    PacketSerializedBytes,
+};
 
 pub use types::PacketState;
 

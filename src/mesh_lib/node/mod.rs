@@ -6,12 +6,14 @@ mod timer;
 mod transmitter;
 mod types;
 
-pub use packet::{AddressType, MULTICAST_RESERVED_IDENTIFIER};
+pub use packet::{
+    meta_data::PacketMetaData, AddressType, ExactDeviceAddressType, GeneralAddressType,
+    LifeTimeType, PacketDataBytes,
+};
+
 use platform_serial::PlatformSerial;
 pub use router::PacketState;
 pub use types::NodeString;
-
-pub use packet::{meta_data::PacketMetaData, LifeTimeType, PacketDataBytes};
 
 use self::{
     router::{PacketLifetimeEnded, RouteResult, Router},
@@ -43,7 +45,7 @@ use platform_millis::{ms, PlatformTime};
 pub struct Node {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
-    my_address: AddressType,
+    my_address: ExactDeviceAddressType,
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
     router: Router,
@@ -67,10 +69,6 @@ pub enum SpecialSendError {
     /// Case when expected response was not received.
     Timeout,
 
-    /// Case, when the destination address is
-    /// reserved for multicast address.
-    MulticastAddressForbidden,
-
     /// Case, when the limit of number of
     /// packets to send isreached.
     SendingQueueIsFull,
@@ -86,8 +84,8 @@ impl From<SendError> for SpecialSendError {
 
 /// User-friendly `Node` configuration structure.
 pub struct NodeConfig {
-    /// Address of this device. Instance of `AddressType`.
-    pub device_address: AddressType,
+    /// Address of this device. Instance of `ExactDeviceAddressType`.
+    pub device_address: ExactDeviceAddressType,
 
     /// Instance of `ms` type. The time period in
     /// milliseconds that this device will listen for incoming packets
@@ -107,7 +105,7 @@ impl Node {
             my_address: config.device_address.clone(),
             timer: timer::Timer::new(config.listen_period),
             received_packet_meta_data_queue: PacketDataQueue::new(),
-            router: Router::new(config.device_address),
+            router: Router::new(config.device_address.into()),
         }
     }
 
@@ -122,19 +120,13 @@ impl Node {
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
-    /// * `destination_device_identifier` is instance of AddressType,
+    /// * `destination_device_identifier` is instance of ExactDeviceAddressType,
     /// This is made to presend device's address within the network.
-    /// `Note!`, that you are prohibited to send message to all devices at once.
-    /// Otherwise it will jam the network.
     ///
     /// *`lifetime` - is the instance of `LifeTimeType`. This value configures the count of
     /// how many nodes - the packet will be able to pass. Also this value is needed
     /// to void the ether being jammed by packets, that in theory might be echoed
     /// by the nodes to the infinity...
-    ///
-    /// *`filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
-    /// echoes of this message. It is strongly recommended to use in order to make lower load
-    /// onto the network.
     ///
     /// * `timeout` - Is the period of time in milliseconds that
     /// this device will listen for incoming packets
@@ -150,48 +142,18 @@ impl Node {
     pub fn send_ping_pong<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: AddressType,
+        destination_device_identifier: ExactDeviceAddressType,
         lifetime: LifeTimeType,
-        filter_out_duplication: bool,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
-        if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
-            return Err(SpecialSendError::MulticastAddressForbidden);
-        }
-
-        let mut current_time = TIMER::millis();
-        let wait_end_time = current_time + timeout;
-
-        while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
-
-        if let Err(any_err) = self._send(PacketMetaData {
+        self._special_send::<TIMER, SERIAL>(
             data,
-            source_device_identifier: self.my_address.clone(),
-            destination_device_identifier: destination_device_identifier.clone(),
+            destination_device_identifier,
+            PacketState::Ping,
+            PacketState::Pong,
             lifetime,
-            filter_out_duplication,
-            spec_state: PacketState::Ping,
-            packet_id: 0,
-        }) {
-            return Err(any_err.into());
-        }
-
-        while current_time < wait_end_time {
-            let _ = self.update::<TIMER, SERIAL>();
-
-            if let Some(answer) = self.receive() {
-                if !(answer.spec_state == PacketState::Pong) {
-                    continue;
-                }
-                if !(answer.source_device_identifier == destination_device_identifier) {
-                    continue;
-                }
-                return Ok(());
-            }
-            current_time = TIMER::millis();
-        }
-
-        Err(SpecialSendError::Timeout)
+            timeout,
+        )
     }
 
     /// Sends the `data` to exact device with the response, that tells if the message
@@ -203,22 +165,15 @@ impl Node {
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
-    /// * `destination_device_identifier` is instance of AddressType,
+    /// * `destination_device_identifier` is instance of `ExactDeviceAddressType`,
     /// That type is made for simplicity of reading the code, and to strict possible mess-ups
     /// during the usage of methods. It is made to present device id within the network.
-    /// Multicast trough this method - is prohibited due to keep the network clean from special packets.
-    /// In case if you will try to multicast it,
-    /// you will get Error with proper reason.
     ///
     /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
     /// how many nodes - the packet will be able to pass. Also this value is needed
     /// to void the ether being jammed by packets, that in theory might be echoed
     /// by the nodes to the infinity...
     /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
-    ///
-    /// * `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
-    /// echoes of this message. It is strongly recommended to use in order to make lower load
-    /// onto the network.
     ///
     /// * `timeout` - Is the period of time in milliseconds that
     /// this device will wait until packet that finishes the transaction - arrives.
@@ -234,14 +189,29 @@ impl Node {
     pub fn send_with_transaction<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: AddressType,
+        destination_device_identifier: ExactDeviceAddressType,
         lifetime: LifeTimeType,
-        filter_out_duplication: bool,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
-        if destination_device_identifier == MULTICAST_RESERVED_IDENTIFIER {
-            return Err(SpecialSendError::MulticastAddressForbidden);
-        }
+        self._special_send::<TIMER, SERIAL>(
+            data,
+            destination_device_identifier,
+            PacketState::SendTransaction,
+            PacketState::FinishTransaction,
+            lifetime,
+            timeout,
+        )
+    }
+
+    fn _special_send<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
+        &mut self,
+        data: PacketDataBytes,
+        destination_device_identifier: ExactDeviceAddressType,
+        request_state: PacketState,
+        successful_response_state: PacketState,
+        lifetime: LifeTimeType,
+        timeout: ms,
+    ) -> Result<(), SpecialSendError> {
         let mut current_time = TIMER::millis();
         let wait_end_time = current_time + timeout;
 
@@ -249,11 +219,11 @@ impl Node {
 
         if let Err(any_err) = self._send(PacketMetaData {
             data,
-            source_device_identifier: self.my_address.clone(),
-            destination_device_identifier: destination_device_identifier.clone(),
+            source_device_identifier: self.my_address.clone().into(),
+            destination_device_identifier: destination_device_identifier.into(),
             lifetime,
-            filter_out_duplication,
-            spec_state: PacketState::SendTransaction,
+            filter_out_duplication: true,
+            spec_state: request_state,
             packet_id: 0,
         }) {
             return Err(any_err.into());
@@ -263,10 +233,10 @@ impl Node {
             let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
-                if !(answer.spec_state == PacketState::FinishTransaction) {
+                if !(answer.spec_state == successful_response_state) {
                     continue;
                 }
-                if !(answer.source_device_identifier == destination_device_identifier) {
+                if !(answer.source_device_identifier == destination_device_identifier.into()) {
                     continue;
                 }
                 return Ok(());
@@ -289,15 +259,9 @@ impl Node {
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
-    /// * `destination_device_identifier` is instance of AddressType,
-    /// That type is made for simplicity of reading the code, and to strict possible mess-ups
-    /// during the usage of methods. It is made to present device id within the network.
-    /// `Note!`, that you can send message to all devices at once.
-    /// The reason of that, that in this protocol - there is reserved
-    /// `MULTICAST_RESERVED_IDENTIFIER`.
-    /// This is the special kind of identifier, made especially to make every node
-    /// to be able to recognize this identifier as it's own identifier. In other words, every node
-    /// will receive the multicast message.
+    /// * `destination_device_identifier` is instance of `GeneralAddressType`,
+    /// That type is made for simplicity of correct interaction with the library, and to strict
+    /// possible mess-ups during the usage of methods. It is made to present device id within the network.
     ///
     /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
     /// how many nodes - the packet will be able to pass. Also this value is needed
@@ -311,14 +275,14 @@ impl Node {
     pub fn send(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: AddressType,
+        destination_device_identifier: GeneralAddressType,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
     ) -> Result<(), SendError> {
         self._send(PacketMetaData {
             data,
-            source_device_identifier: self.my_address.clone(),
-            destination_device_identifier,
+            source_device_identifier: self.my_address.clone().into(),
+            destination_device_identifier: destination_device_identifier.into(),
             lifetime,
             filter_out_duplication,
             spec_state: PacketState::Normal,
@@ -348,7 +312,7 @@ impl Node {
     /// * Call of this method also requires the general types to be passed in.
     /// As the process relies onto timing countings and onto serial stream,
     ///
-    /// That parts can be platform dependent, so general trait bound types are made to
+    /// That parts are platform dependent, so general trait bound types are made to
     /// be able to use this method in any platform, by just providing platform specific
     /// types with all required traits implemented.
     pub fn update<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
@@ -367,17 +331,16 @@ impl Node {
             None => return Ok(()),
         };
 
-        let (received_packet, transit_packet): (Option<PacketMetaData>, Option<PacketMetaData>) =
-            match self.router.route(packet_to_handle) {
-                Ok(ok_case) => match ok_case {
-                    RouteResult::ReceivedOnly(packet) => (Some(packet), None),
-                    RouteResult::TransitOnly(transit) => (None, Some(transit)),
-                    RouteResult::ReceivedAndTransit { received, transit } => {
-                        (Some(received), Some(transit))
-                    }
-                },
-                Err(PacketLifetimeEnded) => (None, None),
-            };
+        let (received_packet, transit_packet) = match self.router.route(packet_to_handle) {
+            Ok(ok_case) => match ok_case {
+                RouteResult::ReceivedOnly(packet) => (Some(packet), None),
+                RouteResult::TransitOnly(transit) => (None, Some(transit)),
+                RouteResult::ReceivedAndTransit { received, transit } => {
+                    (Some(received), Some(transit))
+                }
+            },
+            Err(PacketLifetimeEnded) => (None, None),
+        };
 
         let (mut is_send_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
 
