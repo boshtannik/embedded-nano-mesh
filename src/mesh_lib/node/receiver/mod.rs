@@ -11,7 +11,7 @@ use self::{
 };
 
 use super::{
-    packet::{DataPacker, Packet},
+    packet::{DataPacker, Packet, UnpackSenderAddressError},
     PacketMetaData,
 };
 
@@ -56,6 +56,9 @@ impl Receiver {
         }
     }
 
+    /// Does the following:
+    /// - reads byte from serial
+    /// - checks if the packet can be built from with new received byte.
     pub fn update<SERIAL: PlatformSerial<u8>>(&mut self, current_time: ms) {
         self._receive_byte::<SERIAL>();
         self.packet_filter.update(current_time);
@@ -70,9 +73,14 @@ impl Receiver {
             Some(packet) => packet,
         };
 
-        match self.filter_out_duplicated(packet, current_time) {
-            Ok(packet) => Some(<Packet as DataPacker>::unpack(packet)),
-            Err(_) => None,
+        let packet = match self.filter_out_duplicated(packet, current_time) {
+            Err(_) => return None,
+            Ok(packet) => packet,
+        };
+
+        match <Packet as DataPacker>::unpack(packet) {
+            Ok(parsed_packet) => Some(parsed_packet),
+            Err(UnpackSenderAddressError) => return None,
         }
     }
 

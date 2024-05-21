@@ -11,7 +11,7 @@ pub use meta_data::{PacketLifetimeEnded, PacketMetaData, PacketSourceDestination
 
 pub use traits::{
     DataPacker, FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator,
-    UniqueIdExtractor,
+    UniqueIdExtractor, UnpackSenderAddressError,
 };
 
 pub use constants::{
