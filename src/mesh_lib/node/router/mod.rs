@@ -1,9 +1,8 @@
+use crate::{ExactAddressType, GeneralAddressType};
+
 pub use super::packet::PacketState;
 
-use super::{
-    packet::{PacketMetaData, PacketMetaDataError, StateMutator, MULTICAST_RESERVED_IDENTIFIER},
-    AddressType,
-};
+use super::packet::{PacketLifetimeEnded, PacketMetaData, PacketSourceDestinationSwapError};
 
 /// Structure which keeps logic of routing of the packets
 /// of the network.
@@ -13,7 +12,7 @@ use super::{
 /// their further processing.
 /// * It transits packets, that were sent to other devices.
 pub struct Router {
-    current_device_identifier: AddressType,
+    current_device_identifier: ExactAddressType,
 }
 
 pub enum RouteResult {
@@ -25,10 +24,25 @@ pub enum RouteResult {
     },
 }
 
-pub struct PacketLifetimeEnded;
+pub enum RouteError {
+    PacketLifetimeEnded,
+    PacketSpecialAddressingError,
+}
+
+impl From<PacketLifetimeEnded> for RouteError {
+    fn from(_: PacketLifetimeEnded) -> Self {
+        Self::PacketLifetimeEnded
+    }
+}
+
+impl From<PacketSourceDestinationSwapError> for RouteError {
+    fn from(_: PacketSourceDestinationSwapError) -> Self {
+        Self::PacketSpecialAddressingError
+    }
+}
 
 impl Router {
-    pub fn new(current_device_identifier: AddressType) -> Self {
+    pub fn new(current_device_identifier: ExactAddressType) -> Self {
         Self {
             current_device_identifier,
         }
@@ -45,11 +59,11 @@ impl Router {
     fn handle_multicast(
         &self,
         packet_meta_data: PacketMetaData,
-    ) -> Result<RouteResult, PacketLifetimeEnded> {
+    ) -> Result<RouteResult, RouteError> {
         let received = packet_meta_data.clone();
         let transit: Option<PacketMetaData> = match packet_meta_data.deacrease_lifetime() {
             Ok(packet_meta_data) => Some(packet_meta_data),
-            Err(PacketMetaDataError::PacketLifetimeEnded) => None,
+            Err(PacketLifetimeEnded) => None,
         };
         if let Some(transit) = transit {
             return Ok(RouteResult::ReceivedAndTransit { received, transit });
@@ -60,9 +74,9 @@ impl Router {
     fn keep_copy_and_prepare_transit(
         &self,
         packet_meta_data: PacketMetaData,
-    ) -> Result<RouteResult, PacketLifetimeEnded> {
+    ) -> Result<RouteResult, RouteError> {
         let received = packet_meta_data.clone();
-        let transit = packet_meta_data.mutated();
+        let transit = packet_meta_data.mutated()?;
         Ok(RouteResult::ReceivedAndTransit { received, transit })
     }
 
@@ -77,35 +91,32 @@ impl Router {
     /// * In case, if the packet is addressed to the other device:
     ///     - Reduces lifetime of packet, and in case if packet is still live - sends it
     ///     back into the network.
-    pub fn route(
-        &self,
-        packet_meta_data: PacketMetaData,
-    ) -> Result<RouteResult, PacketLifetimeEnded> {
-        if packet_meta_data.is_destination_identifier_reached(self.current_device_identifier) {
-            match packet_meta_data.spec_state {
+    pub fn route(&self, packet_meta_data: PacketMetaData) -> Result<RouteResult, RouteError> {
+        if packet_meta_data.is_destination_reached(self.current_device_identifier.into()) {
+            return match packet_meta_data.spec_state {
                 PacketState::Normal => Ok(RouteResult::ReceivedOnly(packet_meta_data)), // No need
                 PacketState::Ping => self.keep_copy_and_prepare_transit(packet_meta_data),
                 PacketState::Pong => Ok(RouteResult::ReceivedOnly(packet_meta_data)),
                 PacketState::SendTransaction => {
-                    Ok(RouteResult::TransitOnly(packet_meta_data.mutated()))
+                    Ok(RouteResult::TransitOnly(packet_meta_data.mutated()?))
                 }
                 PacketState::AcceptTransaction => {
-                    Ok(RouteResult::TransitOnly(packet_meta_data.mutated()))
+                    Ok(RouteResult::TransitOnly(packet_meta_data.mutated()?))
                 }
                 PacketState::InitTransaction => {
                     self.keep_copy_and_prepare_transit(packet_meta_data)
                 }
                 PacketState::FinishTransaction => Ok(RouteResult::ReceivedOnly(packet_meta_data)),
-            }
-        } else if packet_meta_data.is_destination_identifier_reached(MULTICAST_RESERVED_IDENTIFIER)
-        {
-            self.handle_multicast(packet_meta_data)
-        } else {
-            let packet_decreased_lifettime = match packet_meta_data.deacrease_lifetime() {
-                Ok(packet_decreased_lifettime) => packet_decreased_lifettime,
-                Err(PacketMetaDataError::PacketLifetimeEnded) => return Err(PacketLifetimeEnded), // Shit happens.
             };
-            Ok(RouteResult::TransitOnly(packet_decreased_lifettime))
+        }
+
+        if packet_meta_data.is_destination_reached(GeneralAddressType::Multicast) {
+            return self.handle_multicast(packet_meta_data);
+        }
+
+        match packet_meta_data.deacrease_lifetime() {
+            Ok(packet) => Ok(RouteResult::TransitOnly(packet)),
+            Err(PacketLifetimeEnded) => return Err(RouteError::PacketLifetimeEnded), // Shit happens.
         }
     }
 }

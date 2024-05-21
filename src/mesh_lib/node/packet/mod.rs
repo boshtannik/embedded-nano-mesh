@@ -7,7 +7,7 @@ pub mod implementations;
 pub mod meta_data;
 pub mod trait_implementations;
 
-pub use meta_data::{PacketMetaData, PacketMetaDataError};
+pub use meta_data::{PacketLifetimeEnded, PacketMetaData, PacketSourceDestinationSwapError};
 
 pub use traits::{
     DataPacker, FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator,
@@ -16,13 +16,13 @@ pub use traits::{
 
 pub use constants::{
     ADDRESS_TYPE_SIZE, CHECKSUM_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, FLAGS_TYPE_SIZE,
-    ID_TYPE_SIZE, LIFETIME_TYPE_SIZE, MULTICAST_RESERVED_IDENTIFIER, PACKET_BYTES_SIZE,
+    ID_TYPE_SIZE, LIFETIME_TYPE_SIZE, PACKET_BYTES_SIZE,
 };
 
 use self::types::{ChecksumType, DataLengthType, FlagsType};
 
 pub use self::types::{
-    AddressType, ExactDeviceAddressType, GeneralAddressType, IdType, LifeTimeType, PacketDataBytes,
+    AddressType, ExactAddressType, GeneralAddressType, IdType, LifeTimeType, PacketDataBytes,
     PacketSerializedBytes,
 };
 

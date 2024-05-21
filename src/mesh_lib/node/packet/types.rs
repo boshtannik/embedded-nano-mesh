@@ -13,15 +13,22 @@ pub type IdType = u8;
 /// Type alias for packet bit flags.
 pub type FlagsType = u8;
 
-pub type ExactDeviceAddressType = core::num::NonZeroU8;
+pub type ExactAddressType = core::num::NonZeroU8;
 
 /// Type to strict interaction with addressing during use of the library.
+#[derive(Eq, PartialEq, Clone)]
 pub enum GeneralAddressType {
     /// Sends the packet to exact device with this address.
-    Exact(ExactDeviceAddressType),
+    Exact(ExactAddressType),
 
     /// Sends the packet to all devices it can reach.
     Multicast,
+}
+
+impl Into<GeneralAddressType> for ExactAddressType {
+    fn into(self) -> GeneralAddressType {
+        GeneralAddressType::Exact(self)
+    }
 }
 
 impl Into<AddressType> for GeneralAddressType {

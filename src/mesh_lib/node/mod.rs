@@ -7,8 +7,7 @@ mod transmitter;
 mod types;
 
 pub use packet::{
-    meta_data::PacketMetaData, AddressType, ExactDeviceAddressType, GeneralAddressType,
-    LifeTimeType, PacketDataBytes,
+    meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, LifeTimeType, PacketDataBytes,
 };
 
 use platform_serial::PlatformSerial;
@@ -16,7 +15,7 @@ pub use router::PacketState;
 pub use types::NodeString;
 
 use self::{
-    router::{PacketLifetimeEnded, RouteResult, Router},
+    router::{RouteError, RouteResult, Router},
     types::PacketDataQueue,
 };
 
@@ -45,7 +44,7 @@ use platform_millis::{ms, PlatformTime};
 pub struct Node {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
-    my_address: ExactDeviceAddressType,
+    my_address: ExactAddressType,
     timer: timer::Timer,
     received_packet_meta_data_queue: PacketDataQueue,
     router: Router,
@@ -85,7 +84,7 @@ impl From<SendError> for SpecialSendError {
 /// User-friendly `Node` configuration structure.
 pub struct NodeConfig {
     /// Address of this device. Instance of `ExactDeviceAddressType`.
-    pub device_address: ExactDeviceAddressType,
+    pub device_address: ExactAddressType,
 
     /// Instance of `ms` type. The time period in
     /// milliseconds that this device will listen for incoming packets
@@ -142,7 +141,7 @@ impl Node {
     pub fn send_ping_pong<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: ExactDeviceAddressType,
+        destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
@@ -189,7 +188,7 @@ impl Node {
     pub fn send_with_transaction<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: ExactDeviceAddressType,
+        destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
@@ -206,7 +205,7 @@ impl Node {
     fn _special_send<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: ExactDeviceAddressType,
+        destination_device_identifier: ExactAddressType,
         request_state: PacketState,
         successful_response_state: PacketState,
         lifetime: LifeTimeType,
@@ -339,7 +338,8 @@ impl Node {
                     (Some(received), Some(transit))
                 }
             },
-            Err(PacketLifetimeEnded) => (None, None),
+            Err(RouteError::PacketLifetimeEnded) => (None, None),
+            Err(RouteError::PacketSpecialAddressingError) => (None, None),
         };
 
         let (mut is_send_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
