@@ -107,7 +107,9 @@ checksum = "384462e0dea55a2f535d6008c8656941928c0a84ee80e4b32cd26177a22a789f"
 
 [[package]]
 name = "platform-serial"
-version = "1.0.1"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a696b9520df01741274e603c4c180a66284878031c4b3c21881c37bbde1edf2b"
 dependencies = [
  "embedded-hal",
  "nb 0.1.3",
