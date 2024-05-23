@@ -7,7 +7,7 @@ pub mod implementations;
 pub mod meta_data;
 pub mod trait_implementations;
 
-pub use meta_data::{PacketLifetimeEnded, PacketMetaData, RespondToMulticastAddressError};
+pub use meta_data::{PacketLifetimeEnded, PacketMetaData, RespondToBroadcastAddressError};
 
 pub use traits::{
     DataPacker, FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator,

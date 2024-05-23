@@ -1,7 +1,4 @@
-use super::constants::{
-    ADDRESS_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, MULTICAST_RESERVED_IDENTIFIER,
-    PACKET_BYTES_SIZE,
-};
+use super::constants::{ADDRESS_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, PACKET_BYTES_SIZE};
 
 use heapless::Vec;
 
@@ -22,7 +19,7 @@ pub enum GeneralAddressType {
     Exact(ExactAddressType),
 
     /// Sends the packet to all devices it can reach.
-    Multicast,
+    Broadcast,
 }
 
 impl Into<GeneralAddressType> for ExactAddressType {
@@ -35,7 +32,7 @@ impl Into<AddressType> for GeneralAddressType {
     fn into(self) -> AddressType {
         match self {
             Self::Exact(address) => address.get(),
-            Self::Multicast => MULTICAST_RESERVED_IDENTIFIER,
+            Self::Broadcast => 0 as AddressType,
         }
     }
 }
@@ -44,7 +41,7 @@ impl From<AddressType> for GeneralAddressType {
     fn from(address: AddressType) -> Self {
         match core::num::NonZeroU8::new(address) {
             Some(address) => Self::Exact(address),
-            None => Self::Multicast,
+            None => Self::Broadcast,
         }
     }
 }

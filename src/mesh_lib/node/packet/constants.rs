@@ -10,8 +10,6 @@ pub const CONTENT_SIZE: usize = 32;
 /// Size of the packet in bytes.
 pub const PACKET_BYTES_SIZE: usize = Packet::size_of_bytes();
 
-pub const MULTICAST_RESERVED_IDENTIFIER: AddressType = 0;
-
 /// This flag make the device, which have packet caught, to ignore
 /// same packets, which were re-transmitted from other devices.
 pub const IGNORE_DUPLICATIONS_FLAG: FlagsType = 0b10000000;

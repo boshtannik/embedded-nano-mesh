@@ -206,7 +206,7 @@ impl Node {
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
         request_state: PacketState,
-        successful_response_state: PacketState,
+        expected_response_state: PacketState,
         lifetime: LifeTimeType,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
@@ -231,7 +231,7 @@ impl Node {
             let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
-                if !(answer.spec_state == successful_response_state) {
+                if !(answer.spec_state == expected_response_state) {
                     continue;
                 }
                 if !(answer.source_device_identifier == destination_device_identifier.into()) {
@@ -247,24 +247,23 @@ impl Node {
     }
 
     /// Sends the `data` to exact device. or to all devices.
-    /// In order to send `data` to all devices, use `MULTICAST_RESERVED_IDENTIFIER`,
-    /// otherwise - use identifier of exact device, which is not `MULTICAST_RESERVED_IDENTIFIER`
-    /// identifier.
+    /// In order to send `data` to all devices, use `GeneralAddressType::Broadcast`,
+    /// otherwise - `GeneralAddressType::Exact(ExactAddressType::new(...).unwrap()) identifier
+    /// in order to set exact receiver device address.
     ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
     /// heapless vector of bytes of special size. This size is configured in the
-    /// node/packet/config.rs file, and can be adjusted for case of other data size is needed.
+    /// node/packet/config.rs file.
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
     /// * `destination_device_identifier` is instance of `GeneralAddressType`,
-    /// That type is made for simplicity of correct interaction with the library, and to strict
-    /// possible mess-ups during the usage of methods. It is made to present device id within the network.
+    /// That type is made to limit possible mess-ups during the usage of method.
     ///
     /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
-    /// how many nodes - the packet will be able to pass. Also this value is needed
+    /// how many nodes - the packet will be able to pass. Also this value is provided
     /// to void the ether being jammed by packets, that in theory might be echoed
-    /// by the nodes to the infinity...
+    /// by other nodes to the infinity...
     /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
     ///
     /// * `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
@@ -297,7 +296,7 @@ impl Node {
 
     /// Optionally returns `PacketDataBytes` instance with data,
     /// which has been send exactly to this device, or has been
-    /// `multicast`ed trough all the network.
+    /// `broadcast`ed trough all the network.
     pub fn receive(&mut self) -> Option<PacketMetaData> {
         self.received_packet_meta_data_queue.pop_front()
     }
@@ -338,7 +337,7 @@ impl Node {
                 }
             },
             Err(RouteError::PacketLifetimeEnded) => (None, None),
-            Err(RouteError::RespondToMulticastAddressError) => (None, None),
+            Err(RouteError::RespondToBroadcastAddressError) => (None, None),
         };
 
         let (mut is_send_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);

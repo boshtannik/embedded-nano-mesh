@@ -2,7 +2,7 @@ use crate::{ExactAddressType, GeneralAddressType};
 
 pub use super::packet::PacketState;
 
-use super::packet::{PacketLifetimeEnded, PacketMetaData, RespondToMulticastAddressError};
+use super::packet::{PacketLifetimeEnded, PacketMetaData, RespondToBroadcastAddressError};
 
 /// Structure which keeps logic of routing of the packets
 /// of the network.
@@ -26,7 +26,7 @@ pub enum RouteResult {
 
 pub enum RouteError {
     PacketLifetimeEnded,
-    RespondToMulticastAddressError,
+    RespondToBroadcastAddressError,
 }
 
 impl From<PacketLifetimeEnded> for RouteError {
@@ -35,9 +35,9 @@ impl From<PacketLifetimeEnded> for RouteError {
     }
 }
 
-impl From<RespondToMulticastAddressError> for RouteError {
-    fn from(_: RespondToMulticastAddressError) -> Self {
-        Self::RespondToMulticastAddressError
+impl From<RespondToBroadcastAddressError> for RouteError {
+    fn from(_: RespondToBroadcastAddressError) -> Self {
+        Self::RespondToBroadcastAddressError
     }
 }
 
@@ -56,7 +56,7 @@ impl Router {
     /// reached it's destination, and
     /// * Checks if packet can be transferred further, and if so - transfers it further into the
     /// network.
-    fn handle_multicast(
+    fn handle_broadcast(
         &self,
         packet_meta_data: PacketMetaData,
     ) -> Result<RouteResult, RouteError> {
@@ -83,7 +83,7 @@ impl Router {
     /// This method makes the packet routing.
     /// It does:
     /// * In case, if the packet is addressed to the current device only - handles it.
-    /// * In case, if the packet is addressed to the multicast:
+    /// * In case, if the packet is addressed to the broadcast:
     ///     - Saves the copy of the packet to treat it as the packet that was
     ///     reached it's destination
     ///     - Checks if packet can be transferred further, and if so - transfers it further into
@@ -110,8 +110,8 @@ impl Router {
             };
         }
 
-        if packet_meta_data.is_destination_reached(GeneralAddressType::Multicast) {
-            return self.handle_multicast(packet_meta_data);
+        if packet_meta_data.is_destination_reached(GeneralAddressType::Broadcast) {
+            return self.handle_broadcast(packet_meta_data);
         }
 
         match packet_meta_data.deacrease_lifetime() {

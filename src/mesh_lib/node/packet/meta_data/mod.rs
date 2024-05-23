@@ -18,13 +18,13 @@ pub struct PacketMetaData {
 }
 
 pub struct PacketLifetimeEnded;
-pub struct RespondToMulticastAddressError;
+pub struct RespondToBroadcastAddressError;
 
 impl PacketMetaData {
-    fn swap_source_destination(&mut self) -> Result<(), RespondToMulticastAddressError> {
+    fn swap_source_destination(&mut self) -> Result<(), RespondToBroadcastAddressError> {
         match self.destination_device_identifier {
-            // Multicast target can not do the answers.
-            GeneralAddressType::Multicast => Err(RespondToMulticastAddressError),
+            // Broadcast target can not do the answers.
+            GeneralAddressType::Broadcast => Err(RespondToBroadcastAddressError),
 
             GeneralAddressType::Exact(destination_device_identifier) => {
                 (
@@ -39,7 +39,7 @@ impl PacketMetaData {
         }
     }
 
-    pub fn mutated(mut self) -> Result<Self, RespondToMulticastAddressError> {
+    pub fn mutated(mut self) -> Result<Self, RespondToBroadcastAddressError> {
         let old_state = self.spec_state.clone();
         match old_state {
             PacketState::Ping => self.swap_source_destination()?,
