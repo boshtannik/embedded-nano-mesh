@@ -102,14 +102,10 @@ checksum = "8d5439c4ad607c3c23abf66de8c8bf57ba8adcd1f129e699851a6e43935d339d"
 [[package]]
 name = "platform-millis"
 version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9e3a5c33187b4e7b81312b4a9d13db713ce98afb292b893d074cc585aa296b8"
 
 [[package]]
 name = "platform-serial"
 version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bd6772469d73d747d41b09fa2b4c87b603e02ca02d07bc817aa41a1dc95c75f"
 dependencies = [
  "embedded-hal",
  "nb 0.1.3",

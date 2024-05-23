@@ -10,7 +10,9 @@ pub use packet::{
     meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, LifeTimeType, PacketDataBytes,
 };
 
-use platform_serial::PlatformSerial;
+pub use platform_millis::{ms, PlatformTime};
+pub use platform_serial::PlatformSerial;
+
 pub use router::PacketState;
 pub use types::NodeString;
 
@@ -18,8 +20,6 @@ use self::{
     router::{RouteError, RouteResult, Router},
     types::PacketDataQueue,
 };
-
-use platform_millis::{ms, PlatformTime};
 
 /// The main structure of the library to use communication
 /// in the mesh network. The node works in the manner of listening
@@ -108,8 +108,8 @@ impl Node {
         }
     }
 
-    /// Sends the `data` to exact device, and the receiving device will
-    /// be forsed to make answer back. The answer from receiving device
+    /// Sends the `data` to exact device with `ping` flag set, and the receiving device will
+    /// be forsed to make answer back with 'pong' flag set. The answer from receiving device
     /// will tell if sending was successful.
     ///
     /// parameters:
@@ -128,8 +128,7 @@ impl Node {
     /// by the nodes to the infinity...
     ///
     /// * `timeout` - Is the period of time in milliseconds that
-    /// this device will listen for incoming packets
-    /// from other devices. In case if no response was caught during that
+    /// this device will listen for response. In case if no response was caught during that
     /// period of time, the method will return `Err(SpecialSendError::Timeout)`.
     ///
     /// * Call of this method also requires the general types to be passed in.
@@ -339,7 +338,7 @@ impl Node {
                 }
             },
             Err(RouteError::PacketLifetimeEnded) => (None, None),
-            Err(RouteError::PacketSpecialAddressingError) => (None, None),
+            Err(RouteError::RespondToMulticastAddressError) => (None, None),
         };
 
         let (mut is_send_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);

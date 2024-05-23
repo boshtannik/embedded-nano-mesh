@@ -2,7 +2,7 @@ use crate::{ExactAddressType, GeneralAddressType};
 
 pub use super::packet::PacketState;
 
-use super::packet::{PacketLifetimeEnded, PacketMetaData, PacketSourceDestinationSwapError};
+use super::packet::{PacketLifetimeEnded, PacketMetaData, RespondToMulticastAddressError};
 
 /// Structure which keeps logic of routing of the packets
 /// of the network.
@@ -26,7 +26,7 @@ pub enum RouteResult {
 
 pub enum RouteError {
     PacketLifetimeEnded,
-    PacketSpecialAddressingError,
+    RespondToMulticastAddressError,
 }
 
 impl From<PacketLifetimeEnded> for RouteError {
@@ -35,9 +35,9 @@ impl From<PacketLifetimeEnded> for RouteError {
     }
 }
 
-impl From<PacketSourceDestinationSwapError> for RouteError {
-    fn from(_: PacketSourceDestinationSwapError) -> Self {
-        Self::PacketSpecialAddressingError
+impl From<RespondToMulticastAddressError> for RouteError {
+    fn from(_: RespondToMulticastAddressError) -> Self {
+        Self::RespondToMulticastAddressError
     }
 }
 
