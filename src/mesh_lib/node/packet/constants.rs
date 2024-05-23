@@ -4,10 +4,11 @@ use super::{
 };
 use core::mem::size_of;
 
+/// Size of the content of the packet.
 pub const CONTENT_SIZE: usize = 32;
-pub const PACKET_BYTES_COUNT: usize = Packet::size_of_bytes();
 
-pub const MULTICAST_RESERVED_IDENTIFIER: AddressType = 0;
+/// Size of the packet in bytes.
+pub const PACKET_BYTES_SIZE: usize = Packet::size_of_bytes();
 
 /// This flag make the device, which have packet caught, to ignore
 /// same packets, which were re-transmitted from other devices.

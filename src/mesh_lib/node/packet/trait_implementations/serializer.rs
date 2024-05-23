@@ -17,7 +17,7 @@ use super::super::traits::FromBytes;
 use core::slice::Iter;
 
 impl Serializer for Packet {
-    fn serialize(self) -> PacketSerializedBytes {
+    fn serialized(self) -> PacketSerializedBytes {
         let mut result = PacketSerializedBytes::new();
         // source_device_identifier: Deviceidentifier,
         for b in self.source_device_identifier.to_be_bytes() {

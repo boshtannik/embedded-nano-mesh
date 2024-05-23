@@ -5,7 +5,7 @@ mod serializer;
 mod state_mutator;
 mod unique_id_extractor;
 
-pub use data_packer::DataPacker;
+pub use data_packer::{DataPacker, UnpackSenderAddressError};
 pub use flag_ops::PacketFlagOps;
 pub use from_bytes::FromBytes;
 pub use serializer::Serializer;

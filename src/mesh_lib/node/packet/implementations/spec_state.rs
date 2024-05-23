@@ -24,32 +24,15 @@ impl Packet {
     }
 
     pub fn set_spec_state(&mut self, new_state: PacketState) {
-        self.set_ping_flag(false);
-        self.set_pong_flag(false);
-        self.set_send_transaction_flag(false);
-        self.set_accept_transaction_flag(false);
-        self.set_initiate_transaction_flag(false);
-        self.set_finish_transaction_flag(false);
+        self.flags = 0;
         match new_state {
             PacketState::Normal => (),
-            PacketState::Ping => {
-                self.set_ping_flag(true);
-            }
-            PacketState::Pong => {
-                self.set_pong_flag(true);
-            }
-            PacketState::SendTransaction => {
-                self.set_send_transaction_flag(true);
-            }
-            PacketState::AcceptTransaction => {
-                self.set_accept_transaction_flag(true);
-            }
-            PacketState::InitTransaction => {
-                self.set_initiate_transaction_flag(true);
-            }
-            PacketState::FinishTransaction => {
-                self.set_finish_transaction_flag(true);
-            }
+            PacketState::Ping => self.set_ping_flag(true),
+            PacketState::Pong => self.set_pong_flag(true),
+            PacketState::SendTransaction => self.set_send_transaction_flag(true),
+            PacketState::AcceptTransaction => self.set_accept_transaction_flag(true),
+            PacketState::InitTransaction => self.set_initiate_transaction_flag(true),
+            PacketState::FinishTransaction => self.set_finish_transaction_flag(true),
         }
     }
 }
