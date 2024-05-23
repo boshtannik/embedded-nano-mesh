@@ -57,13 +57,13 @@ can be ported to many other platforms, which are supported by `embedded-hal`.
 Also this protocol is welcomed to be ported on other platforms.
 In order to simplify process of porting of this protocol to the new
 platforms - the common behaviour is moved out of implementation
-to make it interchangable with implementations of PlatformTime and PlatformSerial traits for
+to make it interchangable with implementations of PlatformMillis and PlatformSerial traits for
 each other platform.
 
 These are two generic interfaces.
 
 - The library uses `PlatformSerial` interface to communicate with radio module over USART.
-- The library uses `PlatformTime` interface to be able to keep track of time.
+- The library uses `PlatformMillis` interface to be able to keep track of time.
 
 In case, if implementations are already present for platform, you need -
 you just simply include those and use them into your project.
@@ -72,7 +72,7 @@ you just simply include those and use them into your project.
 The implementation of PlatformSerial for Arduino nano board is done by:
 - [platform-serial-arduino-nano](https://github.com/boshtannik/platform-serial-arduino-nano)
 
-The implementation of PlatformTime for Arduino nano board is done by:
+The implementation of PlatformMillis for Arduino nano board is done by:
 - [platform-millis-arduino-nano](https://github.com/boshtannik/platform-millis-arduino-nano)
 
 Usage examples can be found here:
@@ -86,7 +86,7 @@ reduce the size of final binary - it is recommended to compile it with
 The implementation of PlatformSerial for Linux is done by:
 - [platform-serial-linux](https://crates.io/crates/platform-serial-linux)
 
-The implementation of PlatformTime for Linux is done by:
+The implementation of PlatformMillis for Linux is done by:
 - [platform-millis-linux](https://crates.io/crates/platform-millis-linux)
 
 Usage examples can be found here:

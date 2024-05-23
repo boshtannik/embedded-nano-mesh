@@ -101,7 +101,9 @@ checksum = "8d5439c4ad607c3c23abf66de8c8bf57ba8adcd1f129e699851a6e43935d339d"
 
 [[package]]
 name = "platform-millis"
-version = "1.0.0"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "384462e0dea55a2f535d6008c8656941928c0a84ee80e4b32cd26177a22a789f"
 
 [[package]]
 name = "platform-serial"

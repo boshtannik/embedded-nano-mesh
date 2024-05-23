@@ -10,7 +10,7 @@ pub use packet::{
     meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, LifeTimeType, PacketDataBytes,
 };
 
-pub use platform_millis::{ms, PlatformTime};
+pub use platform_millis::{ms, PlatformMillis};
 pub use platform_serial::PlatformSerial;
 
 pub use router::PacketState;
@@ -23,24 +23,24 @@ use self::{
 
 /// The main structure of the library to use communication
 /// in the mesh network. The node works in the manner of listening
-/// of ether for some time, which is called `listen_period`, and
-/// then sending out packets.
+/// of ether for specified period of time, which is called `listen_period`,
+/// and then sending out packets between those periods.
 ///
 /// Also node resends caught packets, that were addressed to other
 /// nodes.
 ///
 /// It has next methods:
-/// * `new` - Creates new instance of `Node`.
-/// * `send` - Sends the `data` to exact device. Call of this method does not provide any
-/// response back.
-/// * `send_ping_pong` - Sends the `data` to exact device, and the receiving device will
-/// be forsed to make answer back. The answer from receiving device
-/// may tell if sending was successful.
+/// * `new` -                   Creates new instance of `Node`.
+/// * `send` -                  Sends the `data` to exact device. Call of this method does not provide any
+///                             response back.
+/// * `send_ping_pong` -        Sends the `data` to exact device, and the receiving device will
+///                             be forsed to make answer back. The answer from receiving device
+///                             may tell if sending was successful.
 /// * `send_with_transaction` - Sends the `data` to exact device, and the receiving device will
-/// be forsed to make answer back. The answer from receiving device
-/// will tell if sending was successful.
-/// * `update` - Updates the state of the node. This method should be called in
-/// every loop iteration.
+///                             be forsed to make answer back. The answer from receiving device
+///                             will tell if sending was successful.
+/// * `update` -                Updates the state of the node. This method should be called in
+///                             every loop iteration.
 pub struct Node {
     transmitter: transmitter::Transmitter,
     receiver: receiver::Receiver,
@@ -137,7 +137,7 @@ impl Node {
     /// That parts can be platform dependent, so general trait bound types are made to
     /// be able to use this method in any platform, by just providing platform specific
     /// types.
-    pub fn send_ping_pong<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
+    pub fn send_ping_pong<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
@@ -184,7 +184,7 @@ impl Node {
     /// That parts can be platform dependent, so general trait bound types are made to
     /// be able to use this method in any platform, by just providing platform specific
     /// types.
-    pub fn send_with_transaction<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
+    pub fn send_with_transaction<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
@@ -201,7 +201,7 @@ impl Node {
         )
     }
 
-    fn _special_send<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
+    fn _special_send<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
@@ -312,7 +312,7 @@ impl Node {
     /// That parts are platform dependent, so general trait bound types are made to
     /// be able to use this method in any platform, by just providing platform specific
     /// types with all required traits implemented.
-    pub fn update<TIMER: PlatformTime, SERIAL: PlatformSerial<u8>>(
+    pub fn update<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
         &mut self,
     ) -> Result<(), NodeUpdateError> {
         let current_time = TIMER::millis();
