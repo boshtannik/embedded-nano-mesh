@@ -8,3 +8,5 @@
 0.1.7 - Fix bug of non working transactions with ignore duplication flag set
 0.1.8 - Clean out arduino deps into separate repo.
 0.1.9 - Add packet state enum into exported types.
+1.0.0 - Change API, limit ability to jam network by sending special packets to anyone, code refactor
+1.0.1 - Forgotten doc on new type - added.

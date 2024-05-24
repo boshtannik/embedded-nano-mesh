@@ -10,9 +10,13 @@ pub type IdType = u8;
 /// Type alias for packet bit flags.
 pub type FlagsType = u8;
 
+/// Type alias for device address identification number.
+/// It cancontain only non-zero positive number.
+/// The zero value is reserved for broadcast address.
 pub type ExactAddressType = core::num::NonZeroU8;
 
 /// Type to strict interaction with addressing during use of the library.
+/// It provides options to send packet to exact device or to all devices it can reach.
 #[derive(Eq, PartialEq, Clone)]
 pub enum GeneralAddressType {
     /// Sends the packet to exact device with this address.
