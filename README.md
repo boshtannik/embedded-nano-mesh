@@ -15,7 +15,7 @@ The protocol potentially can use radio modules with similar UART interface, the 
 - GT-38
 - LoRa modules
 
-## Goal
+## Goal:
 The goal of this project is to provide ability to build easy to use,
 mesh like, data transferring protocol using cheap, low memory, components.
 This protocol can be used for:
@@ -25,7 +25,50 @@ This protocol can be used for:
 - Decentralized messaging
 - etc.
 
-## Status
+## Working principle:
+### Principle of spreading data in the network:
+The protocol routes the packets in the most dumb way.
+It spereads the packet in the way, similar to the spread of the wave
+in the pool. It means, that the packet is sent to the nearest devices,
+and each device router determines if the packet is reached it's destination or
+has to be transitted further with decrease of `lifetime` value of the packet.
+Once `lifetime` value is reached zero during routing - the packet is destroyed
+in the exact device which routes it. 
+
+The packets, that were just sent by user in the same device - bypasses routing,
+and will be stored in the sending queue, later they are send during call of `update` method.
+It means, that the user can send the message with:
+* Set the `lifetime` to `0`, and the packet will be transmitted into the ether,
+  nearest device will receive it, check if the destination is reached.
+  If the destination is reached - catch the data.
+  Otherwise - try to transmit further with decrease of `lifetime` value which
+  will lead to packet destruction.
+
+* Also set the `lifetime` to `1`, and the packet will be transmitted into the ether,
+  nearest device will receive it, check if the destination is reached,
+  If the destination is reached - catch the data.
+  Otherwise - try to transmit further with decrease of `lifetime` value which
+  will lead to packet destruction due to the same reason.
+
+* Set the `lifetime` to `2` and the packet will be transmitted into the ether,
+  nearest device will receive it, check if the destination is reached,
+  If the destination is reached - catch the data.
+  Otherwise - try to transmit further with decrease of `lifetime` value which
+  will lead packet transition back into the ether, but with less `lifetime` value.
+
+### Principle of limit number of packets that may jam the network:
+During sending of the packet - it is possible to set `ignore_duplicates` parameter
+to `true` to prevent network from being jammed by duplicated packets.
+It works in the next way: 
+Once intermediate node receives the packet with `ignore_duplicates` flag set to `true`,
+- it remembers the sender of the packet and id of the packet for the specified period of time.
+- if the same packet is sent again - it will be ignored by the node.
+It leads protocol to spread one exact packet trough the network only once.
+
+Special purpose packets as Ping-Pong or Transaction packets are always
+with `ignore_duplicates` flag set to `true` by default.
+
+## Status:
 The following functionalities of protocol have been tested and verified:
 - Send data.
 - Receive data.
@@ -37,7 +80,7 @@ The following functionalities of protocol have been tested and verified:
 - Send data via Transaction and receive packet about transaction being finished.
 
 ## Cross-platform compatibility
-The mesh metwork was tested using few Arduino boards and one Linux machine.
+The mesh metwork was tested using few Arduino boards and one Linux machine within the same network.
 
 For now the protocol was tested on:
 - Arduino nano
