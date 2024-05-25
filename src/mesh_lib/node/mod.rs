@@ -7,7 +7,8 @@ mod transmitter;
 mod types;
 
 pub use packet::{
-    meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, LifeTimeType, PacketDataBytes,
+    meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, IdType, LifeTimeType,
+    PacketDataBytes,
 };
 
 pub use platform_millis::{ms, PlatformMillis};
