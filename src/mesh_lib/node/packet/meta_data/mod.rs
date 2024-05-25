@@ -7,17 +7,48 @@ use super::traits::StateMutator;
 use super::types::IdType;
 
 #[derive(Clone)]
+/// This is the raw structure, to store
+/// packet meta data. It is yet to be serialized into
+/// `Packet` instance and then into bytes in order to be
+/// sent over the network.
+///
+/// Also it is created from bytes and then from `Packet`
+/// instance when received from the network and deserialized.
 pub struct PacketMetaData {
+    /// Bytes of packet data.
     pub data: PacketDataBytes,
+
+    /// Address of device, that sends the packet.
     pub source_device_identifier: ExactAddressType,
+
+    /// Address of device, that the packet is addressed to.
     pub destination_device_identifier: GeneralAddressType,
+
+    /// Amount of devices, that this packet will pass through.
     pub lifetime: LifeTimeType,
+
+    /// Tells if the protocol on the other devices will be ignoring
+    /// echoes of this message. It is strongly recommended to use
+    /// in order to make lower load onto the network.
     pub filter_out_duplication: bool,
+
+    /// Is used to tells if the packet is acquired by
+    /// ping, transaction or normal sending
+    /// operation.
     pub spec_state: PacketState,
+
+    /// Is used by the network to tell one packet
+    /// from another in order to filter out
+    /// duplicated packets.
     pub packet_id: IdType,
 }
 
+/// Case, when packet lifetime ended, and the packet can no longer
+/// be sent further.
 pub struct PacketLifetimeEnded;
+
+/// Is made to prevent forced response to broadcast address
+/// that causes netowrk jamming.
 pub struct RespondToBroadcastAddressError;
 
 impl PacketMetaData {

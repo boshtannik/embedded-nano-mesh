@@ -92,16 +92,15 @@ The implementation of PlatformMillis for Linux is done by:
 Usage examples can be found here:
 - [linux](https://github.com/boshtannik/nano-mesh-linux-example)
 
-# Usage
-## Main Components
-The central component of this protocol is the `Node` structure, which offers a
-user-friendly interface for actions like send, receive, broadcast, ping-pong, and
-send message with transaction.
+## Usage
+The central component of this protocol is the `Node` structure, which offers interface for
+actions like send, receive, broadcast, ping-pong, and send message with transaction.
 The `Node` should be constantly updated by
 call its `update` method, it - does all internal work:
 - routes packets trough the network, transits packets that were sent to other devices
 - handles special packets like `ping` and `pong`, or any kind of transaction one.
 - saves received packets that wil lbe available trough `receive` method.
+- sends packets, that are in the `send` queue.
 
 To initialize a `Node`, you need to provide two values:
 - `ExactAddressType`: Represents the device's identification address in the node pool.
@@ -117,6 +116,10 @@ To send the message to all nodes in the network, you can
 send it with standard `send` method, and put `GeneralAddressType::BROADCAST` as the
 `destination_device_identifier`. Every device will treat `GeneralAddressType::BROADCAST`
 as it's own address, will keep the message as received and will transit copy of that message further.
+
+To send the message to a specific device in the network, you can
+send it with standard `send` method, and put `ExactAddressType` as the
+`destination_device_identifier`.
 
 The term "echoed message" refers to a duplicated message that has
 been re-transmitted into the ether by an intermediate device.
