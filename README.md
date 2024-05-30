@@ -1,12 +1,29 @@
 # Mesh Network Protocol for embedded devices
-This is the radio mesh network protocol for almost every device, that can run
-rust code. The protocol uses serial port of your MCU in order to interact with
-radio module connected to it. The protocol allows to use any kind of radio
-module with USART interface, so you can use any radio module with any frequency
-you want.
+This is the radio mesh network protocol. It is designed to be lightweight,
+portable to many plaftorms, and is easy to use. The protocol uses serial
+port of your MCU in order to interact with radio module connected to it.
+The protocol allows to use any kind of radio module with USART interface,
+so you can build mesh node using any kind of radio module with USART
+interface and MCU.
 
-The protocol is designed to utilize UART interface of your MCU and has been tested with cheap radio modules JDY-40.
-The protocol potentially can use radio modules with similar UART interface, the devices are:
+MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.)
+
+## Node architecture:
+
+ (Library code runs here)
+        |
+        |
+        V
++----------------+              +-----------------+                                  
+|                |     USART    |                 |                                  
+|      MCU       |<------------>|   Radio module  |                               
+|                |              |                 |                                  
++----------------+              +-----------------+                                  
+                                                                                        
+
+The protocol has been tested with radio modules JDY-40, and
+potentially can use radio modules with similar UART interface,
+which might be:
 - JDY-41
 - SV-610
 - HC-11
@@ -17,7 +34,7 @@ The protocol potentially can use radio modules with similar UART interface, the 
 
 ## Goal:
 The goal of this project is to provide ability to build easy to use,
-mesh like, data transferring protocol using cheap, low memory, components.
+mesh - architecture, data transferring protocol for cheap, low memory, components.
 This protocol can be used for:
 - Home automation
 - Remote control
@@ -26,23 +43,27 @@ This protocol can be used for:
 - etc.
 
 ## Working principle:
-### Principle of spreading data in the network:
+### The way, how the protocol spreads the data:
 The protocol routes the packets in the most dumb way.
 It spereads the packet in the way, similar to the spread of the wave
 in the pool. It means, that the packet is sent to the nearest devices,
-and each device router determines if the packet is reached it's destination or
-has to be transitted further with decrease of `lifetime` value of the packet.
+and during the routing by the device - router determines if the packet is reached it's
+destination or has to be transitted further with decrease of `lifetime` value of the packet.
 Once `lifetime` value is reached zero during routing - the packet is destroyed
 in the exact device which routes it. 
 
-The packets, that were just sent by user in the same device - bypasses routing,
-and will be stored in the sending queue, later they are send during call of `update` method.
+The packets, that were just sent by user by `send`, `send_ping_pong` or `send_with_transaction` method
+in the same device - bypasses routing and are going directly into the sending queue.
+So the message can be sent with `lifetime` set to `0`, anyway it will be transmitted
+in the ether for the first time.
+Sending of packets from the queue happends during call of `update` method.
+
 It means, that the user can send the message with:
 * Set the `lifetime` to `0`, and the packet will be transmitted into the ether,
   nearest device will receive it, check if the destination is reached.
   If the destination is reached - catch the data.
   Otherwise - try to transmit further with decrease of `lifetime` value which
-  will lead to packet destruction.
+  will lead to packet destruction due to the end of packet's `lifetime`.
 
 * Also set the `lifetime` to `1`, and the packet will be transmitted into the ether,
   nearest device will receive it, check if the destination is reached,
@@ -56,12 +77,12 @@ It means, that the user can send the message with:
   Otherwise - try to transmit further with decrease of `lifetime` value which
   will lead packet transition back into the ether, but with less `lifetime` value.
 
-### Principle of limit number of packets that may jam the network:
-During sending of the packet - it is possible to set `ignore_duplicates` parameter
+### How the protocol avoid packet duplication:
+During sending of the packet - it is offered to set `ignore_duplicates` parameter
 to `true` to prevent network from being jammed by duplicated packets.
 It works in the next way: 
 Once intermediate node receives the packet with `ignore_duplicates` flag set to `true`,
-- it remembers the sender of the packet and id of the packet for the specified period of time.
+- it remembers the address of sender of the packet and id of the packet for the specified period of time.
 - if the same packet is sent again - it will be ignored by the node.
 It leads protocol to spread one exact packet trough the network only once.
 
@@ -80,7 +101,7 @@ The following functionalities of protocol have been tested and verified:
 - Send data via Transaction and receive packet about transaction being finished.
 
 ## Cross-platform compatibility
-The mesh metwork was tested using few Arduino boards and one Linux machine within the same network.
+The mesh metwork was tested using few Arduino nano boards and one Linux machine within the same network.
 
 For now the protocol was tested on:
 - Arduino nano
@@ -94,22 +115,58 @@ Potentially can be ported to:
 - Raspberry PI pico
 
 ## Porting to other platforms
-While initially designed to be able to run at least on Atmega328p chips - it
-can be ported to many other platforms, which are supported by `embedded-hal`.
+While initially designed to be able to run at least on
+Atmega328p chips - it can be ported to huge variety of other platforms.
+Platforms shall be supported by `embedded-hal`.
 
 Also this protocol is welcomed to be ported on other platforms.
 In order to simplify process of porting of this protocol to the new
 platforms - the common behaviour is moved out of implementation
 to make it interchangable with implementations of PlatformMillis and PlatformSerial traits for
 each other platform.
+So the library is not platform dependent.
 
-These are two generic interfaces.
+So to port the protocol to the new platform, you need to implement these two generic interfaces.
+- `PlatformSerial` - interface to communicate with radio module over USART.
+- `PlatformMillis` - interface to track of time.
 
-- The library uses `PlatformSerial` interface to communicate with radio module over USART.
-- The library uses `PlatformMillis` interface to be able to keep track of time.
+In case - if you have implemented `PlatformSerial` and `PlatformMillis` trait for your platform,
+you can contact developers of this library to include links for your implementations in this README.
+Contacs are:
+- Telegram channel: [https://t.me/embedded_nano_mesh](https://t.me/embedded_nano_mesh)
+- Github: [https://github.com/boshtannik](https://github.com/boshtannik)
+This will help this project grow.
 
 In case, if implementations are already present for platform, you need -
 you just simply include those and use them into your project.
+1 - Include `platform-serial` and `platform-millis` in your project.
+`Cargo.toml`:
+```
+embedded-nano-mesh = "1.0.5"
+platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git", rev = "..." }
+platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git", rev = "..." }
+```
+2 - Include `platform-serial` and `platform-millis` in your project.
+`src/main.rs`:
+```
+use embedded_nano_mesh::*;
+
+use platform_millis_arduino_nano::{init_timer, ms, Atmega328pMillis};
+use platform_serial_arduino_nano::{init_serial, ArduinoNanoSerial};
+```
+
+3 - Use `PlatformSerial` and `PlatformMillis` implementations:
+```
+    /// Send ping-pong example:
+    match mesh_node.send_ping_pong::<Atmega328pMillis, ArduinoNanoSerial>( ... ) { ... }
+
+    /// Send with transaction example:
+    match mesh_node.send_with_transaction::<Atmega328pMillis, ArduinoNanoSerial>( ... ) { ... }
+
+    /// Update example.
+    let _ = mesh_node.update::<Atmega328pMillis, ArduinoNanoSerial>();
+```
+Full examples are available below.
 
 ## Arduino nano port.
 The implementation of PlatformSerial for Arduino nano board is done by:
@@ -140,14 +197,14 @@ The central component of this protocol is the `Node` structure, which offers int
 actions like send, receive, broadcast, ping-pong, and send message with transaction.
 The `Node` should be constantly updated by
 call its `update` method, it - does all internal work:
-- routes packets trough the network, transits packets that were sent to other devices
+- routes packets trough the network, transits packets that were sent to other devices, handles `lifetime` of packets.
 - handles special packets like `ping` and `pong`, or any kind of transaction one.
 - saves received packets that wil lbe available trough `receive` method.
 - sends packets, that are in the `send` queue.
 
-To initialize a `Node`, you need to provide two values:
-- `ExactAddressType`: Represents the device's identification address in the node pool.
-- `listen_period`: A value in milliseconds that determines how long the device will wait before transmitting on the network to prevent network congestion.
+To initialize a `Node`, you need to provide `NodeConfig` with values:
+- `ExactAddressType`: Sets the device's identification address in the node pool.
+- `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting on the network. It prevents network congestion.
 
 You can regulate the number of hops that the packet will be able to
 make - by configuring the `lifetime` during making the send
@@ -161,7 +218,7 @@ send it with standard `send` method, and put `GeneralAddressType::BROADCAST` as 
 as it's own address, will keep the message as received and will transit copy of that message further.
 
 To send the message to a specific device in the network, you can
-send it with standard `send` method, and put `ExactAddressType` as the
+send it with standard `send` method, and put `GeneralAddressTyp::ExactAddressType(...)` as the
 `destination_device_identifier`.
 
 The term "echoed message" refers to a duplicated message that has
@@ -169,7 +226,7 @@ been re-transmitted into the ether by an intermediate device.
 
 ### Receive Method
 The `receive` method optionally returns received data in a `PacketDataBytes` instance in case
-if that packet was previously delivered by the network to this exact device.
+if that packet was previously received by this exact device.
 
 ### Send Method
 The `send` method requires the following arguments:
@@ -207,6 +264,7 @@ like:
 - device 3 - 250 ms,
 this will reduce chance of the network to sychronize,
 which will lead to packet collisions.
+You can play with this values in order to reduce the chance of packet collisions.
 
 ### Note: The higher count of nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
 
@@ -221,9 +279,9 @@ will lead to communication issues.
 
 ## Note
 Under the hood, data is packed into a `Packet` instance. 
-If you need customize packets - you can configure the `Packet`
+If you need customize packets for your needs - you need configure the `Packet`
 fields in `src/Node/packet/config.rs` and `src/Node/packet/types.rs`.
-Also serialization and deserealization part will be touched too.
+Also serialization and deserealization part shall be changed too.
 
 ## License
 This project is licensed under:
