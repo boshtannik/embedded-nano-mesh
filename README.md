@@ -9,7 +9,7 @@ interface and MCU.
 MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.)
 
 ## Node architecture:
-
+```
  (Library code runs here)
         |
         |
@@ -19,7 +19,7 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 |      MCU       |<------------>|   Radio module  |                               
 |                |              |                 |                                  
 +----------------+              +-----------------+                                  
-                                                                                        
+```
 
 The protocol has been tested with radio modules JDY-40, and
 potentially can use radio modules with similar UART interface,
