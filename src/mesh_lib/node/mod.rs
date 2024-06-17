@@ -22,10 +22,11 @@ use self::{
     types::PacketDataQueue,
 };
 
-/// The main structure of the library to bring communication
-/// in the mesh network. The node works in the manner of listening
-/// of ether for specified period of time, which is called `listen_period`,
-/// and then sending out packets between those periods.
+/// The main and only structure of the library that brings API for
+/// communication trough the mesh network.
+/// It works in the manner of listening of ether for
+/// specified period of time, which is called `listen_period`,
+/// and then sending out packets out of queues between those periods.
 ///
 /// Also node resends caught packets, that were addressed to other
 /// nodes.
@@ -249,7 +250,7 @@ impl Node {
 
     /// Sends the `data` to exact device. or to all devices.
     /// In order to send `data` to all devices, use `GeneralAddressType::Broadcast`,
-    /// otherwise - `GeneralAddressType::Exact(ExactAddressType::new(...).unwrap()) identifier
+    /// otherwise - `GeneralAddressType::Exact(ExactAddressType::new(...).unwrap())` identifier
     /// in order to set exact receiver device address.
     ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
