@@ -64,7 +64,7 @@ pub enum SendError {
 }
 
 /// Errors, that may occur during the call
-/// call of `Node` `send_with_transaction`
+/// of `Node` `send_with_transaction`
 /// or `send_ping_pong` method.
 pub enum SpecialSendError {
     /// Case when expected response was not received.
@@ -85,11 +85,11 @@ impl From<SendError> for SpecialSendError {
 
 /// User-friendly `Node` configuration structure.
 pub struct NodeConfig {
-    /// Address of this device. Instance of `ExactDeviceAddressType`.
+    /// Address of configurable device. Instance of `ExactAddressType`.
     pub device_address: ExactAddressType,
 
     /// Instance of `ms` type. The time period in
-    /// milliseconds that this device will listen for incoming packets
+    /// milliseconds that configured device will listen for incoming packets
     /// before speaking back into the ether.
     pub listen_period: ms,
 }

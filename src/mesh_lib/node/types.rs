@@ -7,7 +7,7 @@ use super::constants::{PACKET_META_DATA_QUEUE_SIZE, PACKET_QUEUE_SIZE, PACKET_ST
 
 pub type PacketQueue = Deque<Packet, PACKET_QUEUE_SIZE>;
 pub type PacketDataQueue = Deque<PacketMetaData, PACKET_META_DATA_QUEUE_SIZE>;
-pub type PacketBytesBuffer = Deque<u8, { PACKET_BYTES_SIZE + PACKET_START_BYTES_COUNT }>;
+pub type ParserBytesBuffer = Deque<u8, { PACKET_BYTES_SIZE + PACKET_START_BYTES_COUNT }>;
 
 /// Type alias for a String with fixed length, that is made
 /// to simplify messaging between nodes.
