@@ -22,10 +22,11 @@ use self::{
     types::PacketDataQueue,
 };
 
-/// The main structure of the library to bring communication
-/// in the mesh network. The node works in the manner of listening
-/// of ether for specified period of time, which is called `listen_period`,
-/// and then sending out packets between those periods.
+/// The main and only structure of the library that brings API for
+/// communication trough the mesh network.
+/// It works in the manner of listening of ether for
+/// specified period of time, which is called `listen_period`,
+/// and then sending out packets out of queues between those periods.
 ///
 /// Also node resends caught packets, that were addressed to other
 /// nodes.
@@ -63,7 +64,7 @@ pub enum SendError {
 }
 
 /// Errors, that may occur during the call
-/// call of `Node` `send_with_transaction`
+/// of `Node` `send_with_transaction`
 /// or `send_ping_pong` method.
 pub enum SpecialSendError {
     /// Case when expected response was not received.
@@ -84,11 +85,11 @@ impl From<SendError> for SpecialSendError {
 
 /// User-friendly `Node` configuration structure.
 pub struct NodeConfig {
-    /// Address of this device. Instance of `ExactDeviceAddressType`.
+    /// Address of configurable device. Instance of `ExactAddressType`.
     pub device_address: ExactAddressType,
 
     /// Instance of `ms` type. The time period in
-    /// milliseconds that this device will listen for incoming packets
+    /// milliseconds that configured device will listen for incoming packets
     /// before speaking back into the ether.
     pub listen_period: ms,
 }
@@ -249,7 +250,7 @@ impl Node {
 
     /// Sends the `data` to exact device. or to all devices.
     /// In order to send `data` to all devices, use `GeneralAddressType::Broadcast`,
-    /// otherwise - `GeneralAddressType::Exact(ExactAddressType::new(...).unwrap()) identifier
+    /// otherwise - `GeneralAddressType::Exact(ExactAddressType::new(...).unwrap())` identifier
     /// in order to set exact receiver device address.
     ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
