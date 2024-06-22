@@ -10,3 +10,7 @@
 0.1.9 - Add packet state enum into exported types.
 1.0.0 - Change API, limit ability to jam network by sending special packets to anyone, code refactor
 1.0.1 - Forgotten doc on new type - added.
+1.0.2 - Update the documentation
+1.0.3 - Update README documentation - add work principle explanation
+1.0.4 - PacketMetaData - is added to exported types.
+1.0.5 - Update README documentation, add developer contacts information.

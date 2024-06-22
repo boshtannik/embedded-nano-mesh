@@ -10,5 +10,5 @@ pub type PacketDataQueue = Deque<PacketMetaData, PACKET_META_DATA_QUEUE_SIZE>;
 pub type PacketBytesBuffer = Deque<u8, { PACKET_BYTES_SIZE + PACKET_START_BYTES_COUNT }>;
 
 /// Type alias for a String with fixed length, that is made
-/// to unify use of the library.
+/// to simplify messaging between nodes.
 pub type NodeString = String<{ super::packet::CONTENT_SIZE }>;

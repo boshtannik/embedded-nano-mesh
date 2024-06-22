@@ -11,7 +11,7 @@ pub type IdType = u8;
 pub type FlagsType = u8;
 
 /// Type alias for device address identification number.
-/// It cancontain only non-zero positive number.
+/// It can contain only non-zero positive number.
 /// The zero value is reserved for broadcast address.
 pub type ExactAddressType = core::num::NonZeroU8;
 
@@ -66,7 +66,7 @@ pub type DataLengthType = u16;
 /// to pass all the nodes of the network.
 pub type LifeTimeType = AddressType;
 
-/// Type alias for data contained in the packet.
+/// Type alias for bytes of data contained in the packet.
 pub type PacketDataBytes = Vec<u8, { CONTENT_SIZE }>;
 
 /// Type alias that represents serialized packet bytes sequence.
@@ -87,11 +87,32 @@ impl FromBytes<DATA_LENGTH_TYPE_SIZE> for DataLengthType {
 /// State of the packet.
 #[derive(PartialEq, Eq, Clone)]
 pub enum PacketState {
+    /// End receiver of packet with this state - just receives the data.
     Normal,
+
+    /// Packet with this state being set - forces end-receiver device,
+    /// to automatically respond same packet back with `Pong` state.
+    /// Also receiving device receives content of the packet.
     Ping,
+
+    /// Packet with this state being set - indicates, that receiver
+    /// has successfully processed the packet.
     Pong,
+
+    /// Packet with this state being set - forces end-receiver device,
+    /// to get ready to do full transaction.
     SendTransaction,
+
+    /// Packet with this state being set - is sent by receiver and
+    /// informs sender device, that receiver have the
+    /// transaction being started.
     AcceptTransaction,
+
+    /// Packet with this state being set - is sent by sender and
+    /// forces end-receiver device, to do the transaction finish.
     InitTransaction,
+
+    /// Packet with this state being set - is sent by receiver and
+    /// informs sender device, that receiver have the transaction finished.
     FinishTransaction,
 }

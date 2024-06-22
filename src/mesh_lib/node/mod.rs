@@ -7,7 +7,8 @@ mod transmitter;
 mod types;
 
 pub use packet::{
-    meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, LifeTimeType, PacketDataBytes,
+    meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, IdType, LifeTimeType,
+    PacketDataBytes,
 };
 
 pub use platform_millis::{ms, PlatformMillis};
@@ -21,7 +22,7 @@ use self::{
     types::PacketDataQueue,
 };
 
-/// The main structure of the library to use communication
+/// The main structure of the library to bring communication
 /// in the mesh network. The node works in the manner of listening
 /// of ether for specified period of time, which is called `listen_period`,
 /// and then sending out packets between those periods.
@@ -297,6 +298,8 @@ impl Node {
     /// Optionally returns `PacketDataBytes` instance with data,
     /// which has been send exactly to this device, or has been
     /// `broadcast`ed trough all the network.
+    ///
+    /// Returns `None` if no data is available.
     pub fn receive(&mut self) -> Option<PacketMetaData> {
         self.received_packet_meta_data_queue.pop_front()
     }

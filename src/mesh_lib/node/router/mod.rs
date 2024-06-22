@@ -8,8 +8,9 @@ use super::packet::{PacketLifetimeEnded, PacketMetaData, RespondToBroadcastAddre
 /// of the network.
 ///
 /// * It handles has the `lifeteime` of the packet.
-/// * It hangles packets of different special purposes, like ping-pong, transactions, and handles
-/// their further processing.
+/// * It handles packets of different special purposes, like ping-pong,
+///   transactions, and does their further processing.
+/// * It catches packets, that were send to this device.
 /// * It transits packets, that were sent to other devices.
 pub struct Router {
     current_device_identifier: ExactAddressType,
@@ -80,7 +81,7 @@ impl Router {
         Ok(RouteResult::ReceivedAndTransit { received, transit })
     }
 
-    /// This method makes the packet routing.
+    /// This method makes all the packet routing of the netwok.
     /// It does:
     /// * In case, if the packet is addressed to the current device only - handles it.
     /// * In case, if the packet is addressed to the broadcast:
