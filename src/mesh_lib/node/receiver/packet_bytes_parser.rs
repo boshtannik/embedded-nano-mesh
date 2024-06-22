@@ -36,11 +36,7 @@ impl PacketBytesParser {
             self.bytes_buffer.pop_front().unwrap_or_else(|| 0u8);
         }
 
-        let parsing_buffer = self
-            .bytes_buffer
-            .iter()
-            .map(|el_ref| *el_ref)
-            .collect::<PacketSerializedBytes>();
+        let parsing_buffer: PacketSerializedBytes = self.bytes_buffer.iter().map(|b| *b).collect();
 
         let got_packet = <Packet as Serializer>::deserialize(parsing_buffer);
 
