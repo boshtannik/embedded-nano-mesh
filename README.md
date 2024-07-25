@@ -1,6 +1,6 @@
 # Mesh Network Protocol for embedded devices
 This is the radio mesh network protocol. It is designed to be lightweight,
-portable to many plaftorms, and is easy to use. The protocol uses serial
+portable to many plaftorms, and easy to use. The protocol uses serial
 port of your MCU in order to interact with radio module connected to it.
 The protocol allows to use any kind of radio module with USART interface,
 so you can build mesh node using any kind of radio module with USART
@@ -34,7 +34,7 @@ which might be:
 
 ## Goal:
 The goal of this project is to provide ability to build easy to use,
-mesh - architecture, data transferring protocol for cheap, low memory, components.
+mesh - architecture, data transferring network out of cheap, low memory, components.
 This protocol can be used for:
 - Home automation
 - Remote control
@@ -78,16 +78,16 @@ It means, that the user can send the message with:
   will lead packet transition back into the ether, but with less `lifetime` value.
 
 ### How the protocol avoid packet duplication:
-During sending of the packet - it is offered to set `ignore_duplicates` parameter
+During sending of the packet - it is offered to set `filter_out_duplication` parameter
 to `true` to prevent network from being jammed by duplicated packets.
 It works in the next way: 
-Once intermediate node receives the packet with `ignore_duplicates` flag set to `true`,
+Once intermediate node receives the packet with `ignore_duplication` flag set to `true`,
 - it remembers the address of sender of the packet and id of the packet for the specified period of time.
 - if the same packet is sent again - it will be ignored by the node.
 It leads protocol to spread one exact packet trough the network only once.
 
 Special purpose packets as Ping-Pong or Transaction packets are always
-with `ignore_duplicates` flag set to `true` by default.
+with `filter_out_duplication` flag set to `true` by default.
 
 ## Status:
 The following functionalities of protocol have been tested and verified:
@@ -117,7 +117,7 @@ Potentially can be ported to:
 ## Porting to other platforms
 While initially designed to be able to run at least on
 Atmega328p chips - it can be ported to huge variety of other platforms.
-Platforms shall be supported by `embedded-hal`.
+Protocol is using `embedded-hal`,  so platforms shall be supported by `embedded-hal`.
 
 Also this protocol is welcomed to be ported on other platforms.
 In order to simplify process of porting of this protocol to the new
@@ -196,7 +196,7 @@ Usage examples can be found here:
 The central component of this protocol is the `Node` structure, which offers interface for
 actions like send, receive, broadcast, ping-pong, and send message with transaction.
 The `Node` should be constantly updated by
-call its `update` method, it - does all internal work:
+call its `update` method, during call of `update` method - it does all internal work:
 - routes packets trough the network, transits packets that were sent to other devices, handles `lifetime` of packets.
 - handles special packets like `ping` and `pong`, or any kind of transaction one.
 - saves received packets that wil lbe available trough `receive` method.
@@ -238,7 +238,7 @@ The `send` method requires the following arguments:
 
 ### Send Ping-Pong Method
 The `send_ping_pong` method sends a message with a "ping" flag to the destination node and
-waits for the same message with a "pong" flag. It returns an error if the ping-pong exchange fails.
+waits for the same message with a "pong" flag which tells that the device have received the message at least once. It returns an error if the ping-pong exchange fails.
 The following arguments are required:
 
 - `data`: A `PacketDataBytes` instance.
@@ -248,7 +248,7 @@ The following arguments are required:
 
 ### Send with Transaction Method
 The `send_with_transaction` method sends a message and handles all further work to
-ensure the target device have received it correctly. It returns an error if the transaction failed.
+ensure the target device have received it only once and correctly. It returns an error if the transaction failed.
 The required arguments are:
 
 - `data`: A `PacketDataBytes` instance.
@@ -263,7 +263,7 @@ like:
 - device 2 - 240 ms,
 - device 3 - 250 ms,
 this will reduce chance of the network to sychronize,
-which will lead to packet collisions.
+and shall make less packet collisions.
 You can play with this values in order to reduce the chance of packet collisions.
 
 ### Note: The higher count of nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
