@@ -43,6 +43,7 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 |                |               |                 |                 |                | 
 |      Node      |  (( Ether ))  |      Node       |   (( Ether ))   |      Node      |  
 |   Address: 1   |               |   Address: 2    |                 |    Address: 3  | 
+|                |               |                 |                 |                | 
 +----------------+  <--------->  +-----------------+  <----------->  +----------------+ 
                   ^               ^                                                    
                    \             /                                                     
@@ -55,8 +56,13 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
               |                |                                                       
               |      Node      |                                                       
               |   Address: 4   |                                                       
+              |                |                                                       
               +----------------+                                                       
 ```
+
+## Quick links to usage examples:
+- [arduino-nano](https://github.com/boshtannik/nano-mesh-arduino-nano-example)
+- [linux](https://github.com/boshtannik/nano-mesh-linux-example)
 
 ## Goal:
 The goal of this project is to provide ability to build easy to use,
@@ -73,7 +79,7 @@ This protocol can be used for:
 The protocol routes the packets in the most dumb way.
 It spereads the packet in the way, similar to the spread of the atenuating
 wave in the pool. It means, that all near devices, that can catch the packet - cathes it.
-And the device's router - determines if the packet is reached it's
+Then the device's router - determines if the packet is reached it's
 destination or has to be transitted further with decrease of `lifetime` value of the packet.
 Once `lifetime` value is reached zero during routing - the packet is destroyed
 in the exact device which currently routes it. 
@@ -84,11 +90,6 @@ sending queue, and then into the ether. Meaning that lifetime of the packet is n
 So the message can be sent even with `lifetime` set to `0`, anyway it will be transmitted
 in the ether for the first time.
 Sending of packets from the queues happends during call of `update` method.
-Every node have 2 queues:
-- `send` - for sending packets
-- `transit` - for packets, that are sent to the other devices.
-Sizes of those queues are configurable. And their both configuration of size
-is made by `PACKET_QUEUE_SIZE` constant in `./src/mesh_lib/node/constants.rs`.
 
 It means, that the user can send the message with:
 * Set the `lifetime` to `0`, and the packet will be transmitted into the ether,
@@ -108,6 +109,12 @@ It means, that the user can send the message with:
   If the destination is reached - catch the data.
   Otherwise - try to transmit further with decrease of `lifetime` value which
   will lead packet transition back into the ether, but with less `lifetime` value.
+
+Every node have 2 queues:
+- `send` - for sending packets
+- `transit` - for packets, that are sent to the other devices.
+Sizes of those queues are configurable. And their both configuration of size
+is made by `PACKET_QUEUE_SIZE` constant in `./src/mesh_lib/node/constants.rs`.
 
 * And so on..
 
@@ -171,6 +178,8 @@ Contacs are:
 - Github: [https://github.com/boshtannik](https://github.com/boshtannik)
 This will help this project grow.
 
+
+## Usage steps:
 In case, if implementations are already present for platform, you need -
 you just simply include those and use them into your project.
 1 - Include `platform-serial` and `platform-millis` in your project.
@@ -180,7 +189,7 @@ embedded-nano-mesh = "1.0.5"
 platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git", rev = "..." }
 platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git", rev = "..." }
 ```
-2 - Include `platform-serial` and `platform-millis` in your project.
+2 - Include `platform-serial` and `platform-millis` in your project, and of course the library `embedded-nano-mesh` itself.
 `src/main.rs`:
 ```
 use embedded_nano_mesh::*;
@@ -190,6 +199,7 @@ use platform_serial_arduino_nano::{init_serial, ArduinoNanoSerial};
 ```
 
 3 - Use `PlatformSerial` and `PlatformMillis` implementations:
+`src/main.rs`:
 ```
 /// Send ping-pong example:
 match mesh_node.send_ping_pong::<Atmega328pMillis, ArduinoNanoSerial>( ... ) { ... }
@@ -198,7 +208,9 @@ match mesh_node.send_ping_pong::<Atmega328pMillis, ArduinoNanoSerial>( ... ) { .
 match mesh_node.send_with_transaction::<Atmega328pMillis, ArduinoNanoSerial>( ... ) { ... }
 
 /// Update example.
-let _ = mesh_node.update::<Atmega328pMillis, ArduinoNanoSerial>();
+loop {
+  let _ = mesh_node.update::<Atmega328pMillis, ArduinoNanoSerial>();
+}
 ```
 Full examples are available below.
 
@@ -226,7 +238,7 @@ The implementation of PlatformMillis for Linux is done by:
 Usage examples can be found here:
 - [linux](https://github.com/boshtannik/nano-mesh-linux-example)
 
-## Usage
+## Extended usage description
 1 - Instantiate `Node` structure.
 2 - Constantly call `update` method of `Node`.
 3 - Call any method of `Node` structure you need, such as:
@@ -235,20 +247,20 @@ Usage examples can be found here:
   - `send_ping_pong`
   - `send_with_transaction`
 
-To create node - instantiate `Node` structure with `NodeConfig` in your program:
-example:
+To initialize a `Node`, you need to provide `NodeConfig` with values:
+- `ExactAddressType`: Sets the device's identification address in the node pool.
+- `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting on the network. It prevents network congestion.
+
+`main.rs`:
 ```
 let mut mesh_node = Node::new(NodeConfig {
     device_address: ExactAddressType::new(1).unwrap(),
     listen_period: 150 as ms,
 });
 ```
-To initialize a `Node`, you need to provide `NodeConfig` with values:
-- `ExactAddressType`: Sets the device's identification address in the node pool.
-- `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting on the network. It prevents network congestion.
 
 The central component of this protocol is the `Node` structure, which offers interface for
-actions like send, receive, broadcast, ping-pong, and send message with transaction.
+actions like `send`, `receive`, `send_ping_pong`, and `send_with_transaction`.
 The `Node` should be constantly updated by
 call its `update` method, it - does all internal work:
 - routes packets trough the network, transits packets that were sent to other devices, handles `lifetime` of packets.
@@ -260,7 +272,7 @@ As the protocol relies on physical environment - it is crucial to provide
 ability to the library to rely on time counting and on USART interface, as
 it is described above by `PlatformSerial` and `PlatformMillis` implementations.
 
-During the use of methods, that relies on PlatformMillis trait and PlatformSerial trait -
+During the use of methods, that relies on `PlatformMillis` trait and `PlatformSerial` trait -
 it is needed to provide those implementations during the method call.
 Those methods are:
 - `update`
@@ -272,6 +284,7 @@ To send the message to all nodes in the network, you can
 send it with standard `send` method, and put `GeneralAddressType::Broadcast` as the
 `destination_device_identifier`. Every device will treat `GeneralAddressType::Broadcast`
 as it's own address, will keep the message as received and will transit copy of that message further.
+`main.rs`:
 ```
 mesh_node.send(
     NodeString::from("Hello, world!").into_bytes(),
@@ -284,6 +297,7 @@ mesh_node.send(
 To send the message to a specific device in the network, you can
 send it with standard `send` method, and put `GeneralAddressType::Exact(...)` as the
 `destination_device_identifier`.
+`main.rs`:
 ```
 mesh_node.send(
     NodeString::from("Hello, world!").into_bytes(),
