@@ -181,7 +181,7 @@ This will help this project grow.
 
 ## Usage steps:
 In case, if implementations are already present for platform, you need -
-you just simply include those and use them into your project.
+just follow three steps to use it: (Examples are for arduino nano)
 1 - Include `platform-serial` and `platform-millis` in your project.
 `Cargo.toml`:
 ```
@@ -198,7 +198,7 @@ use platform_millis_arduino_nano::{init_timer, ms, Atmega328pMillis};
 use platform_serial_arduino_nano::{init_serial, ArduinoNanoSerial};
 ```
 
-3 - Use `PlatformSerial` and `PlatformMillis` implementations:
+3 - Use `PlatformSerial` and `PlatformMillis` implementations during use of dependent methods on this traits:
 `src/main.rs`:
 ```
 /// Send ping-pong example:
