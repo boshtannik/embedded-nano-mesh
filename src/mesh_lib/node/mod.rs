@@ -193,6 +193,8 @@ impl Node {
         lifetime: LifeTimeType,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
+        // FIXME! Require to distinguish one sent transaction from another. Probably by wait
+        // packet_id
         self._special_send::<TIMER, SERIAL>(
             data,
             destination_device_identifier,
