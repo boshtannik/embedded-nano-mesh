@@ -36,9 +36,9 @@ impl Transmitter {
         }
     }
 
-    pub fn send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), PacketQueueIsFull> {
+    pub fn send(&mut self, packet_meta_data: PacketMetaData) -> Result<IdType, PacketQueueIsFull> {
         match self._send(packet_meta_data, true) {
-            Ok(_) => Ok(()),
+            Ok(generated_packet_id) => Ok(generated_packet_id),
             Err(QueuePushError) => Err(PacketQueueIsFull),
         }
     }
@@ -47,17 +47,19 @@ impl Transmitter {
         &mut self,
         mut packet_meta_data: PacketMetaData,
         update_id_counter: bool,
-    ) -> Result<(), QueuePushError> {
+    ) -> Result<IdType, QueuePushError> {
         if update_id_counter {
             let (new_val, _) = self.id_counter.overflowing_add(1);
             self.id_counter = new_val;
             packet_meta_data.packet_id = self.id_counter;
         }
 
+        let generated_packet_id = packet_meta_data.packet_id.clone();
+
         let packed_data = <Packet as DataPacker>::pack(packet_meta_data);
 
         match self.packet_queue.push_back(packed_data) {
-            Ok(_) => Ok(()),
+            Ok(_) => Ok(generated_packet_id),
             Err(_) => Err(QueuePushError),
         }
     }

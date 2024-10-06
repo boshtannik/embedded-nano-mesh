@@ -193,8 +193,6 @@ impl Node {
         lifetime: LifeTimeType,
         timeout: ms,
     ) -> Result<(), SpecialSendError> {
-        // FIXME! Require to distinguish one sent transaction from another. Probably by wait
-        // packet_id
         self._special_send::<TIMER, SERIAL>(
             data,
             destination_device_identifier,
@@ -219,26 +217,34 @@ impl Node {
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
 
-        if let Err(any_err) = self._send(PacketMetaData {
+        let expected_packet_id = match self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone().into(),
             destination_device_identifier: destination_device_identifier.into(),
             lifetime,
             filter_out_duplication: true,
-            spec_state: request_state,
+            spec_state: request_state.clone(),
             packet_id: 0,
         }) {
-            return Err(any_err.into());
-        }
+            Err(any_err) => return Err(any_err.into()),
+            Ok(generated_packet_id) => match request_state {
+                PacketState::SendTransaction => generated_packet_id + 1,
+                PacketState::Ping => generated_packet_id,
+                _ => generated_packet_id,
+            },
+        };
 
         while current_time < wait_end_time {
             let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
+                if !(answer.source_device_identifier == destination_device_identifier.into()) {
+                    continue;
+                }
                 if !(answer.spec_state == expected_response_state) {
                     continue;
                 }
-                if !(answer.source_device_identifier == destination_device_identifier.into()) {
+                if !(answer.packet_id == expected_packet_id) {
                     continue;
                 }
                 return Ok(());
@@ -279,7 +285,7 @@ impl Node {
         destination_device_identifier: GeneralAddressType,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
-    ) -> Result<(), SendError> {
+    ) -> Result<IdType, SendError> {
         self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone().into(),
@@ -291,9 +297,9 @@ impl Node {
         })
     }
 
-    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), SendError> {
+    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<IdType, SendError> {
         match self.transmitter.send(packet_meta_data) {
-            Ok(_) => Ok(()),
+            Ok(generated_packet_id) => Ok(generated_packet_id),
             Err(transmitter::PacketQueueIsFull) => Err(SendError::SendingQueueIsFull),
         }
     }
