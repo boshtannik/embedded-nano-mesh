@@ -241,7 +241,7 @@ Usage examples can be found here:
 ## Extended usage description
 1 - Instantiate `Node` structure.
 2 - Constantly call `update` method of `Node`.
-3 - Call any method of `Node` structure you need, such as:
+3 - Call any method of `Node` structure that you need, such as:
   - `send`
   - `receive`
   - `send_ping_pong`
