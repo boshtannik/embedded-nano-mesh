@@ -256,10 +256,9 @@ impl Node {
         Err(SpecialSendError::Timeout)
     }
 
-    /// Sends the `data` to exact device. or to all devices.
-    /// In order to send `data` to all devices, use `GeneralAddressType::Broadcast`,
-    /// otherwise - `GeneralAddressType::Exact(ExactAddressType::new(...).unwrap())` identifier
-    /// in order to set exact receiver device address.
+    /// Sends the `data` to exact device.
+    /// In order to send `data` to exact device`, use
+    /// ExactAddressType::new(...).unwrap()` identifier
     ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
     /// heapless vector of bytes of special size. This size is configured in the
@@ -267,7 +266,7 @@ impl Node {
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
-    /// * `destination_device_identifier` is instance of `GeneralAddressType`,
+    /// * `destination_device_identifier` is instance of `ExactAddressType`,
     /// That type is made to limit possible mess-ups during the usage of method.
     ///
     /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
@@ -276,13 +275,13 @@ impl Node {
     /// by other nodes to the infinity...
     /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
     ///
-    /// * `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// * `filter_out_duplication` - Tells if the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send(
+    pub fn send_to_exact(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: GeneralAddressType,
+        destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
     ) -> Result<IdType, SendError> {
@@ -292,6 +291,35 @@ impl Node {
             destination_device_identifier: destination_device_identifier.into(),
             lifetime,
             filter_out_duplication,
+            spec_state: PacketState::Normal,
+            packet_id: 0,
+        })
+    }
+
+    /// Sends the `data` to all devices.
+    ///
+    /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
+    /// heapless vector of bytes of special size. This size is configured in the
+    /// node/packet/config.rs file.
+    /// `Note!` That all devices should have same version of protocol flashed, in order to
+    /// be able to correctly to communicate with each other.
+    ///
+    /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
+    /// how many nodes - the packet will be able to pass. Also this value is provided
+    /// to void the ether being jammed by packets, that in theory might be echoed
+    /// by other nodes to the infinity...
+    /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
+    pub fn broadcast(
+        &mut self,
+        data: PacketDataBytes,
+        lifetime: LifeTimeType,
+    ) -> Result<IdType, SendError> {
+        self._send(PacketMetaData {
+            data,
+            source_device_identifier: self.my_address.clone().into(),
+            destination_device_identifier: GeneralAddressType::Broadcast,
+            lifetime,
+            filter_out_duplication: true,
             spec_state: PacketState::Normal,
             packet_id: 0,
         })

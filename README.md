@@ -2,8 +2,8 @@
 This is the low speed mesh network protocol. It allows to turn almost any
 kind of MCU device + Radio module device into a mesh node. It is designed
 to be lightweight, easy to use and portable to many plaftorms. The protocol
-uses serial port of your MCU in order to communicate with other nodes
-via radio modules connected to it.
+uses serial port of your MCU in order to communicate with
+radio modulee connected to it.
 
 The network extends and heals itself automatically by communicating
 with other nodes, which have same protocol version installed. Most
@@ -37,7 +37,7 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 +----------------+              +-----------------+
 ```
 
-## Network architecture:
+## Network possible architecture:
 ```
 +----------------+               +-----------------+                 +----------------+ 
 |                |               |                 |                 |                | 
@@ -81,13 +81,13 @@ It spereads the packet in the way, similar to the spread of the atenuating
 wave in the pool. It means, that all near devices, that can catch the packet - cathes it.
 Then the device's router - determines if the packet is reached it's
 destination or has to be transitted further with decrease of `lifetime` value of the packet.
-Once `lifetime` value is reached zero during routing - the packet is destroyed
-in the exact device which currently routes it. 
+Once `lifetime` value is reached zero during routing - the packet gets destroyed
+by the exact device which currently routes it.
 
-The packets, that were just sent by user by `send`, `send_ping_pong` or `send_with_transaction` method
-in the device, which performs the operation - that packets bypasses routing and are sent directly into
-sending queue, and then into the ether. Meaning that lifetime of the packet is not decreased by the router.
-So the message can be sent even with `lifetime` set to `0`, anyway it will be transmitted
+The packets, that were just sent by user by `send_to_exact`, `broadcast`, `send_ping_pong` or `send_with_transaction`
+method in the device, which performs the operation - that packets bypasses routing and are sent directly into
+sending queue, and then into the ether. It means that lifetime of the packet is not decreased by the router
+of the device. So the message can be sent even with `lifetime` set to `0`, anyway it will be transmitted
 in the ether for the first time.
 Sending of packets from the queues happends during call of `update` method.
 
@@ -110,41 +110,43 @@ It means, that the user can send the message with:
   Otherwise - try to transmit further with decrease of `lifetime` value which
   will lead packet transition back into the ether, but with less `lifetime` value.
 
-Every node have 2 queues:
+* And so on..
+
+Every node have 2 internal queues, they are not exposed to user:
 - `send` - for sending packets
 - `transit` - for packets, that are sent to the other devices.
 Sizes of those queues are configurable. And their both configuration of size
 is made by `PACKET_QUEUE_SIZE` constant in `./src/mesh_lib/node/constants.rs`.
-
-* And so on..
 
 ### How the protocol avoid packet duplication:
 During sending of the packet - it is offered to set `filter_out_duplication` parameter
 to `true` to prevent network from being jammed by duplicated packets.
 It works in the next way: 
 Once intermediate node receives the packet with `ignore_duplicates` flag set to `true`,
-- it remembers the `sender_device_identifier` of the packet and `id` of the packet for the `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD`. - This period is configurable.
-- if the same packet with same `sender_device_identifier` and with same `id` is sent again - it will be ignored by the node.
-It leads protocol to spread one exact packet trough the network only once.
+- it remembers the `sender_device_identifier` of the packet and `id` of the packet for the
+`RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD`. - This period is configurable. if the same packet
+with same `sender_device_identifier` and with same `id` is sent again - it will be ignored by
+the node. It leads protocol to spread one exact packet trough the network only once.
 
 Special purpose packets as Ping-Pong or Transaction packets are always
 with `ignore_duplicates` flag set to `true` by default.
 
 ## Status:
-Every planned functionality is working. It is:
-- Send data.
-- Receive data.
-- Send data with ignorance of duplicated packets.
-- Send data with limited of number of hops.
-- Broadcast data to all nodes.
-- Message transition by the intermediate nodes.
-- Send data with ping flag, and receive answer with pong flag set.
-- Send data via Transaction and receive packet about transaction being finished.
+For version 1.1.0 No thing is tested.
+
+Last tested version is: 1.0.5:
+  Every planned functionality is working. It is:
+  - Send data.
+  - Receive data.
+  - Send data with ignorance of duplicated packets.
+  - Send data with limited of number of hops.
+  - Broadcast data to all nodes.
+  - Message transition by the intermediate nodes.
+  - Send data with ping flag, and receive answer with pong flag set.
+  - Send data via Transaction and receive packet about transaction being finished.
 
 ## Cross-platform compatibility
-The mesh metwork was tested using few Arduino nano boards and one Linux machine within the same network.
-
-For now the protocol was tested on:
+For now the protocol is ported to:
 - Arduino nano
 - Linux (Raspberry PI, Desktop)
 
@@ -242,7 +244,8 @@ Usage examples can be found here:
 1 - Instantiate `Node` structure.
 2 - Constantly call `update` method of `Node`.
 3 - Call any method of `Node` structure that you need, such as:
-  - `send`
+  - `send_to_exact`
+  - `broadcast`
   - `receive`
   - `send_ping_pong`
   - `send_with_transaction`
@@ -260,7 +263,7 @@ let mut mesh_node = Node::new(NodeConfig {
 ```
 
 The central component of this protocol is the `Node` structure, which offers interface for
-actions like `send`, `receive`, `send_ping_pong`, and `send_with_transaction`.
+actions like `send_to_exact`, `broadcast`, `receive`, `send_ping_pong`, and `send_with_transaction`.
 The `Node` should be constantly updated by
 call its `update` method, it - does all internal work:
 - routes packets trough the network, transits packets that were sent to other devices, handles `lifetime` of packets.
@@ -281,27 +284,25 @@ Those methods are:
 More examples can be found in the examples repositories above.
 
 To send the message to all nodes in the network, you can
-send it with standard `send` method, and put `GeneralAddressType::Broadcast` as the
-`destination_device_identifier`. Every device will treat `GeneralAddressType::Broadcast`
+send it with standard `broadcast` method, It sends packet with destination address set as
+`GeneralAddressType::BROADCAST`. Every device will treat `GeneralAddressType::Broadcast`
 as it's own address, will keep the message as received and will transit copy of that message further.
 `main.rs`:
 ```
-mesh_node.send(
+mesh_node.broadcast(
     NodeString::from("Hello, world!").into_bytes(),
-    GeneralAddressType::Broadcast,
     3.into(),
-    true,
 );
 ```
 
 To send the message to a specific device in the network, you can
-send it with standard `send` method, and put `GeneralAddressType::Exact(...)` as the
+send it with standard `send_to_exact` method, and put `ExactAddressType(...)` as the
 `destination_device_identifier`.
 `main.rs`:
 ```
 mesh_node.send(
     NodeString::from("Hello, world!").into_bytes(),
-    GeneralAddressType::Exact(ExactAddressType::new(3).unwrap()),
+    ExactAddressType::new(3).unwrap(),
     3.into(),
     true,
 );
@@ -321,10 +322,10 @@ The `receive` method optionally returns received data in a `PacketDataBytes` ins
 if that packet was previously received by this exact device.
 
 ### Send Method
-The `send` method requires the following arguments:
+The `send_to_exact` method requires the following arguments:
 
 - `data`: A `PacketDataBytes` instance to hold the message bytes.
-- `destination_device_identifier`: A `GeneralAddressType` instance indicating exact target device while using GeneralAddressType::Exact(...) or indicating all devices to receive the message by using GeneralAddressType::BROADCAST.
+- `destination_device_identifier`: A `ExactAddressType` instance indicating exact target device.
 - `lifetime`: A `LifeTimeType` instance to control for how far the message can travel.
 - `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
 
@@ -393,5 +394,34 @@ You can choose the license that best suits your preferences.
 Unless you specify otherwise, any contributions submitted for inclusion in this project, as defined in the Apache-2.0 license, will be dual-licensed under both licenses without additional terms or conditions.
 
 ## Donation
-Also you can support the project by donating few
-bucks on the bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
+If you earn money with using that code - Please donate
+at least 1$ to bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
+to support the project.
+
+Project mantainance get slowlier than before due to the lack of financing.
+
+Things that the project needs in order to build
+and test small scale network:
+3x Arduino nano clone:     3$     x 3 =   9$
+6x Usb-MiniUsb cables:     1$     x 5 =   5$
+5x JDY-40:                 2$     x 5 =   10$
+3x Small bredboards:       0.5$   x 3 =   1.5$
+3x Wires pack:             1$     x 3 =   3$
+2x USB-TTL converter:      2$     x 2 =   4$
+1x MicroUsb-Usb adapter:   1$     x 1 =   1$
+3x 18650 Battery           4$     x 8 =   12$
+5x 18650 Power bank case   1.5$   x 4 =   7.5$
+______________________________________________
+                                  Total:  53$
+
+Please. Do not donate more than required.
+
+Already existing parts:
+3x Arduino nano clone
+1x Raspberry Pi zero
+1x Desktop PC
+3x JDY-40
+5x Small bredboards
+2x Power bank
+2x Wires pack
+2x 18650 battery
