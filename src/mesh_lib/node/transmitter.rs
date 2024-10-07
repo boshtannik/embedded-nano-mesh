@@ -48,6 +48,8 @@ impl Transmitter {
         mut packet_meta_data: PacketMetaData,
         update_id_counter: bool,
     ) -> Result<IdType, QueuePushError> {
+        // The update_id_counter is the default behaviour.
+        // it can be set to false to transit packet.
         if update_id_counter {
             let (new_val, _) = self.id_counter.overflowing_add(1);
             self.id_counter = new_val;
