@@ -402,21 +402,24 @@ Project mantainance get slowlier than before due to the lack of financing.
 
 Things that the project needs in order to build
 and test small scale network:
-- 3x Arduino nano clone:     3$     x 3 =   9$
-- 6x Usb-MiniUsb cables:     1$     x 5 =   5$
-- 5x JDY-40:                 2$     x 5 =   10$
-- 3x Small bredboards:       0.5$   x 3 =   1.5$
-- 3x Wires pack:             1$     x 3 =   3$
-- 2x USB-TTL converter:      2$     x 2 =   4$
-- 1x MicroUsb-Usb adapter:   1$     x 1 =   1$
-- 3x 18650 Battery           4$     x 8 =   12$
-- 5x 18650 Power bank case   1.5$   x 4 =   7.5$
-- ______________________________________________
-                                  - Total:  53$
+```
+3x Arduino nano clone:     3$     x 3 =   9$
+6x Usb-MiniUsb cables:     1$     x 5 =   5$
+5x JDY-40:                 2$     x 5 =   10$
+3x Small bredboards:       0.5$   x 3 =   1.5$
+3x Wires pack:             1$     x 3 =   3$
+2x USB-TTL converter:      2$     x 2 =   4$
+1x MicroUsb-Usb adapter:   1$     x 1 =   1$
+3x 18650 Battery           4$     x 8 =   12$
+5x 18650 Power bank case   1.5$   x 4 =   7.5$
+----------------------------------------------
+                                - Total:  53$
+```
 
 Please. Do not donate more than required.
 
 Already existing parts:
+```
 - 3x Arduino nano clone
 - 1x Raspberry Pi zero
 - 1x Desktop PC
@@ -425,3 +428,4 @@ Already existing parts:
 - 2x Power bank
 - 2x Wires pack
 - 2x 18650 battery
+```
