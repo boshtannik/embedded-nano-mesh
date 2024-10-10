@@ -33,7 +33,9 @@ use self::{
 ///
 /// It has next methods:
 /// * `new` -                   Creates new instance of `Node`.
-/// * `send` -                  Sends the `data` to exact device. Call of this method does not provide any
+/// * `send_to_exact` -         Sends the `data` to exact device. Call of this method does not provide any
+///                             response back.
+/// * `broadcast` -             Sends the `data` to all devices. Call of this method does not provide any
 ///                             response back.
 /// * `send_ping_pong` -        Sends the `data` to exact device, and the receiving device will
 ///                             be forsed to make answer back. The answer from receiving device
@@ -58,14 +60,13 @@ pub struct NodeUpdateError {
     pub is_transit_queue_full: bool,
 }
 
-/// Error that can be returned by `Node` `send` method.
+/// Error that can be returned by `Node` `send` method or `broadcast` method.
 pub enum SendError {
     SendingQueueIsFull,
 }
 
 /// Errors, that may occur during the call
-/// of `Node` `send_with_transaction`
-/// or `send_ping_pong` method.
+/// of `Node` `send_with_transaction` or `send_ping_pong` method.
 pub enum SpecialSendError {
     /// Case when expected response was not received.
     Timeout,
