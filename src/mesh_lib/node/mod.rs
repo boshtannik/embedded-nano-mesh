@@ -56,7 +56,7 @@ pub struct Node {
 
 /// Error that can be returned by `Node` `update` method.
 pub struct NodeUpdateError {
-    pub is_send_queue_full: bool,
+    pub is_receive_queue_full: bool,
     pub is_transit_queue_full: bool,
 }
 
@@ -381,7 +381,7 @@ impl Node {
             Err(RouteError::RespondToBroadcastAddressError) => (None, None),
         };
 
-        let (mut is_send_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
+        let (mut is_receive_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
 
         if let Some(received_packet) = received_packet {
             match self
@@ -390,7 +390,7 @@ impl Node {
             {
                 Ok(()) => (),
                 Err(_) => {
-                    is_send_queue_full = true;
+                    is_receive_queue_full = true;
                 }
             }
         }
@@ -404,9 +404,9 @@ impl Node {
             }
         }
 
-        if is_send_queue_full || is_transit_queue_full {
+        if is_receive_queue_full || is_transit_queue_full {
             return Err(NodeUpdateError {
-                is_send_queue_full,
+                is_receive_queue_full,
                 is_transit_queue_full,
             });
         } else {
