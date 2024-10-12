@@ -122,18 +122,11 @@ is made by `PACKET_QUEUE_SIZE` constant in `./src/mesh_lib/node/constants.rs`.
 During sending of the packet - it is offered to set `filter_out_duplication` parameter
 to `true` to prevent network from being jammed by duplicated packets.
 It works in the next way: 
-<<<<<<< HEAD
 Once intermediate node receives the packet with `ignore_duplication` flag set to `true`,
-- it remembers the address of sender of the packet and id of the packet for the specified period of time.
-- if the same packet is sent again - it will be ignored by the node.
-It leads protocol to spread one exact packet trough the network only once.
-=======
-Once intermediate node receives the packet with `ignore_duplicates` flag set to `true`,
 - it remembers the `sender_device_identifier` of the packet and `id` of the packet for the
 `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD`. - This period is configurable. if the same packet
 with same `sender_device_identifier` and with same `id` is sent again - it will be ignored by
 the node. It leads protocol to spread one exact packet trough the network only once.
->>>>>>> 5d00bef2de684ee6b337e5b96d061a48354a37c3
 
 Special purpose packets as Ping-Pong or Transaction packets are always
 with `filter_out_duplication` flag set to `true` by default.
