@@ -23,3 +23,5 @@
         * The same bug for ping-pong was fixed too.
         * API simplified: No longer need of instantiating of complex enums to provide during sending.
         * 1.0.5 Fully Compatible.
+
+1.1.1 - * README fix.
