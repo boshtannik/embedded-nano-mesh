@@ -285,8 +285,8 @@ impl Node {
         destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
-    ) -> Result<IdType, SendError> {
-        self._send(PacketMetaData {
+    ) -> Result<(), SendError> {
+        match self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone().into(),
             destination_device_identifier: destination_device_identifier.into(),
@@ -294,7 +294,10 @@ impl Node {
             filter_out_duplication,
             spec_state: PacketState::Normal,
             packet_id: 0,
-        })
+        }) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        }
     }
 
     /// Sends the `data` to all devices.
@@ -314,8 +317,8 @@ impl Node {
         &mut self,
         data: PacketDataBytes,
         lifetime: LifeTimeType,
-    ) -> Result<IdType, SendError> {
-        self._send(PacketMetaData {
+    ) -> Result<(), SendError> {
+        match self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone().into(),
             destination_device_identifier: GeneralAddressType::Broadcast,
@@ -323,7 +326,10 @@ impl Node {
             filter_out_duplication: true,
             spec_state: PacketState::Normal,
             packet_id: 0,
-        })
+        }) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        }
     }
 
     fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<IdType, SendError> {
