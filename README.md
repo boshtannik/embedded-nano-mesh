@@ -61,8 +61,8 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 ```
 
 ## Quick links to usage examples:
-- [arduino-nano](https://github.com/boshtannik/nano-mesh-arduino-nano-example)
-- [linux](https://github.com/boshtannik/nano-mesh-linux-example)
+- [arduino-nano](https://github.com/boshtannik/embedded-nano-mesh-arduino-nano-example)
+- [linux](https://github.com/boshtannik/embedded-nano-mesh-linux-example)
 
 ## Goal:
 The goal of this project is to provide ability to build easy to use,
@@ -186,7 +186,7 @@ just follow three steps to use it: (Examples are for arduino nano)
 1 - Include `platform-serial` and `platform-millis` in your project.
 `Cargo.toml`:
 ```
-embedded-nano-mesh = "1.0.5"
+embedded-nano-mesh = "1.1.1"
 platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git", rev = "..." }
 platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git", rev = "..." }
 ```
@@ -223,7 +223,7 @@ The implementation of PlatformMillis for Arduino nano board is done by:
 - [platform-millis-arduino-nano](https://github.com/boshtannik/platform-millis-arduino-nano)
 
 Usage examples can be found here:
-- [arduino-nano](https://github.com/boshtannik/nano-mesh-arduino-nano-example)
+- [arduino-nano](https://github.com/boshtannik/embedded-nano-mesh-arduino-nano-example)
 
 Sometimes code binary might not fit onto your arduino board memory, in order to
 reduce the size of final binary - it is recommended to compile it with
@@ -237,7 +237,7 @@ The implementation of PlatformMillis for Linux is done by:
 - [platform-millis-linux](https://crates.io/crates/platform-millis-linux)
 
 Usage examples can be found here:
-- [linux](https://github.com/boshtannik/nano-mesh-linux-example)
+- [linux](https://github.com/boshtannik/embedded-nano-mesh-linux-example)
 
 ## Extended usage description
 1 - Instantiate `Node` structure.
