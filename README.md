@@ -239,9 +239,9 @@ The implementation of PlatformMillis for Linux is done by:
 Usage examples can be found here:
 - [linux](https://github.com/boshtannik/embedded-nano-mesh-linux-example)
 
-## Extended usage description
+## Short usage description
 1 - Instantiate `Node` structure.
-2 - Constantly call `update` method of `Node`.
+2 - Constantly call `update` method of `Node` in a loop.
 3 - Call any method of `Node` structure that you need, such as:
   - `send_to_exact`
   - `broadcast`
@@ -249,18 +249,7 @@ Usage examples can be found here:
   - `send_ping_pong`
   - `send_with_transaction`
 
-To initialize a `Node`, you need to provide `NodeConfig` with values:
-- `ExactAddressType`: Sets the device's identification address in the node pool. It is ok to have multiple deivces sharing same address in the same network.
-- `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting on the network. It prevents network congestion.
-
-`main.rs`:
-```
-let mut mesh_node = Node::new(NodeConfig {
-    device_address: ExactAddressType::new(1).unwrap(),
-    listen_period: 150 as ms,
-});
-```
-
+## Methods description
 The central component of this protocol is the `Node` structure, which offers interface for
 actions like `send_to_exact`, `broadcast`, `receive`, `send_ping_pong`, and `send_with_transaction`.
 The `Node` should be constantly updated by
@@ -280,7 +269,25 @@ Those methods are:
 - `update`
 - `send_ping_pong`
 - `send_with_transaction`
-More examples can be found in the examples repositories above.
+
+You can regulate the distance that the packet will be able to
+make - by configuring the `lifetime` during making the send
+of the message. For example:
+- setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
+- setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
+
+### New Method
+To initialize a `Node`, you need to provide `NodeConfig` with values:
+- `ExactAddressType`: Sets the device's identification address in the node pool. It is ok to have multiple deivces sharing same address in the same network.
+- `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting on the network. It prevents network congestion.
+
+`main.rs`:
+```
+let mut mesh_node = Node::new(NodeConfig {
+    device_address: ExactAddressType::new(1).unwrap(),
+    listen_period: 150 as ms,
+});
+```
 
 ### Broadcast Method
 To send the message to all nodes in the network, you can
@@ -317,12 +324,6 @@ mesh_node.send_to_exact(
 );
 ```
 
-You can regulate the number of hops that the packet will be able to
-make - by configuring the `lifetime` during making the send
-of the message. For example:
-- setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
-- setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
-
 ### Receive Method
 The `receive` method optionally returns received data in a `PacketDataBytes` instance in case
 if that packet was previously received by this exact device. It does not matter if that data
@@ -349,6 +350,20 @@ The following arguments are required:
 - `lifetime`: A `LifeTimeType` instance.
 - `timeout`: An `ms` instance specifying how long to wait for a response.
 
+`main.rs`:
+```
+   match mesh_node.send_ping_pong::<Atmega328pMillis, ArduinoNanoSerial>(
+        NodeString::from("This is the message to be sent").into_bytes(),
+        ExactAddressType::new(2).unwrap(),
+        10 as LifeTimeType,
+        3000 as ms,
+    ) {
+        Ok(()) => ..., // Means that receiving device got the message exaclty once.
+        Err(SpecialSendError::SendingQueueIsFull) => ..., // Message wasnt even sent.
+        Err(SpecialSendError::Timeout) => ..., // No response from the receiving device.
+    }
+```
+
 ### Send with Transaction Method
 The `send_with_transaction` method sends a message and handles all further work to
 ensure the target device have received it only once and correctly. It returns an error if the transaction failed.
@@ -358,6 +373,20 @@ The required arguments are:
 - `destination_device_identifier`: A `ExactAddressType` instance, that indicates exact target device address.
 - `lifetime`: A `LifeTimeType` instance.
 - `timeout`: An `ms` instance to specify the response wait time.
+
+`main.rs`:
+```
+    match mesh_node.send_with_transaction::<Atmega328pMillis, ArduinoNanoSerial>(
+        NodeString::from("This is the message to be sent").into_bytes(),
+        ExactAddressType::new(2).unwrap(),
+        10 as LifeTimeType,
+        3000 as ms,
+    ) {
+        Ok(()) => ..., // Means that receiving device got the message exaclty once.
+        Err(SpecialSendError::SendingQueueIsFull) => ..., // Message wasnt even sent.
+        Err(SpecialSendError::Timeout) => ..., // No response from the receiving device.
+    }
+```
 
 ### Update Method
 The `update` method is used to perform all internal operation of the `Node`.
