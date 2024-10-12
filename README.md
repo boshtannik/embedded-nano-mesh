@@ -186,7 +186,7 @@ just follow three steps to use it: (Examples are for arduino nano)
 1 - Include `platform-serial` and `platform-millis` in your project.
 `Cargo.toml`:
 ```
-embedded-nano-mesh = "1.1.1"
+embedded-nano-mesh = "1.1.4"
 platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git", rev = "..." }
 platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git", rev = "..." }
 ```
