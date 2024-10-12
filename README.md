@@ -282,6 +282,7 @@ Those methods are:
 - `send_with_transaction`
 More examples can be found in the examples repositories above.
 
+### Broadcast Method
 To send the message to all nodes in the network, you can
 send it with standard `broadcast` method, It sends packet with destination address set as
 `GeneralAddressType::BROADCAST`. Every device will treat `GeneralAddressType::Broadcast`
@@ -294,9 +295,18 @@ mesh_node.broadcast(
 );
 ```
 
-To send the message to a specific device in the network, you can
-send it with standard `send_to_exact` method, and put `ExactAddressType(...)` as the
-`destination_device_identifier`.
+### Send to exact Method
+Sends the message to device with exact address in the network.
+The `send_to_exact` method requires the following arguments:
+
+The term "echoed message" refers to a duplicated message that has
+been re-transmitted into the ether by an intermediate device.
+
+- `data`: A `PacketDataBytes` instance to hold the message bytes.
+- `destination_device_identifier`: A `ExactAddressType` instance indicating exact target device.
+- `lifetime`: A `LifeTimeType` instance to control for how far the message can travel.
+- `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
+
 `main.rs`:
 ```
 mesh_node.send_to_exact(
@@ -307,9 +317,6 @@ mesh_node.send_to_exact(
 );
 ```
 
-The term "echoed message" refers to a duplicated message that has
-been re-transmitted into the ether by an intermediate device.
-
 You can regulate the number of hops that the packet will be able to
 make - by configuring the `lifetime` during making the send
 of the message. For example:
@@ -318,16 +325,19 @@ of the message. For example:
 
 ### Receive Method
 The `receive` method optionally returns received data in a `PacketDataBytes` instance in case
-if that packet was previously received by this exact device.
+if that packet was previously received by this exact device. It does not matter if that data
+was sent via `broadcast`, `send_to_exact`, `ping_pong` or `send_with_transaction` method because
+anyway it will be available via `receive` method.
+The way that packet was sent to this device can be checked in `special_state` field of returned
+value. Field shall contain `PacketState` enum instance.
 
-### Send to exact Method
-Sends the message to device with exact address in the network.
-The `send_to_exact` method requires the following arguments:
-
-- `data`: A `PacketDataBytes` instance to hold the message bytes.
-- `destination_device_identifier`: A `ExactAddressType` instance indicating exact target device.
-- `lifetime`: A `LifeTimeType` instance to control for how far the message can travel.
-- `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
+`main.rs`:
+```
+match mesh_node.receive() {
+    Some(packet) => ...,
+    Node => ....,
+}
+```
 
 ### Send Ping-Pong Method
 The `send_ping_pong` method sends a message with a "ping" flag to the destination node and
@@ -353,6 +363,14 @@ The required arguments are:
 The `update` method is used to perform all internal operation of the `Node`.
 It shall be called in a loop with providing `PlatformMillis` and `PlatformSerial` instances
 - it allows `Node` to interact with MCU peripherals, such as time counting and USART.
+With out call this method in a loop - the node will stop working.
+
+`main.rs`:
+```
+  loop {
+    let _ = mesh_node.update::<Atmega328pMillis, ArduinoNanoSerial>();
+  }
+```
 
 ## Reduce packet collisions
 It is recommended to set `listen_period` value on multiple devices different from each other,
