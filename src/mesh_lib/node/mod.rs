@@ -22,17 +22,20 @@ use self::{
     types::PacketDataQueue,
 };
 
-/// The main structure of the library to bring communication
-/// in the mesh network. The node works in the manner of listening
-/// of ether for specified period of time, which is called `listen_period`,
-/// and then sending out packets between those periods.
+/// The main and only structure of the library that brings API for
+/// communication trough the mesh network.
+/// It works in the manner of listening of ether for
+/// specified period of time, which is called `listen_period`,
+/// and then sending out packets out of queues between those periods.
 ///
 /// Also node resends caught packets, that were addressed to other
 /// nodes.
 ///
 /// It has next methods:
 /// * `new` -                   Creates new instance of `Node`.
-/// * `send` -                  Sends the `data` to exact device. Call of this method does not provide any
+/// * `send_to_exact` -         Sends the `data` to exact device. Call of this method does not provide any
+///                             response back.
+/// * `broadcast` -             Sends the `data` to all devices. Call of this method does not provide any
 ///                             response back.
 /// * `send_ping_pong` -        Sends the `data` to exact device, and the receiving device will
 ///                             be forsed to make answer back. The answer from receiving device
@@ -53,18 +56,17 @@ pub struct Node {
 
 /// Error that can be returned by `Node` `update` method.
 pub struct NodeUpdateError {
-    pub is_send_queue_full: bool,
+    pub is_receive_queue_full: bool,
     pub is_transit_queue_full: bool,
 }
 
-/// Error that can be returned by `Node` `send` method.
+/// Error that can be returned by `Node` `send` method or `broadcast` method.
 pub enum SendError {
     SendingQueueIsFull,
 }
 
 /// Errors, that may occur during the call
-/// call of `Node` `send_with_transaction`
-/// or `send_ping_pong` method.
+/// of `Node` `send_with_transaction` or `send_ping_pong` method.
 pub enum SpecialSendError {
     /// Case when expected response was not received.
     Timeout,
@@ -84,11 +86,11 @@ impl From<SendError> for SpecialSendError {
 
 /// User-friendly `Node` configuration structure.
 pub struct NodeConfig {
-    /// Address of this device. Instance of `ExactDeviceAddressType`.
+    /// Address of configurable device. Instance of `ExactAddressType`.
     pub device_address: ExactAddressType,
 
     /// Instance of `ms` type. The time period in
-    /// milliseconds that this device will listen for incoming packets
+    /// milliseconds that configured device will listen for incoming packets
     /// before speaking back into the ether.
     pub listen_period: ms,
 }
@@ -216,26 +218,34 @@ impl Node {
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
 
-        if let Err(any_err) = self._send(PacketMetaData {
+        let expected_packet_id = match self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone().into(),
             destination_device_identifier: destination_device_identifier.into(),
             lifetime,
             filter_out_duplication: true,
-            spec_state: request_state,
+            spec_state: request_state.clone(),
             packet_id: 0,
         }) {
-            return Err(any_err.into());
-        }
+            Err(any_err) => return Err(any_err.into()),
+            Ok(generated_packet_id) => match request_state {
+                PacketState::SendTransaction => generated_packet_id + 1,
+                PacketState::Ping => generated_packet_id,
+                _ => generated_packet_id,
+            },
+        };
 
         while current_time < wait_end_time {
             let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
+                if !(answer.source_device_identifier == destination_device_identifier.into()) {
+                    continue;
+                }
                 if !(answer.spec_state == expected_response_state) {
                     continue;
                 }
-                if !(answer.source_device_identifier == destination_device_identifier.into()) {
+                if !(answer.packet_id == expected_packet_id) {
                     continue;
                 }
                 return Ok(());
@@ -247,10 +257,9 @@ impl Node {
         Err(SpecialSendError::Timeout)
     }
 
-    /// Sends the `data` to exact device. or to all devices.
-    /// In order to send `data` to all devices, use `GeneralAddressType::Broadcast`,
-    /// otherwise - `GeneralAddressType::Exact(ExactAddressType::new(...).unwrap()) identifier
-    /// in order to set exact receiver device address.
+    /// Sends the `data` to exact device.
+    /// In order to send `data` to exact device`, use
+    /// ExactAddressType::new(...).unwrap()` identifier
     ///
     /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
     /// heapless vector of bytes of special size. This size is configured in the
@@ -258,7 +267,7 @@ impl Node {
     /// `Note!` That all devices should have same version of protocol flashed, in order to
     /// be able to correctly to communicate with each other.
     ///
-    /// * `destination_device_identifier` is instance of `GeneralAddressType`,
+    /// * `destination_device_identifier` is instance of `ExactAddressType`,
     /// That type is made to limit possible mess-ups during the usage of method.
     ///
     /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
@@ -267,17 +276,17 @@ impl Node {
     /// by other nodes to the infinity...
     /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
     ///
-    /// * `filter_out_duplication` - Tells if the protocol on the other devices will be ignoring
+    /// * `filter_out_duplication` - Tells if the other devices will be ignoring
     /// echoes of this message. It is strongly recommended to use in order to make lower load
     /// onto the network.
-    pub fn send(
+    pub fn send_to_exact(
         &mut self,
         data: PacketDataBytes,
-        destination_device_identifier: GeneralAddressType,
+        destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
     ) -> Result<(), SendError> {
-        self._send(PacketMetaData {
+        match self._send(PacketMetaData {
             data,
             source_device_identifier: self.my_address.clone().into(),
             destination_device_identifier: destination_device_identifier.into(),
@@ -285,12 +294,47 @@ impl Node {
             filter_out_duplication,
             spec_state: PacketState::Normal,
             packet_id: 0,
-        })
+        }) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        }
     }
 
-    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<(), SendError> {
-        match self.transmitter.send(packet_meta_data) {
+    /// Sends the `data` to all devices.
+    ///
+    /// * `data` - Is the instance of `PacketDataBytes`, which is just type alias of
+    /// heapless vector of bytes of special size. This size is configured in the
+    /// node/packet/config.rs file.
+    /// `Note!` That all devices should have same version of protocol flashed, in order to
+    /// be able to correctly to communicate with each other.
+    ///
+    /// * `lifetime` - is the instance of `LifeTimeType`. This value configures the count of
+    /// how many nodes - the packet will be able to pass. Also this value is provided
+    /// to void the ether being jammed by packets, that in theory might be echoed
+    /// by other nodes to the infinity...
+    /// Each device, once passes transit packet trough it - it reduces packet's lifetime.
+    pub fn broadcast(
+        &mut self,
+        data: PacketDataBytes,
+        lifetime: LifeTimeType,
+    ) -> Result<(), SendError> {
+        match self._send(PacketMetaData {
+            data,
+            source_device_identifier: self.my_address.clone().into(),
+            destination_device_identifier: GeneralAddressType::Broadcast,
+            lifetime,
+            filter_out_duplication: true,
+            spec_state: PacketState::Normal,
+            packet_id: 0,
+        }) {
             Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<IdType, SendError> {
+        match self.transmitter.send(packet_meta_data) {
+            Ok(generated_packet_id) => Ok(generated_packet_id),
             Err(transmitter::PacketQueueIsFull) => Err(SendError::SendingQueueIsFull),
         }
     }
@@ -343,7 +387,7 @@ impl Node {
             Err(RouteError::RespondToBroadcastAddressError) => (None, None),
         };
 
-        let (mut is_send_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
+        let (mut is_receive_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
 
         if let Some(received_packet) = received_packet {
             match self
@@ -352,7 +396,7 @@ impl Node {
             {
                 Ok(()) => (),
                 Err(_) => {
-                    is_send_queue_full = true;
+                    is_receive_queue_full = true;
                 }
             }
         }
@@ -366,9 +410,9 @@ impl Node {
             }
         }
 
-        if is_send_queue_full || is_transit_queue_full {
+        if is_receive_queue_full || is_transit_queue_full {
             return Err(NodeUpdateError {
-                is_send_queue_full,
+                is_receive_queue_full,
                 is_transit_queue_full,
             });
         } else {

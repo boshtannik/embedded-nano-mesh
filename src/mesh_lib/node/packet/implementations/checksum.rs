@@ -17,37 +17,41 @@ impl Packet {
     ///      data_length
     ///      data
     fn calculate_packet_sum(&self) -> ChecksumType {
-        let result: ChecksumType = 0;
+        let mut result: ChecksumType = 0;
 
         // Calculate source_device_identifier
-        let result = result.overflowing_add(self.source_device_identifier).0;
+        for byte in self.source_device_identifier.to_be_bytes() {
+            (result, _) = result.overflowing_add(byte);
+        }
 
         // Calculate destination_device_identifier
-        let mut result = result.overflowing_add(self.destination_device_identifier).0;
+        for byte in self.destination_device_identifier.to_be_bytes() {
+            (result, _) = result.overflowing_add(byte);
+        }
 
         // Calculate id
         for byte in self.id.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
+            (result, _) = result.overflowing_add(byte);
         }
 
         // Calculate lifetime
         for byte in self.lifetime.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
+            (result, _) = result.overflowing_add(byte);
         }
 
         // Calculate flags
         for byte in self.flags.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
+            (result, _) = result.overflowing_add(byte);
         }
 
         // Calculate data_length
         for byte in self.data_length.to_be_bytes() {
-            result = result.overflowing_add(byte).0;
+            (result, _) = result.overflowing_add(byte);
         }
 
         // Calculate data
         for byte in self.data.iter() {
-            result = result.overflowing_add(*byte).0;
+            (result, _) = result.overflowing_add(*byte);
         }
 
         result

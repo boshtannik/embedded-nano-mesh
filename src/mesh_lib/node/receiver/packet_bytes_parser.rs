@@ -1,20 +1,20 @@
 use crate::mesh_lib::node::{
     packet::{Packet, PacketSerializedBytes, Serializer, PACKET_BYTES_SIZE},
-    types::PacketBytesBuffer,
+    types::ParserBytesBuffer,
 };
 
 use super::super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 
 pub struct PacketBytesParser {
     parsed_packet: Option<Packet>,
-    bytes_buffer: PacketBytesBuffer,
+    bytes_buffer: ParserBytesBuffer,
 }
 
 impl PacketBytesParser {
     pub fn new() -> PacketBytesParser {
         PacketBytesParser {
             parsed_packet: None,
-            bytes_buffer: PacketBytesBuffer::new(),
+            bytes_buffer: ParserBytesBuffer::new(),
         }
     }
 
@@ -36,12 +36,7 @@ impl PacketBytesParser {
             self.bytes_buffer.pop_front().unwrap_or_else(|| 0u8);
         }
 
-        let parsing_buffer = PacketSerializedBytes::from(
-            self.bytes_buffer
-                .iter()
-                .map(|el_ref| *el_ref)
-                .collect::<PacketSerializedBytes>(),
-        );
+        let parsing_buffer: PacketSerializedBytes = self.bytes_buffer.iter().map(|b| *b).collect();
 
         let got_packet = <Packet as Serializer>::deserialize(parsing_buffer);
 
