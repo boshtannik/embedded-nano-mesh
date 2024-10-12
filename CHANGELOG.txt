@@ -21,5 +21,5 @@
           which led to mess-up. The previous transaction packet could break current transaction process.
           Now - the protocol distunguishes one transaction from another by expected packet_id in response.
         * The same bug for ping-pong was fixed too.
-        * API prettified: No longer instantiating of complex enums messed
-                          with types during sending the data.
+        * API simplified: No longer need of instantiating of complex enums to provide during sending.
+        * 1.0.5 Fully Compatible.
