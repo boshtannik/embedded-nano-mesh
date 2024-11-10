@@ -74,6 +74,43 @@ This protocol can be used for:
 - Decentralized messaging
 - etc.
 
+## Support project:
+If you earn money with using that code - Please donate
+to bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
+to support the project.
+Or you can buy me a coffee:
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/boshtannik)
+
+Project mantainance get slowlier due to the lack of financing.
+
+Things that the project needs in order to build
+small scale network for testing purpose:
+```
+3x Arduino nano clone:     3$     x 3 =   9$
+6x Usb-MiniUsb cables:     1$     x 5 =   5$
+5x JDY-40:                 2$     x 5 =   10$
+3x Small bredboards:       0.5$   x 3 =   1.5$
+3x Wires pack:             1$     x 3 =   3$
+2x USB-TTL converter:      2$     x 2 =   4$
+1x MicroUsb-Usb adapter:   1$     x 1 =   1$
+3x 18650 Battery           4$     x 8 =   12$
+5x 18650 Power bank case   1.5$   x 4 =   7.5$
+----------------------------------------------
+                                - Total:  53$
+```
+
+Already existing parts:
+```
+- 3x Arduino nano clone
+- 1x Raspberry Pi zero
+- 1x Desktop PC
+- 3x JDY-40
+- 5x Small bredboards
+- 2x Power bank
+- 2x Wires pack
+- 2x 18650 battery
+```
+
 ## Working principle:
 ### The way, how the protocol spreads the data:
 The protocol routes the packets in the most dumb way.
@@ -438,43 +475,11 @@ This project is licensed under:
 You can choose the license that best suits your preferences.
 
 ## Contribution
-Unless you specify otherwise, any contributions submitted for inclusion in this project, as defined in the Apache-2.0 license, will be dual-licensed under both licenses without additional terms or conditions.
+You can contribute to this project by make fork of 'main' branch and then creating
+pyull request to this repository.
+Pull request shall be created with next data mentioned.
 
-## Donation
-If you earn money with using that code - Please donate
-at least 1$ to bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
-to support the project.
-
-Project mantainance get slowlier than before due to the lack of financing.
-
-Things that the project needs in order to build
-and test small scale network:
-```
-3x Arduino nano clone:     3$     x 3 =   9$
-6x Usb-MiniUsb cables:     1$     x 5 =   5$
-5x JDY-40:                 2$     x 5 =   10$
-3x Small bredboards:       0.5$   x 3 =   1.5$
-3x Wires pack:             1$     x 3 =   3$
-2x USB-TTL converter:      2$     x 2 =   4$
-1x MicroUsb-Usb adapter:   1$     x 1 =   1$
-3x 18650 Battery           4$     x 8 =   12$
-5x 18650 Power bank case   1.5$   x 4 =   7.5$
-----------------------------------------------
-                                - Total:  53$
-```
-
-Please. Do not donate more than required.
-
-Already existing parts:
-```
-- 3x Arduino nano clone
-- 1x Raspberry Pi zero
-- 1x Desktop PC
-- 3x JDY-40
-- 5x Small bredboards
-- 2x Power bank
-- 2x Wires pack
-- 2x 18650 battery
-```
-
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/boshtannik)
+- Name of the issue the the pull request solves.
+- Link to the issue in the pull request description.
+- Abstract description of the problem and the way it was solved.
+- Optionally notes or wishes for further maintainance.
