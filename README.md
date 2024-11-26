@@ -81,36 +81,6 @@ to support the project.
 Or you can buy me a coffee:
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/boshtannik)
 
-Project mantainance get slowlier due to the lack of financing.
-
-Things that the project needs in order to build
-small scale network for testing purpose:
-```
-3x Arduino nano clone:     3$     x 3 =   9$
-6x Usb-MiniUsb cables:     1$     x 5 =   5$
-5x JDY-40:                 2$     x 5 =   10$
-3x Small bredboards:       0.5$   x 3 =   1.5$
-3x Wires pack:             1$     x 3 =   3$
-2x USB-TTL converter:      2$     x 2 =   4$
-1x MicroUsb-Usb adapter:   1$     x 1 =   1$
-3x 18650 Battery           4$     x 8 =   12$
-5x 18650 Power bank case   1.5$   x 4 =   7.5$
-----------------------------------------------
-                                - Total:  53$
-```
-
-Already existing parts:
-```
-- 3x Arduino nano clone
-- 1x Raspberry Pi zero
-- 1x Desktop PC
-- 3x JDY-40
-- 5x Small bredboards
-- 2x Power bank
-- 2x Wires pack
-- 2x 18650 battery
-```
-
 ## Working principle:
 ### The way, how the protocol spreads the data:
 The protocol routes the packets in the most dumb way.
@@ -220,14 +190,15 @@ This will help this project grow.
 ## Usage steps:
 In case, if implementations are already present for platform, you need -
 just follow three steps to use it: (Examples are for arduino nano)
-1 - Include `platform-serial` and `platform-millis` in your project.
+1 - Include implementations of `platform-serial` and `platform-millis` for your
+platform into your project.
 `Cargo.toml`:
 ```
 embedded-nano-mesh = "1.1.4"
-platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git", rev = "..." }
-platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git", rev = "..." }
+platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git" }
+platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git" }
 ```
-2 - Include `platform-serial` and `platform-millis` in your project, and of course the library `embedded-nano-mesh` itself.
+2 - Include implementation of `platform-serial` and `platform-millis` in your project, and of course the library `embedded-nano-mesh` itself.
 `src/main.rs`:
 ```
 use embedded_nano_mesh::*;
@@ -250,6 +221,7 @@ loop {
   let _ = mesh_node.update::<Atmega328pMillis, ArduinoNanoSerial>();
 }
 ```
+Note that `send_to_exact` and `broadcast` do not require `PlatformSerial` and `PlatformMillis` generics being provided.
 Full examples are available below.
 
 ## Arduino nano port.

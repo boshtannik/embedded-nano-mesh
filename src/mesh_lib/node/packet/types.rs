@@ -87,12 +87,14 @@ impl FromBytes<DATA_LENGTH_TYPE_SIZE> for DataLengthType {
 /// State of the packet.
 #[derive(PartialEq, Eq, Clone)]
 pub enum PacketState {
-    /// End receiver of packet with this state - just receives the data.
+    /// End-receiver of packet with this state - just receives the data.
+    /// does no additional logic over it.
     Normal,
 
     /// Packet with this state being set - forces end-receiver device,
-    /// to automatically respond same packet back with `Pong` state.
-    /// Also receiving device receives content of the packet.
+    /// to automatically respond packet with same content back with
+    /// `Pong` state being set. Also receiving device receives content
+    /// of the packet.
     Ping,
 
     /// Packet with this state being set - indicates, that receiver
