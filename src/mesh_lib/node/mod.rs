@@ -6,21 +6,17 @@ mod timer;
 mod transmitter;
 mod types;
 
-pub use packet::{
-    meta_data::PacketMetaData, ExactAddressType, GeneralAddressType, IdType, LifeTimeType,
-    PacketDataBytes,
-};
+use packet::{traits::GettersSetters, Packet};
+pub use packet::{ExactAddressType, GeneralAddressType, IdType, LifeTimeType, PacketDataBytes};
 
 pub use platform_millis::{ms, PlatformMillis};
 pub use platform_serial::PlatformSerial;
 
 pub use router::PacketState;
 pub use types::NodeString;
+use types::PacketQueue;
 
-use self::{
-    router::{RouteError, RouteResult, Router},
-    types::PacketDataQueue,
-};
+use self::router::{RouteError, RouteResult, Router};
 
 /// The main and only structure of the library that brings API for
 /// communication trough the mesh network.
@@ -50,7 +46,7 @@ pub struct Node {
     receiver: receiver::Receiver,
     my_address: ExactAddressType,
     timer: timer::Timer,
-    received_packet_meta_data_queue: PacketDataQueue,
+    received_packet_queue: PacketQueue,
     router: Router,
 }
 
@@ -106,7 +102,7 @@ impl Node {
             receiver: receiver::Receiver::new(),
             my_address: config.device_address.clone(),
             timer: timer::Timer::new(config.listen_period),
-            received_packet_meta_data_queue: PacketDataQueue::new(),
+            received_packet_queue: PacketQueue::new(),
             router: Router::new(config.device_address.into()),
         }
     }
@@ -218,20 +214,21 @@ impl Node {
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
 
-        let expected_packet_id = match self._send(PacketMetaData {
-            data,
-            source_device_identifier: self.my_address.clone().into(),
-            destination_device_identifier: destination_device_identifier.into(),
+        let expected_response_packet_id = match self._send(Packet::new(
+            self.my_address.into(),
+            destination_device_identifier.into(),
+            0,
             lifetime,
-            filter_out_duplication: true,
-            spec_state: request_state.clone(),
-            packet_id: 0,
-        }) {
+            request_state.clone(),
+            true,
+            data,
+        )) {
             Err(any_err) => return Err(any_err.into()),
-            Ok(generated_packet_id) => match request_state {
-                PacketState::SendTransaction => generated_packet_id + 1,
-                PacketState::Ping => generated_packet_id,
-                _ => generated_packet_id,
+            Ok(expected_response_packet_id) => match request_state {
+                // It is needed to wait for response packet with specific packet id.
+                PacketState::SendTransaction => expected_response_packet_id + 1,
+                PacketState::Ping => expected_response_packet_id,
+                _ => expected_response_packet_id,
             },
         };
 
@@ -239,13 +236,14 @@ impl Node {
             let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
-                if !(answer.source_device_identifier == destination_device_identifier.into()) {
+                if !(answer.get_source_device_identifier() == destination_device_identifier.into())
+                {
                     continue;
                 }
-                if !(answer.spec_state == expected_response_state) {
+                if !(answer.get_spec_state() == expected_response_state) {
                     continue;
                 }
-                if !(answer.packet_id == expected_packet_id) {
+                if !(answer.get_id() == expected_response_packet_id) {
                     continue;
                 }
                 return Ok(());
@@ -286,15 +284,15 @@ impl Node {
         lifetime: LifeTimeType,
         filter_out_duplication: bool,
     ) -> Result<(), SendError> {
-        match self._send(PacketMetaData {
-            data,
-            source_device_identifier: self.my_address.clone().into(),
-            destination_device_identifier: destination_device_identifier.into(),
+        match self._send(Packet::new(
+            self.my_address.into(),
+            destination_device_identifier.into(),
+            0,
             lifetime,
+            PacketState::Normal,
             filter_out_duplication,
-            spec_state: PacketState::Normal,
-            packet_id: 0,
-        }) {
+            data,
+        )) {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
@@ -318,22 +316,22 @@ impl Node {
         data: PacketDataBytes,
         lifetime: LifeTimeType,
     ) -> Result<(), SendError> {
-        match self._send(PacketMetaData {
-            data,
-            source_device_identifier: self.my_address.clone().into(),
-            destination_device_identifier: GeneralAddressType::Broadcast,
+        match self._send(Packet::new(
+            self.my_address.into(),
+            GeneralAddressType::Broadcast.into(),
+            0,
             lifetime,
-            filter_out_duplication: true,
-            spec_state: PacketState::Normal,
-            packet_id: 0,
-        }) {
+            PacketState::Normal,
+            true,
+            data,
+        )) {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
     }
 
-    fn _send(&mut self, packet_meta_data: PacketMetaData) -> Result<IdType, SendError> {
-        match self.transmitter.send(packet_meta_data) {
+    fn _send(&mut self, packet: Packet) -> Result<IdType, SendError> {
+        match self.transmitter.send(packet) {
             Ok(generated_packet_id) => Ok(generated_packet_id),
             Err(transmitter::PacketQueueIsFull) => Err(SendError::SendingQueueIsFull),
         }
@@ -344,8 +342,8 @@ impl Node {
     /// `broadcast`ed trough all the network.
     ///
     /// Returns `None` if no data is available.
-    pub fn receive(&mut self) -> Option<PacketMetaData> {
-        self.received_packet_meta_data_queue.pop_front()
+    pub fn receive(&mut self) -> Option<Packet> {
+        self.received_packet_queue.pop_front()
     }
 
     /// Does all necessary internal work of mesh node:
@@ -370,12 +368,12 @@ impl Node {
         }
         self.receiver.update::<SERIAL>(current_time);
 
-        let packet_to_handle = match self.receiver.receive(current_time) {
+        let packet_to_route = match self.receiver.receive(current_time) {
             Some(packet_to_handle) => packet_to_handle,
             None => return Ok(()),
         };
 
-        let (received_packet, transit_packet) = match self.router.route(packet_to_handle) {
+        let (received_packet, transit_packet) = match self.router.route(packet_to_route) {
             Ok(ok_case) => match ok_case {
                 RouteResult::ReceivedOnly(packet) => (Some(packet), None),
                 RouteResult::TransitOnly(transit) => (None, Some(transit)),
@@ -390,10 +388,7 @@ impl Node {
         let (mut is_receive_queue_full, mut is_transit_queue_full): (bool, bool) = (false, false);
 
         if let Some(received_packet) = received_packet {
-            match self
-                .received_packet_meta_data_queue
-                .push_back(received_packet)
-            {
+            match self.received_packet_queue.push_back(received_packet) {
                 Ok(()) => (),
                 Err(_) => {
                     is_receive_queue_full = true;

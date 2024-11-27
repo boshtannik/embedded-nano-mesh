@@ -1,17 +1,16 @@
 mod bitpos;
 mod constants;
-mod traits;
 mod types;
 
 pub mod implementations;
-pub mod meta_data;
-pub mod trait_implementations;
 
-pub use meta_data::{PacketLifetimeEnded, PacketMetaData, RespondToBroadcastAddressError};
+pub mod trait_implementations;
+pub mod traits;
+
+pub use implementations::{PacketLifetimeEnded, RespondToBroadcastAddressError};
 
 pub use traits::{
-    DataPacker, FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator,
-    UniqueIdExtractor, UnpackSenderAddressError,
+    FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator, UniqueIdExtractor,
 };
 
 pub use constants::{
@@ -41,12 +40,13 @@ pub struct Packet {
 }
 
 impl Packet {
-    fn new(
+    pub fn new(
         source_device_identifier: AddressType,
         destination_device_identifier: AddressType,
         id: IdType,
         lifetime: LifeTimeType,
         spec_state: PacketState,
+        ignore_duplications_flag: bool,
         mut data: PacketDataBytes,
     ) -> Packet {
         while !data.is_full() {
@@ -62,8 +62,16 @@ impl Packet {
             data,
             checksum: ChecksumType::MIN,
         };
+        new_packet.set_ignore_duplication_flag(ignore_duplications_flag);
         new_packet.set_spec_state(spec_state);
-        new_packet.summarized()
+        new_packet
+    }
+
+    // Because some one can form and transmit packet that is marked
+    // to be sent from broadcast address for example, which should
+    // not be possible case. This method helps prevent it.
+    pub fn has_correct_source_device_identifier(&self) -> bool {
+        ExactAddressType::new(self.source_device_identifier).is_some()
     }
 
     pub const fn size_of_bytes() -> usize {

@@ -19,10 +19,12 @@ impl PacketBytesParser {
     }
 
     fn try_parse_packet(&mut self) {
+        // No bytes enough yet to be parsed.
         if self.bytes_buffer.len() < (PACKET_START_BYTES_COUNT + PACKET_BYTES_SIZE) {
             return;
         }
 
+        // No start bytes found.
         if !self
             .bytes_buffer
             .iter()
@@ -40,7 +42,7 @@ impl PacketBytesParser {
 
         let got_packet = <Packet as Serializer>::deserialize(parsing_buffer);
 
-        if got_packet.is_checksum_correct() {
+        if got_packet.is_checksum_correct() && got_packet.has_correct_source_device_identifier() {
             self.parsed_packet.replace(got_packet);
         }
     }

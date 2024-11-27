@@ -2,8 +2,6 @@ use platform_millis::ms;
 
 pub const PACKET_QUEUE_SIZE: usize = 5;
 
-pub const PACKET_META_DATA_QUEUE_SIZE: usize = 10;
-
 /// Start byte of packet. The device will recognize
 /// packets by this byte.
 pub const PACKET_START_BYTE: u8 = b'x';

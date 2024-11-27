@@ -1,4 +1,4 @@
-mod data_packer;
+mod getters_setters;
 mod packet_flag_ops;
 mod serializer;
 mod state_mutator;

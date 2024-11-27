@@ -10,10 +10,7 @@ use self::{
     packet_filter::{Filter, RegistrationError},
 };
 
-use super::{
-    packet::{DataPacker, Packet, UnpackSenderAddressError},
-    PacketMetaData,
-};
+use super::Packet;
 
 pub struct Receiver {
     packet_filter: Filter,
@@ -67,7 +64,7 @@ impl Receiver {
     /// Checks, if parser has packet being parsed, and then
     /// cheks if packet is not duplicated.
     /// Returns packet if all checks were passed, or None otherwise.
-    pub fn receive(&mut self, current_time: ms) -> Option<PacketMetaData> {
+    pub fn receive(&mut self, current_time: ms) -> Option<Packet> {
         let packet = match self.packet_bytes_parser.get_packet() {
             None => return None,
             Some(packet) => packet,
@@ -78,10 +75,7 @@ impl Receiver {
             Ok(packet) => packet,
         };
 
-        match <Packet as DataPacker>::unpack(packet) {
-            Ok(parsed_packet) => Some(parsed_packet),
-            Err(UnpackSenderAddressError) => return None,
-        }
+        Some(packet)
     }
 
     fn _receive_byte<SERIAL: PlatformSerial<u8>>(&mut self) {

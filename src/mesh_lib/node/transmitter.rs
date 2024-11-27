@@ -1,8 +1,8 @@
 use platform_serial::PlatformSerial;
 
 use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
-use super::packet::{DataPacker, IdType, Packet, Serializer};
-use super::PacketMetaData;
+use super::packet::traits::GettersSetters;
+use super::packet::{IdType, Packet, Serializer};
 
 use super::types::PacketQueue;
 
@@ -26,18 +26,15 @@ impl Transmitter {
         }
     }
 
-    pub fn send_transit(
-        &mut self,
-        packet_meta_data: PacketMetaData,
-    ) -> Result<(), PacketTransitQueueIsFull> {
-        match self._send(packet_meta_data, false) {
+    pub fn send_transit(&mut self, packet: Packet) -> Result<(), PacketTransitQueueIsFull> {
+        match self._send(packet, false) {
             Ok(_) => Ok(()),
             Err(QueuePushError) => Err(PacketTransitQueueIsFull),
         }
     }
 
-    pub fn send(&mut self, packet_meta_data: PacketMetaData) -> Result<IdType, PacketQueueIsFull> {
-        match self._send(packet_meta_data, true) {
+    pub fn send(&mut self, packet: Packet) -> Result<IdType, PacketQueueIsFull> {
+        match self._send(packet, true) {
             Ok(generated_packet_id) => Ok(generated_packet_id),
             Err(QueuePushError) => Err(PacketQueueIsFull),
         }
@@ -45,22 +42,20 @@ impl Transmitter {
 
     fn _send(
         &mut self,
-        mut packet_meta_data: PacketMetaData,
+        mut packet: Packet,
         update_id_counter: bool,
     ) -> Result<IdType, QueuePushError> {
-        // The update_id_counter is the default behaviour.
-        // it can be set to false to transit packet.
+        // Packet transition does not require id incrementing.
+        // But every other senging method requires it.
         if update_id_counter {
             let (new_val, _) = self.id_counter.overflowing_add(1);
             self.id_counter = new_val;
-            packet_meta_data.packet_id = self.id_counter;
+            packet.set_id(self.id_counter);
         }
 
-        let generated_packet_id = packet_meta_data.packet_id.clone();
+        let generated_packet_id = packet.get_id().clone();
 
-        let packed_data = <Packet as DataPacker>::pack(packet_meta_data);
-
-        match self.packet_queue.push_back(packed_data) {
+        match self.packet_queue.push_back(packet) {
             Ok(_) => Ok(generated_packet_id),
             Err(_) => Err(QueuePushError),
         }

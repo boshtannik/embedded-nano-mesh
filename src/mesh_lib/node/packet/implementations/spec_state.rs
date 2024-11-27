@@ -24,6 +24,7 @@ impl Packet {
     }
 
     pub fn set_spec_state(&mut self, new_state: PacketState) {
+        let is_ignore_duplication_flag_set = self.is_ignore_duplication_flag_set();
         self.flags = 0;
         match new_state {
             PacketState::Normal => (),
@@ -34,5 +35,6 @@ impl Packet {
             PacketState::InitTransaction => self.set_initiate_transaction_flag(true),
             PacketState::FinishTransaction => self.set_finish_transaction_flag(true),
         }
+        self.set_ignore_duplication_flag(is_ignore_duplication_flag_set);
     }
 }
