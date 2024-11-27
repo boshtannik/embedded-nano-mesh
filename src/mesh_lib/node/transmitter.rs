@@ -1,7 +1,6 @@
 use platform_serial::PlatformSerial;
 
 use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
-use super::packet::traits::GettersSetters;
 use super::packet::{IdType, Packet, Serializer};
 
 use super::types::PacketQueue;

@@ -1,4 +1,4 @@
-use crate::mesh_lib::node::packet::{traits::GettersSetters, StateMutator};
+use crate::mesh_lib::node::packet::StateMutator;
 
 use super::super::{
     types::{GeneralAddressType, PacketState},

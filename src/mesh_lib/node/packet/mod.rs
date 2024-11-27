@@ -29,13 +29,13 @@ pub use types::PacketState;
 
 #[derive(Clone)]
 pub struct Packet {
-    source_device_identifier: AddressType,
+    pub source_device_identifier: AddressType,
     destination_device_identifier: AddressType,
     id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
     data_length: DataLengthType,
-    data: PacketDataBytes,
+    pub data: PacketDataBytes,
     checksum: ChecksumType,
 }
 

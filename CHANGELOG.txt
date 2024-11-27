@@ -28,3 +28,7 @@
 1.1.2 - * README fix, Renamings of other repositories included.
 1.1.3 - * README adjust.
 1.1.4 - * README fix.
+1.2.0 - * Readme adjust
+        * Significally reduce code duplication and amount of unnecessary types conversion.
+        * Example of arduino receive binary shrank for about 1kb.
+        * Example of arduino send binary shrank for about 300 bytes.

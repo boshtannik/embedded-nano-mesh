@@ -6,7 +6,7 @@ mod timer;
 mod transmitter;
 mod types;
 
-use packet::{traits::GettersSetters, Packet};
+use packet::Packet;
 pub use packet::{ExactAddressType, GeneralAddressType, IdType, LifeTimeType, PacketDataBytes};
 
 pub use platform_millis::{ms, PlatformMillis};
