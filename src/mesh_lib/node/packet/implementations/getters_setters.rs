@@ -1,4 +1,4 @@
-use super::super::types::{AddressType, IdType};
+use super::super::types::IdType;
 use super::super::Packet;
 
 impl Packet {
@@ -11,10 +11,6 @@ impl Packet {
     }
 
     pub fn increment_id(&mut self) {
-        self.id = self.id.wrapping_add(0);
-    }
-
-    pub fn get_source_device_identifier(&self) -> AddressType {
-        self.source_device_identifier
+        self.id = self.id.wrapping_add(1);
     }
 }

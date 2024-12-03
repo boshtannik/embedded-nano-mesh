@@ -6,8 +6,9 @@ mod timer;
 mod transmitter;
 mod types;
 
-use packet::Packet;
-pub use packet::{ExactAddressType, GeneralAddressType, IdType, LifeTimeType, PacketDataBytes};
+pub use packet::{
+    ExactAddressType, GeneralAddressType, IdType, LifeTimeType, Packet, PacketDataBytes,
+};
 
 pub use platform_millis::{ms, PlatformMillis};
 pub use platform_serial::PlatformSerial;
@@ -236,8 +237,7 @@ impl Node {
             let _ = self.update::<TIMER, SERIAL>();
 
             if let Some(answer) = self.receive() {
-                if !(answer.get_source_device_identifier() == destination_device_identifier.into())
-                {
+                if !(answer.source_device_identifier == destination_device_identifier.into()) {
                     continue;
                 }
                 if !(answer.get_spec_state() == expected_response_state) {

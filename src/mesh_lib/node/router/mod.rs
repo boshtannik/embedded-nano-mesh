@@ -76,11 +76,11 @@ impl Router {
     /// * In case, if the packet is addressed to the current device only - handles it.
     /// * In case, if the packet is addressed to the broadcast address:
     ///     1. Catches the packet as received.
-    ///     2. Makes copy of received packet - tries to turn it into transit, and sends it back into the
-    ///        ether.
+    ///     2. Makes copy of received packet - tries to push it into transit queue with lifetime
+    ///        reduced, from where it will be sent back into ether.
     /// * In case, if the packet is addressed to the other device:
-    ///     - Reduces lifetime of packet, and in case if packet is still live - sends it
-    ///     back into the network.
+    ///         - Reduces lifetime of packet, and in case if packet is still live - sends it
+    ///           back into the network.
     pub fn route(&self, packet: Packet) -> Result<RouteResult, RouteError> {
         if packet.is_destination_reached(self.current_device_identifier.into()) {
             return match packet.get_spec_state() {
