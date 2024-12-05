@@ -453,5 +453,7 @@ Pull request shall be created with next data mentioned.
 
 - Name of the issue the the pull request solves.
 - Link to the issue in the pull request description.
-- Abstract description of the problem and the way it was solved.
-- Optionally notes or wishes for further maintainance.
+- Abstract description of the cause of problem and the way it was solved.
+- Optionally notes or wishes for further maintainance or improvement.
+- Before pushing the pull request - merge it with main branch again to void all possible conflicts.
+- Push the pull request.

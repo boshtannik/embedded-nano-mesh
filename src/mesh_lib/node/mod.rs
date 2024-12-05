@@ -287,7 +287,7 @@ impl Node {
         match self._send(Packet::new(
             self.my_address.into(),
             destination_device_identifier.into(),
-            0,
+            0,  // Anyway it will be set later in the trasmitter.
             lifetime,
             PacketState::Normal,
             filter_out_duplication,
