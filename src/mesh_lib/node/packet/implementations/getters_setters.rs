@@ -11,6 +11,6 @@ impl Packet {
     }
 
     pub fn increment_id(&mut self) {
-        self.id = self.id.wrapping_add(1);
+        self.id = self.id.overflowing_add(1).0;
     }
 }
