@@ -63,6 +63,7 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 ## Quick links to usage examples:
 - [arduino-nano](https://github.com/boshtannik/embedded-nano-mesh-arduino-nano-example)
 - [linux](https://github.com/boshtannik/embedded-nano-mesh-linux-example)
+- [linux-cli-tool](https://github.com/boshtannik/embedded-nano-mesh-cli-tool)
 
 ## Goal:
 The goal of this project is to provide ability to build easy to use,
