@@ -1,4 +1,4 @@
-use platform_millis::ms;
+use super::ms;
 
 pub const PACKET_QUEUE_SIZE: usize = 5;
 

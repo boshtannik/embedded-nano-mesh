@@ -10,14 +10,20 @@ pub use packet::{
     ExactAddressType, GeneralAddressType, IdType, LifeTimeType, Packet, PacketDataBytes,
 };
 
-pub use platform_millis::{ms, PlatformMillis};
-pub use platform_serial::PlatformSerial;
-
 pub use router::PacketState;
-pub use types::NodeString;
 use types::PacketQueue;
+pub use types::{ms, NodeString};
 
 use self::router::{RouteError, RouteResult, Router};
+
+pub trait InterfaceDriver:
+    embedded_io::Read
+    + embedded_io::Write
+    + embedded_io::Error
+    + embedded_io::ReadReady
+    + embedded_io::WriteReady
+{
+}
 
 /// The main and only structure of the library that brings API for
 /// communication trough the mesh network.
@@ -97,7 +103,7 @@ impl Node {
     ///
     /// parameters:
     /// * `config` - Instance of `NodeConfig`.
-    pub fn new(config: NodeConfig) -> Node {
+    pub fn new<T, M>(config: NodeConfig) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
             receiver: receiver::Receiver::new(),
@@ -137,20 +143,24 @@ impl Node {
     /// That parts can be platform dependent, so general trait bound types are made to
     /// be able to use this method in any platform, by just providing platform specific
     /// types.
-    pub fn send_ping_pong<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
+    pub fn send_ping_pong<T: InterfaceDriver, M: Fn() -> ms>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         timeout: ms,
+        millis_provider: M,
+        interface_driver: &mut T,
     ) -> Result<(), SpecialSendError> {
-        self._special_send::<TIMER, SERIAL>(
+        self._special_send(
             data,
             destination_device_identifier,
             PacketState::Ping,
             PacketState::Pong,
             lifetime,
             timeout,
+            millis_provider,
+            interface_driver,
         )
     }
 
@@ -184,24 +194,28 @@ impl Node {
     /// That parts can be platform dependent, so general trait bound types are made to
     /// be able to use this method in any platform, by just providing platform specific
     /// types.
-    pub fn send_with_transaction<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
+    pub fn send_with_transaction<T: InterfaceDriver, M: Fn() -> ms>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         timeout: ms,
+        millis_provider: M,
+        interface_driver: &mut T,
     ) -> Result<(), SpecialSendError> {
-        self._special_send::<TIMER, SERIAL>(
+        self._special_send(
             data,
             destination_device_identifier,
             PacketState::SendTransaction,
             PacketState::FinishTransaction,
             lifetime,
             timeout,
+            millis_provider,
+            interface_driver,
         )
     }
 
-    fn _special_send<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
+    fn _special_send<T: InterfaceDriver, M: Fn() -> ms>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
@@ -209,8 +223,10 @@ impl Node {
         expected_response_state: PacketState,
         lifetime: LifeTimeType,
         timeout: ms,
+        millis_provider: M,
+        interface_driver: &mut T,
     ) -> Result<(), SpecialSendError> {
-        let mut current_time = TIMER::millis();
+        let mut current_time = millis_provider();
         let wait_end_time = current_time + timeout;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
@@ -234,7 +250,8 @@ impl Node {
         };
 
         while current_time < wait_end_time {
-            let _ = self.update::<TIMER, SERIAL>();
+            current_time = millis_provider();
+            let _ = self.update(interface_driver, current_time);
 
             if let Some(answer) = self.receive() {
                 if !(answer.source_device_identifier == destination_device_identifier.into()) {
@@ -249,7 +266,7 @@ impl Node {
                 return Ok(());
             }
 
-            current_time = TIMER::millis();
+            current_time = millis_provider();
         }
 
         Err(SpecialSendError::Timeout)
@@ -287,7 +304,7 @@ impl Node {
         match self._send(Packet::new(
             self.my_address.into(),
             destination_device_identifier.into(),
-            0,  // Anyway it will be set later in the trasmitter.
+            0, // Anyway it will be set later in the trasmitter.
             lifetime,
             PacketState::Normal,
             filter_out_duplication,
@@ -357,16 +374,16 @@ impl Node {
     /// That parts are platform dependent, so general trait bound types are made to
     /// be able to use this method in any platform, by just providing platform specific
     /// types with all required traits implemented.
-    pub fn update<TIMER: PlatformMillis, SERIAL: PlatformSerial<u8>>(
+    pub fn update<T: InterfaceDriver>(
         &mut self,
+        interface_driver: &mut T,
+        current_time: ms,
     ) -> Result<(), NodeUpdateError> {
-        let current_time = TIMER::millis();
-
         if self.timer.is_time_to_speak(current_time) {
-            self.transmitter.update::<SERIAL>();
+            self.transmitter.update(interface_driver);
             self.timer.record_speak_time(current_time);
         }
-        self.receiver.update::<SERIAL>(current_time);
+        self.receiver.update(current_time, interface_driver);
 
         let packet_to_route = match self.receiver.receive(current_time) {
             Some(packet_to_handle) => packet_to_handle,

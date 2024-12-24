@@ -10,3 +10,6 @@ pub type ParserBytesBuffer = Deque<u8, { PACKET_BYTES_SIZE + PACKET_START_BYTES_
 /// Type alias for a String with fixed length, that is made
 /// to simplify messaging between nodes.
 pub type NodeString = String<{ super::packet::CONTENT_SIZE }>;
+
+#[allow(non_camel_case_types)]
+pub type ms = u32;

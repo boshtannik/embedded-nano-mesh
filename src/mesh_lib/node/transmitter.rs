@@ -1,9 +1,8 @@
-use platform_serial::PlatformSerial;
-
 use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{IdType, Packet, Serializer};
 
 use super::types::PacketQueue;
+use super::InterfaceDriver;
 
 pub struct Transmitter {
     packet_queue: PacketQueue,
@@ -60,29 +59,31 @@ impl Transmitter {
         }
     }
 
-    fn send_start_byte_sequence<SERIAL: PlatformSerial<u8>>(&self) {
-        let mut serial = SERIAL::default();
+    fn send_start_byte_sequence<D: InterfaceDriver>(&self, interface_driver: &mut D) {
         for _ in 0..PACKET_START_BYTES_COUNT {
-            serial.write(PACKET_START_BYTE).unwrap_or_else(|_| {});
+            let _ = interface_driver.write(&[PACKET_START_BYTE]);
         }
     }
 
-    pub fn update<SERIAL: PlatformSerial<u8>>(&mut self) {
+    pub fn update<D: InterfaceDriver>(&mut self, interface_driver: &mut D) {
+        if !interface_driver.write_ready().unwrap_or_default() {
+            return;
+        }
+
         // Send transit queue.
-        let mut serial = SERIAL::default();
         while let Some(packet) = self.transit_queue.pop_front() {
-            self.send_start_byte_sequence::<SERIAL>();
+            self.send_start_byte_sequence(interface_driver);
             for byte in packet.summarized().serialized() {
-                serial.write(byte).unwrap_or_else(|_| {})
+                let _ = interface_driver.write(&[byte]);
             }
             return;
         }
 
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
-            self.send_start_byte_sequence::<SERIAL>();
+            self.send_start_byte_sequence(interface_driver);
             for byte in packet.summarized().serialized() {
-                serial.write(byte).unwrap_or_else(|_| {})
+                let _ = interface_driver.write(&[byte]);
             }
             return;
         }

@@ -1,16 +1,14 @@
 mod packet_bytes_parser;
 mod packet_filter;
 
-use crate::mesh_lib::ms;
-
-use platform_serial::PlatformSerial;
+use super::ms;
 
 use self::{
     packet_bytes_parser::PacketBytesParser,
     packet_filter::{Filter, RegistrationError},
 };
 
-use super::Packet;
+use super::{InterfaceDriver, Packet};
 
 pub struct Receiver {
     packet_filter: Filter,
@@ -56,8 +54,8 @@ impl Receiver {
     /// Does the following:
     /// - reads byte from serial
     /// - checks if the packet can be built from with new received byte.
-    pub fn update<SERIAL: PlatformSerial<u8>>(&mut self, current_time: ms) {
-        self._receive_byte::<SERIAL>();
+    pub fn update<D: InterfaceDriver>(&mut self, current_time: ms, interface_driver: &mut D) {
+        self._receive_byte(interface_driver);
         self.packet_filter.update(current_time);
     }
 
@@ -78,10 +76,16 @@ impl Receiver {
         Some(packet)
     }
 
-    fn _receive_byte<SERIAL: PlatformSerial<u8>>(&mut self) {
-        let mut serial = SERIAL::default();
-        while let Ok(byte) = serial.read() {
-            self.packet_bytes_parser.push_byte(byte);
+    fn _receive_byte<D: InterfaceDriver>(&mut self, interface_driver: &mut D) {
+        if !interface_driver.read_ready().unwrap_or_default() {
+            return;
+        }
+
+        let mut buf = [0u8];
+        let _ = interface_driver.read(&mut buf);
+
+        for b in buf {
+            self.packet_bytes_parser.push_byte(b);
         }
     }
 }

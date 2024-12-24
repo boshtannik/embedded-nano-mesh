@@ -1,4 +1,4 @@
-use platform_millis::ms;
+use super::ms;
 
 pub struct Timer {
     listen_period: ms,
