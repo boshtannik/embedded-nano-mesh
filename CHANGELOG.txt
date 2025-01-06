@@ -32,3 +32,15 @@
         * Significally reduce code duplication and amount of unnecessary types conversion.
         * Example of arduino receive binary shrank for about 1kb.
         * Example of arduino send binary shrank for about 300 bytes.
+2.0.0 - * Update README with diagrams
+        * Major version change due to the API change.
+        * Adjust work principle of transactions, it broke backward compatibility on transactions only.
+        * No more dependency PlatformSerial trait in order to provide
+          ability to use more interfaces than just USART, Library now just depends on
+          embedded_serial trait.
+        * No more dependency on PlatformMillis trait. Now for time calculation
+          library uses Fn() -> ms (ms is u32 alias) closure that just returns ms since program start.
+        * Node now again can ping itself trough the network and make transaction to itself.
+        * Restored feature of transaction to itself.
+          For use of transactions - all nodes shall support version 2.0.0.
+

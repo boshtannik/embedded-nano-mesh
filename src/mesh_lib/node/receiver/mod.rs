@@ -8,7 +8,7 @@ use self::{
     packet_filter::{Filter, RegistrationError},
 };
 
-use super::{InterfaceDriver, Packet};
+use super::Packet;
 
 pub struct Receiver {
     packet_filter: Filter,
@@ -54,7 +54,10 @@ impl Receiver {
     /// Does the following:
     /// - reads byte from serial
     /// - checks if the packet can be built from with new received byte.
-    pub fn update<D: InterfaceDriver>(&mut self, current_time: ms, interface_driver: &mut D) {
+    pub fn update<I>(&mut self, current_time: ms, interface_driver: &mut I)
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+    {
         self._receive_byte(interface_driver);
         self.packet_filter.update(current_time);
     }
@@ -76,16 +79,14 @@ impl Receiver {
         Some(packet)
     }
 
-    fn _receive_byte<D: InterfaceDriver>(&mut self, interface_driver: &mut D) {
-        if !interface_driver.read_ready().unwrap_or_default() {
-            return;
-        }
-
-        let mut buf = [0u8];
-        let _ = interface_driver.read(&mut buf);
-
-        for b in buf {
-            self.packet_bytes_parser.push_byte(b);
+    fn _receive_byte<I>(&mut self, interface_driver: &mut I)
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+    {
+        if let Ok(red_byte_option) = interface_driver.getc_try() {
+            if let Some(red_byte) = red_byte_option {
+                self.packet_bytes_parser.push_byte(red_byte);
+            }
         }
     }
 }

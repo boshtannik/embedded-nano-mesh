@@ -2,7 +2,6 @@ use super::constants::{PACKET_START_BYTE, PACKET_START_BYTES_COUNT};
 use super::packet::{IdType, Packet, Serializer};
 
 use super::types::PacketQueue;
-use super::InterfaceDriver;
 
 pub struct Transmitter {
     packet_queue: PacketQueue,
@@ -59,33 +58,31 @@ impl Transmitter {
         }
     }
 
-    fn send_start_byte_sequence<D: InterfaceDriver>(&self, interface_driver: &mut D) {
+    fn send_start_byte_sequence<I>(&self, interface_driver: &mut I)
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+    {
         for _ in 0..PACKET_START_BYTES_COUNT {
-            let _ = interface_driver.write(&[PACKET_START_BYTE]);
+            let _ = interface_driver.puts(&[PACKET_START_BYTE]);
         }
     }
 
-    pub fn update<D: InterfaceDriver>(&mut self, interface_driver: &mut D) {
-        if !interface_driver.write_ready().unwrap_or_default() {
-            return;
-        }
-
+    pub fn update<I>(&mut self, interface_driver: &mut I)
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+    {
         // Send transit queue.
         while let Some(packet) = self.transit_queue.pop_front() {
             self.send_start_byte_sequence(interface_driver);
-            for byte in packet.summarized().serialized() {
-                let _ = interface_driver.write(&[byte]);
-            }
-            return;
+            let _ = interface_driver.puts(&packet.summarized().serialized());
+            return; // This return makes sending one packet in a listen period
         }
 
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
             self.send_start_byte_sequence(interface_driver);
-            for byte in packet.summarized().serialized() {
-                let _ = interface_driver.write(&[byte]);
-            }
-            return;
+            let _ = interface_driver.puts(&packet.summarized().serialized());
+            return; // This return makes sending one packet in a listen period
         }
     }
 }

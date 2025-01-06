@@ -32,10 +32,9 @@ impl Packet {
 
         match old_state {
             PacketState::Ping => self.swap_source_destination()?,
-            PacketState::SendTransaction | PacketState::InitTransaction => {
-                self.swap_source_destination()?;
-            }
-            PacketState::AcceptTransaction => {
+            PacketState::SendTransaction
+            | PacketState::InitTransaction
+            | PacketState::AcceptTransaction => {
                 self.increment_id();
                 self.swap_source_destination()?;
             }

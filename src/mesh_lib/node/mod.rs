@@ -16,15 +16,6 @@ pub use types::{ms, NodeString};
 
 use self::router::{RouteError, RouteResult, Router};
 
-pub trait InterfaceDriver:
-    embedded_io::Read
-    + embedded_io::Write
-    + embedded_io::Error
-    + embedded_io::ReadReady
-    + embedded_io::WriteReady
-{
-}
-
 /// The main and only structure of the library that brings API for
 /// communication trough the mesh network.
 /// It works in the manner of listening of ether for
@@ -103,7 +94,7 @@ impl Node {
     ///
     /// parameters:
     /// * `config` - Instance of `NodeConfig`.
-    pub fn new<T, M>(config: NodeConfig) -> Node {
+    pub fn new(config: NodeConfig) -> Node {
         Node {
             transmitter: transmitter::Transmitter::new(),
             receiver: receiver::Receiver::new(),
@@ -137,21 +128,25 @@ impl Node {
     /// this device will listen for response. In case if no response was caught during that
     /// period of time, the method will return `Err(SpecialSendError::Timeout)`.
     ///
-    /// * Call of this method also requires the general types to be passed in.
-    /// As the process relies onto timing countings and onto serial stream,
+    /// * `millis_provider` - Is the closure that returns current time in milliseconds,
     ///
-    /// That parts can be platform dependent, so general trait bound types are made to
-    /// be able to use this method in any platform, by just providing platform specific
-    /// types.
-    pub fn send_ping_pong<T: InterfaceDriver, M: Fn() -> ms>(
+    /// * `interface_driver` - Is the instance of `embedded_serial::MutNonBlockingRx`
+    ///                        and `MutBlockingTx` traits.
+    ///                        In other words the driver which will be used to
+    ///                        read and write from the interface.
+    pub fn send_ping_pong<I, M>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         timeout: ms,
         millis_provider: M,
-        interface_driver: &mut T,
-    ) -> Result<(), SpecialSendError> {
+        interface_driver: &mut I,
+    ) -> Result<(), SpecialSendError>
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        M: Fn() -> ms,
+    {
         self._special_send(
             data,
             destination_device_identifier,
@@ -188,21 +183,25 @@ impl Node {
     /// In case if no response was caught during that period of time, the method will
     /// return `Err(SpecialSendError::Timeout)`.
     ///
-    /// * Call of this method also requires the general types to be passed in.
-    /// As the process relies onto timing countings and onto serial stream,
+    /// * `millis_provider` - Is the closure that returns current time in milliseconds,
     ///
-    /// That parts can be platform dependent, so general trait bound types are made to
-    /// be able to use this method in any platform, by just providing platform specific
-    /// types.
-    pub fn send_with_transaction<T: InterfaceDriver, M: Fn() -> ms>(
+    /// * `interface_driver` - Is the instance of `embedded_serial::MutNonBlockingRx`
+    ///                        and `MutBlockingTx` traits.
+    ///                        In other words the driver which will be used to
+    ///                        read and write from the interface.
+    pub fn send_with_transaction<I, M>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
         lifetime: LifeTimeType,
         timeout: ms,
         millis_provider: M,
-        interface_driver: &mut T,
-    ) -> Result<(), SpecialSendError> {
+        interface_driver: &mut I,
+    ) -> Result<(), SpecialSendError>
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        M: Fn() -> ms,
+    {
         self._special_send(
             data,
             destination_device_identifier,
@@ -215,7 +214,7 @@ impl Node {
         )
     }
 
-    fn _special_send<T: InterfaceDriver, M: Fn() -> ms>(
+    fn _special_send<I, M>(
         &mut self,
         data: PacketDataBytes,
         destination_device_identifier: ExactAddressType,
@@ -224,8 +223,12 @@ impl Node {
         lifetime: LifeTimeType,
         timeout: ms,
         millis_provider: M,
-        interface_driver: &mut T,
-    ) -> Result<(), SpecialSendError> {
+        interface_driver: &mut I,
+    ) -> Result<(), SpecialSendError>
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        M: Fn() -> ms,
+    {
         let mut current_time = millis_provider();
         let wait_end_time = current_time + timeout;
 
@@ -243,14 +246,15 @@ impl Node {
             Err(any_err) => return Err(any_err.into()),
             Ok(expected_response_packet_id) => match request_state {
                 // It is needed to wait for response packet with specific packet id.
-                PacketState::SendTransaction => expected_response_packet_id + 1,
+                // Following the transaction time diagram - it is expected the packet to
+                // have it's id increased three times.
+                PacketState::SendTransaction => expected_response_packet_id + 3,
                 PacketState::Ping => expected_response_packet_id,
                 _ => expected_response_packet_id,
             },
         };
 
         while current_time < wait_end_time {
-            current_time = millis_provider();
             let _ = self.update(interface_driver, current_time);
 
             if let Some(answer) = self.receive() {
@@ -371,14 +375,19 @@ impl Node {
     /// * Call of this method also requires the general types to be passed in.
     /// As the process relies onto timing countings and onto serial stream,
     ///
-    /// That parts are platform dependent, so general trait bound types are made to
-    /// be able to use this method in any platform, by just providing platform specific
-    /// types with all required traits implemented.
-    pub fn update<T: InterfaceDriver>(
+    /// * `interface_driver` - is instance of `MutNonBlockingRx` and `MutBlockingTx`
+    /// traits.
+    ///
+    /// * `current_time` - Is a closure which returns current time in milliseconds
+    /// since the start of the program.
+    pub fn update<I>(
         &mut self,
-        interface_driver: &mut T,
+        interface_driver: &mut I,
         current_time: ms,
-    ) -> Result<(), NodeUpdateError> {
+    ) -> Result<(), NodeUpdateError>
+    where
+        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+    {
         if self.timer.is_time_to_speak(current_time) {
             self.transmitter.update(interface_driver);
             self.timer.record_speak_time(current_time);

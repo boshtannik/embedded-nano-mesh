@@ -2,8 +2,8 @@
 This is the low speed mesh network protocol. It allows to turn almost any
 kind of MCU device + Radio module device into a mesh node. It is designed
 to be lightweight, easy to use and portable to many plaftorms. The protocol
-uses serial port of your MCU in order to communicate with
-radio modulee connected to it.
+may use variety of radio modules, implementation of driver is required for
+radio modulee connected to MCU.
 
 The network extends and heals itself automatically by communicating
 with other nodes, which have same protocol version installed. Most
@@ -12,8 +12,7 @@ it is recommended to use the latest version.
 
 The protocol has been tested with radio
 modules JDY-40 during the development, and potentially can
-use radio modules with similar UART interface,
-which might be:
+use other radio modules, which might be or your choice:
 - JDY-41
 - SV-610
 - HC-11
@@ -29,9 +28,9 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
  (Library code runs here which turns MCU into a mesh node)
         |                                          
         |                                          
-        V                                          
-+----------------+              +-----------------+
-|                |     USART    |                 |
+        V           (Interface                     
++----------------+    of your   +-----------------+
+|                |    choice)   |                 |
 |      MCU       |<------------>|   Radio module  |
 |                |              |                 |
 +----------------+              +-----------------+
@@ -39,12 +38,12 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 
 ## Network possible architecture:
 ```
-+----------------+               +-----------------+                 +----------------+ 
-|                |               |                 |                 |                | 
-|      Node      |  (( Ether ))  |      Node       |   (( Ether ))   |      Node      |  
-|   Address: 1   |               |   Address: 2    |                 |    Address: 3  | 
-|                |               |                 |                 |                | 
-+----------------+  <--------->  +-----------------+  <----------->  +----------------+ 
++----------------+               +----------------+                 +---------------+ 
+|                |               |                |                 |               | 
+|      Node      |  (( Ether ))  |      Node      |   (( Ether ))   |     Node      |  
+|   Address: 1   |               |   Address: 2   |                 |   Address: 3  | 
+|                |  <--------->  |                |  <----------->  |               | 
++----------------+               +----------------+                 +---------------+ 
                   ^               ^                                                    
                    \             /                                                     
                     \           /                                                      
@@ -52,12 +51,12 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
                       \       /                                                        
                        \     /                                                         
                         v   v                                                           
-              +----------------+                                                       
-              |                |                                                       
-              |      Node      |                                                       
-              |   Address: 4   |                                                       
-              |                |                                                       
-              +----------------+                                                       
+                +----------------+                                                       
+                |                |                                                       
+                |      Node      |                                                       
+                |   Address: 4   |                                                       
+                |                |                                                       
+                +----------------+                                                       
 ```
 
 ## Quick links to usage examples:
@@ -74,6 +73,9 @@ This protocol can be used for:
 - Remote monitoring (telemetry)
 - Decentralized messaging
 - etc.
+Goal of to be able to use cheap components - is dictated by
+need to extend the network by nodes built of cheap components which
+may handle simplest logic or no logic at all.
 
 ## Support project:
 If you earn money with using that code - Please donate
@@ -132,15 +134,17 @@ to `true` to prevent network from being jammed by duplicated packets.
 It works in the next way: 
 Once intermediate node receives the packet with `ignore_duplication` flag set to `true`,
 - it remembers the `sender_device_identifier` of the packet and `id` of the packet for the
-`RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD`. - This period is configurable. if the same packet
+`RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD`. - This period is configurable. if the packet
 with same `sender_device_identifier` and with same `id` is sent again - it will be ignored by
-the node. It leads protocol to spread one exact packet trough the network only once.
+the node for specified period of time which was described above.
+`ignore_duplication` leads protocol to spread one exact packet trough the network only once.
 
 Special purpose packets as Ping-Pong or Transaction packets are always
-with `filter_out_duplication` flag set to `true` by default.
+with `filter_out_duplication` flag set to `true` by default, because they
+require more than one packet be sent to handle whole process of `ping-pong` or `transaction`.
 
 ## Status:
-The version is: 1.1.0:
+The version is: 2.0.0:
   Every planned functionality is working. It is:
   - Send data.
   - Receive data.
@@ -148,16 +152,15 @@ The version is: 1.1.0:
   - Send data with limited of number of hops.
   - Broadcast data to all nodes.
   - Message transition by the intermediate nodes.
-  - Send data with ping flag, and receive answer with pong flag set.
-  - Send data via Transaction and receive packet about transaction being finished.
-  - Full backward compatible with version 1.0.5. (but anyway it is better to be in sync :) )
+  - Send data via Ping-pong method, and receive result saying that ping-pong send finished.
+  - Send data via Transaction and receive result saying that transaction being finished.
 
 ## Cross-platform compatibility
-For now the protocol is ported to:
+Protocol currently natively runs on:
 - Arduino nano
 - Linux (Raspberry PI, Desktop)
 
-Potentially can be ported to:
+Not tested yet on:
 - Windows
 - Mac
 - STM32
@@ -166,72 +169,94 @@ Potentially can be ported to:
 
 ## Porting to other platforms
 While initially designed to be able to run at least on
-Atmega328p chips - it can be ported to huge variety of other platforms.
-Protocol is using `embedded-hal`,  so platforms shall be supported by `embedded-hal`.
+Atmega328p microcontollers - it can run natively on huge variety of other platforms and operating systems.
+Protocol is using `embedded-serial` crate to depend on MutBlockingTX and MutNonBlockingRX
+traits which shall be implemented and provided during use of the library, for methods
+`update`, `send_ping_pong` and `send_with_transaction`.
 
-Also this protocol is welcomed to be ported on other platforms.
-In order to simplify process of porting of this protocol to the new
-platforms - the common behaviour is moved out of implementation
-to make it interchangable with implementations of PlatformMillis and PlatformSerial traits for
-each other platform.
-
-To be able to run protocol on new platforms, it is needed to have implemented
-`PlatformMillis` and `PlatformSerial` traits for this specific platform.
-- `PlatformSerial` - trait to communicate with radio module over USART.
-- `PlatformMillis` - trait to track of time since program start.
-
-In case - if you have implemented `PlatformSerial` and `PlatformMillis` trait for your platform,
-you can contact developers of this library to include links for your implementations in this README.
+## Issues and discussions:
 Contacs are:
 - Telegram channel: [https://t.me/embedded_nano_mesh](https://t.me/embedded_nano_mesh)
 - Github: [https://github.com/boshtannik](https://github.com/boshtannik)
 This will help this project grow.
 
 
-## Usage steps:
-In case, if implementations are already present for platform, you need -
-just follow three steps to use it: (Examples are for arduino nano)
-1 - Include implementations of `platform-serial` and `platform-millis` for your
-platform into your project.
+## Usage:
+1 - Include library.
 `Cargo.toml`:
 ```
-embedded-nano-mesh = "1.1.4"
-platform-millis-arduino-nano = { git = "https://github.com/boshtannik/platform-millis-arduino-nano.git" }
-platform-serial-arduino-nano = { git = "https://github.com/boshtannik/platform-serial-arduino-nano.git" }
+embedded-nano-mesh = "2.0.0"
+embedded-serial = "0.5.0"
 ```
-2 - Include implementation of `platform-serial` and `platform-millis` in your project, and of course the library `embedded-nano-mesh` itself.
+2 - Include implementation of embedded-serial or implement it yourself.
 `src/main.rs`:
 ```
-use embedded_nano_mesh::*;
-
-use platform_millis_arduino_nano::{init_timer, ms, Atmega328pMillis};
-use platform_serial_arduino_nano::{init_serial, ArduinoNanoSerial};
-```
-
-3 - Use `PlatformSerial` and `PlatformMillis` implementations during use of dependent methods on this traits:
-`src/main.rs`:
-```
-/// Send ping-pong example:
-match mesh_node.send_ping_pong::<Atmega328pMillis, ArduinoNanoSerial>( ... ) { ... }
-
-/// Send with transaction example:
-match mesh_node.send_with_transaction::<Atmega328pMillis, ArduinoNanoSerial>( ... ) { ... }
-
-/// Update example.
-loop {
-  let _ = mesh_node.update::<Atmega328pMillis, ArduinoNanoSerial>();
+struct LinuxInterfaceDriver {
+    serial: serialport::TTYPort,
 }
+
+impl LinuxInterfaceDriver {
+    pub fn new(serial: serialport::TTYPort) -> LinuxInterfaceDriver {
+        LinuxInterfaceDriver { serial }
+    }
+}
+
+impl embedded_serial::MutBlockingTx for LinuxInterfaceDriver {
+    type Error = ();
+
+    fn putc(&mut self, ch: u8) -> Result<(), Self::Error> {
+        self.serial.write(&[ch]).unwrap();
+        Ok(())
+    }
+}
+
+impl embedded_serial::MutNonBlockingRx for LinuxInterfaceDriver {
+    type Error = ();
+
+    fn getc_try(&mut self) -> Result<Option<u8>, Self::Error> {
+        let mut buf = [0u8];
+        match self.serial.read(&mut buf) {
+            Ok(_) => Ok(Some(buf[0])),
+            Err(_) => Ok(None),
+        }
+    }
+}
+
 ```
-Note that `send_to_exact` and `broadcast` do not require `PlatformSerial` and `PlatformMillis` generics being provided.
+
+3 - initialize and use your implementation of embedded-serial in your code:
+`src/main.rs`:
+```
+    let mut interface = LinuxInterfaceDriver::new( ... );
+    let mut mesh_node = ...;
+
+    match mesh_node.send_to_exact(
+        message.into_bytes(),              // Content.
+        ExactAddressType::new(2).unwrap(), // Send to device with address 2.
+        10 as LifeTimeType, // Let message travel 10 devices before being destroyed.
+        true,
+    ) {
+        Ok(()) => {
+            println!("Message sent")
+        }
+        Err(SendError::SendingQueueIsFull) => {
+            println!("SendingQueueIsFull")
+        }
+    }
+
+    loop {
+        let _ = mesh_node.update(&mut interface, current_time);
+    }
+```
+During sending of message you can regulate the distance that the packet will be able to
+make - by configuring the `lifetime` during making the send
+of the message. For example:
+- setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
+- setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
+
 Full examples are available below.
 
-## Arduino nano port.
-The implementation of PlatformSerial for Arduino nano board is done by:
-- [platform-serial-arduino-nano](https://github.com/boshtannik/platform-serial-arduino-nano)
-
-The implementation of PlatformMillis for Arduino nano board is done by:
-- [platform-millis-arduino-nano](https://github.com/boshtannik/platform-millis-arduino-nano)
-
+## Arduino nano examples.
 Usage examples can be found here:
 - [arduino-nano](https://github.com/boshtannik/embedded-nano-mesh-arduino-nano-example)
 
@@ -239,57 +264,40 @@ Sometimes code binary might not fit onto your arduino board memory, in order to
 reduce the size of final binary - it is recommended to compile it with
 --release flag - it increases optimisation level tlat leads to smaller binary.
 
-## Linux port.
-The implementation of PlatformSerial for Linux is done by:
-- [platform-serial-linux](https://crates.io/crates/platform-serial-linux)
-
-The implementation of PlatformMillis for Linux is done by:
-- [platform-millis-linux](https://crates.io/crates/platform-millis-linux)
-
+## Linux examples.
 Usage examples can be found here:
 - [linux](https://github.com/boshtannik/embedded-nano-mesh-linux-example)
 
-## Short usage description
-1 - Instantiate `Node` structure.
-2 - Constantly call `update` method of `Node` in a loop.
-3 - Call any method of `Node` structure that you need, such as:
-  - `send_to_exact`
-  - `broadcast`
-  - `receive`
-  - `send_ping_pong`
-  - `send_with_transaction`
-
-## Methods description
+## API description
 The central component of this protocol is the `Node` structure, which offers interface for
 actions like `send_to_exact`, `broadcast`, `receive`, `send_ping_pong`, and `send_with_transaction`.
-The `Node` should be constantly updated by
-call its `update` method, during call of `update` method - it does all internal work:
-- routes packets trough the network, transits packets that were sent to other devices, handles `lifetime` of packets.
+
+The `Node` should be constantly updated by call its `update` method.
+During call of `update` method - it does all internal work:
+- routes packets trough the network
+- transits packets that were sent to other devices
+- handles `lifetime` of packets
 - handles special packets like `ping` and `pong`, or any kind of transaction one.
 - saves received packets that wil lbe available trough `receive` method.
 - sends packets, that are in the `send` queue.
 
 As the protocol relies on physical environment - it is crucial to provide
-ability to the library to rely on time counting and on USART interface, as
-it is described above by `PlatformSerial` and `PlatformMillis` implementations.
+ability to the library to rely on time counting and on communication interface, time
+calculation is provided by millis_provider closure, and interface_driver
+is described above by `embedded-serial` traits.
 
-During the use of methods, that relies on `PlatformMillis` trait and `PlatformSerial` trait -
+During the use of methods, that relies on millis_provider closure and interface_driver which
+is the structure that implements embedded-serial trait -
 it is needed to provide those implementations during the method call.
 Those methods are:
 - `update`
 - `send_ping_pong`
 - `send_with_transaction`
 
-You can regulate the distance that the packet will be able to
-make - by configuring the `lifetime` during making the send
-of the message. For example:
-- setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
-- setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
-
 ### New Method
 To initialize a `Node`, you need to provide `NodeConfig` with values:
 - `ExactAddressType`: Sets the device's identification address in the node pool. It is ok to have multiple deivces sharing same address in the same network.
-- `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting on the network. It prevents network congestion.
+- `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting packet to the network. It prevents network congestion.
 
 `main.rs`:
 ```
@@ -306,18 +314,18 @@ send it with standard `broadcast` method, It sends packet with destination addre
 as it's own address, will keep the message as received and will transit copy of that message further.
 `main.rs`:
 ```
-mesh_node.broadcast(
-    NodeString::from("Hello, world!").into_bytes(),
-    3.into(),
+let _ = mesh_node.broadcast(
+    message.into_bytes(), // Content.
+    10 as LifeTimeType,   // Let message travel 10 devices before being destroyed.
 );
 ```
 
 ### Send to exact Method
-Sends the message to device with exact address in the network.
-The `send_to_exact` method requires the following arguments:
-
-The term "echoed message" refers to a duplicated message that has
+!The term `echoed message` refers to a duplicated message that has
 been re-transmitted into the ether by an intermediate device.
+
+Send to exact method - sends the message to device with exact address in the network.
+The `send_to_exact` method requires the following arguments:
 
 - `data`: A `PacketDataBytes` instance to hold the message bytes.
 - `destination_device_identifier`: A `ExactAddressType` instance indicating exact target device.
@@ -326,10 +334,10 @@ been re-transmitted into the ether by an intermediate device.
 
 `main.rs`:
 ```
-mesh_node.send_to_exact(
-    NodeString::from("Hello, world!").into_bytes(),
-    ExactAddressType::new(3).unwrap(),
-    3.into(),
+let _ = match mesh_node.send_to_exact(
+    message.into_bytes(),              // Content.
+    ExactAddressType::new(2).unwrap(), // Send to device with address 2.
+    10 as LifeTimeType, // Let message travel 10 devices before being destroyed.
     true,
 );
 ```
@@ -338,7 +346,7 @@ mesh_node.send_to_exact(
 The `receive` method optionally returns received data in a `PacketDataBytes` instance in case
 if that packet was previously received by this exact device. It does not matter if that data
 was sent via `broadcast`, `send_to_exact`, `ping_pong` or `send_with_transaction` method because
-anyway it will be available via `receive` method.
+anyway it was sent to that exact device.
 The way that packet was sent to this device can be checked in `special_state` field of returned
 value. Field shall contain `PacketState` enum instance.
 
@@ -352,8 +360,21 @@ match mesh_node.receive() {
 
 ### Send Ping-Pong Method
 The `send_ping_pong` method sends a message with a "ping" flag to the destination node and
-waits for the same message with a "pong" flag which tells that the device have received the message at least once. It returns an error if the ping-pong exchange fails.
+waits for the same message with a "pong" flag which tells that the end device have received
+the message at least once. It returns an error if the ping-pong exchange fails.
 The following arguments are required:
+
+`Ping-Pong time diagram`:
+```
++----------+              +----------+
+|  Sender  |              | Receiver |
++--------- +              +----------+
+     |                         |     
+     |   --------Ping------->  |     
+     |   <-------Pong--------  |     
+     |                         |     
+                                    
+```
 
 - `data`: A `PacketDataBytes` instance.
 - `destination_device_identifier`: A `ExactAddressType` instance, that indicates exact target device address.
@@ -362,23 +383,42 @@ The following arguments are required:
 
 `main.rs`:
 ```
-   match mesh_node.send_ping_pong::<Atmega328pMillis, ArduinoNanoSerial>(
-        NodeString::from("This is the message to be sent").into_bytes(),
-        ExactAddressType::new(2).unwrap(),
-        10 as LifeTimeType,
-        3000 as ms,
-    ) {
-        Ok(()) => ..., // Means that receiving device got the message exaclty once.
-        Err(SpecialSendError::SendingQueueIsFull) => ..., // Message wasnt even sent.
-        Err(SpecialSendError::Timeout) => ..., // No response from the receiving device.
-    }
+let _ = mesh_node.send_ping_pong(
+    message.into_bytes(),              // Content.
+    ExactAddressType::new(2).unwrap(), // Send to device with address 2.
+    10 as LifeTimeType, // Let message travel 10 devices before being destroyed.
+    1000 as ms,
+    || {
+        Instant::now()
+            .duration_since(program_start_time)
+            .as_millis() as ms
+    },
+    &mut serial,
+);
 ```
 
 ### Send with Transaction Method
 The `send_with_transaction` method sends a message and handles all further work to
 ensure the target device have received it only once and correctly. It returns an error if the transaction failed.
-The required arguments are:
 
+`Transaction time diagram`:
+```
+                      +----------+              +----------+
+                      |  Sender  |              | Receiver |
+                      +--------- +              +----------+
+                           |                         |     
+                           | ---SendTransaction--->  |    \
+                           |                         |     (increment packet id by 1)
+                   /       | <--AcceptTransaction--  |    /
+ (increment packet id by 1)|                         |     
+                   \       | ---InitTransaction--->  |    \                           
+                           |                         |     (increment packet id by 1) 
+                           | <--FinishTransaction--  |    /                           
+                           |                         |     
+                                    
+```
+
+The required arguments are:
 - `data`: A `PacketDataBytes` instance.
 - `destination_device_identifier`: A `ExactAddressType` instance, that indicates exact target device address.
 - `lifetime`: A `LifeTimeType` instance.
@@ -386,29 +426,35 @@ The required arguments are:
 
 `main.rs`:
 ```
-    match mesh_node.send_with_transaction::<Atmega328pMillis, ArduinoNanoSerial>(
-        NodeString::from("This is the message to be sent").into_bytes(),
-        ExactAddressType::new(2).unwrap(),
-        10 as LifeTimeType,
-        3000 as ms,
-    ) {
-        Ok(()) => ..., // Means that receiving device got the message exaclty once.
-        Err(SpecialSendError::SendingQueueIsFull) => ..., // Message wasnt even sent.
-        Err(SpecialSendError::Timeout) => ..., // No response from the receiving device.
-    }
+match mesh_node.send_with_transaction(
+    message.into_bytes(),              // Content.
+    ExactAddressType::new(2).unwrap(), // Send to device with address 2.
+    10 as LifeTimeType, // Let message travel 10 devices before being destroyed.
+    2000 as ms,
+    || {
+        Instant::now()
+            .duration_since(program_start_time)
+            .as_millis() as ms
+    },
+    &mut serial,
+);
 ```
 
 ### Update Method
 The `update` method is used to perform all internal operation of the `Node`.
-It shall be called in a loop with providing `PlatformMillis` and `PlatformSerial` instances
-- it allows `Node` to interact with MCU peripherals, such as time counting and USART.
+It shall be called in a loop with providing embedded-serial implemented structure
+and current_time im milliseconds. It allows `Node` to interact with outer world.
 With out call this method in a loop - the node will stop working.
 
 `main.rs`:
 ```
-  loop {
-    let _ = mesh_node.update::<Atmega328pMillis, ArduinoNanoSerial>();
-  }
+loop {
+    let current_time = Instant::now()
+        .duration_since(program_start_time)
+        .as_millis() as ms;
+
+    let _ = mesh_node.update(&mut serial, current_time);
+}
 ```
 
 ## Reduce packet collisions
@@ -421,9 +467,9 @@ this will reduce chance of the network to sychronize,
 and shall make less packet collisions.
 You can play with this values in order to reduce the chance of packet collisions.
 
-### Note: The higher count of nodes in the network leads to the more network stability. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
+### Note: The higher count of nodes in the network leads to the more network stability, but listen period must be higher in order to let devices to share same ether with less collisions. In the stable networks - there is less need to use `transaction` or `ping_pong` sending, unless, you send something very important.
 
-## Warning
+## No encryption
 This protocol does not provide data encryption. To secure your data from
 being stolen, you should implement (de/en)cryption mechanisms independently.
 

@@ -9,18 +9,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
-name = "embedded-io"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
-
-[[package]]
 name = "embedded-nano-mesh"
 version = "2.0.0"
 dependencies = [
- "embedded-io",
+ "embedded-serial",
  "heapless",
 ]
+
+[[package]]
+name = "embedded-serial"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23cba09b46dc33141b384b676b9b95ae03cc32d52afe173f9f67b701500d510e"
 
 [[package]]
 name = "hash32"
