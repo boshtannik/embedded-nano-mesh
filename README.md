@@ -366,13 +366,14 @@ The following arguments are required:
 
 `Ping-Pong time diagram`:
 ```
-+----------+              +----------+
-|  Sender  |              | Receiver |
-+--------- +              +----------+
-     |                         |     
-     |   --------Ping------->  |     
-     |   <-------Pong--------  |     
-     |                         |     
+            +----------+              +----------+
+            |  Sender  |              | Receiver |
+            +--------- +              +----------+
+                 |                         |     
+ Ping-pong start |   --------Ping------->  |   <-- Receiver has received the message
+                 |                         |     
+Ping-pong finish |   <-------Pong--------  |     
+                 |                         |     
                                     
 ```
 
@@ -407,13 +408,13 @@ ensure the target device have received it only once and correctly. It returns an
                       |  Sender  |              | Receiver |
                       +--------- +              +----------+
                            |                         |     
-                           | ---SendTransaction--->  |    \
+    *Transaction start     | ---SendTransaction--->  |    \
                            |                         |     (increment packet id by 1)
                    /       | <--AcceptTransaction--  |    /
- (increment packet id by 1)|                         |     
-                   \       | ---InitTransaction--->  |    \                           
+(increment packet id by 1) |                         |     
+                   \       | ---InitTransaction--->  |    \ <--- Receiver has received the message
                            |                         |     (increment packet id by 1) 
-                           | <--FinishTransaction--  |    /                           
+    *Transaction finish    | <--FinishTransaction--  |    /                           
                            |                         |     
                                     
 ```
