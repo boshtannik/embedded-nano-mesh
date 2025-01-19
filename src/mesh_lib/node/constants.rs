@@ -15,3 +15,6 @@ pub const RECEIVER_FILTER_REGISTRATION_SIZE: usize = 8;
 
 /// Perid of time, during which duplicated packets will be ignored.
 pub const RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD: ms = 1000;
+
+/// Size of read buffer from serial interface for receiver.
+pub const RECEIVER_READER_BUFFER_SIZE: usize = 1;

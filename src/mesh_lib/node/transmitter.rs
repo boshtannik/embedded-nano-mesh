@@ -58,31 +58,32 @@ impl Transmitter {
         }
     }
 
+    #[inline]
     fn send_start_byte_sequence<I>(&self, interface_driver: &mut I)
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
     {
         for _ in 0..PACKET_START_BYTES_COUNT {
-            let _ = interface_driver.puts(&[PACKET_START_BYTE]);
+            let _ = interface_driver.write(&[PACKET_START_BYTE]);
         }
     }
 
     pub fn update<I>(&mut self, interface_driver: &mut I)
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
     {
         // Send transit queue.
         while let Some(packet) = self.transit_queue.pop_front() {
             self.send_start_byte_sequence(interface_driver);
-            let _ = interface_driver.puts(&packet.summarized().serialized());
-            return; // This return makes sending one packet in a listen period
+            let _ = interface_driver.write_all(&packet.summarized().serialized());
+            return; // This return makes sending one packet per listen period
         }
 
         // Send packet queue.
         while let Some(packet) = self.packet_queue.pop_front() {
             self.send_start_byte_sequence(interface_driver);
-            let _ = interface_driver.puts(&packet.summarized().serialized());
-            return; // This return makes sending one packet in a listen period
+            let _ = interface_driver.write_all(&packet.summarized().serialized());
+            return; // This return makes sending one packet per listen period
         }
     }
 }

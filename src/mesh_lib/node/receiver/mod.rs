@@ -1,6 +1,8 @@
 mod packet_bytes_parser;
 mod packet_filter;
 
+use super::constants::RECEIVER_READER_BUFFER_SIZE;
+
 use super::ms;
 
 use self::{
@@ -56,7 +58,7 @@ impl Receiver {
     /// - checks if the packet can be built from with new received byte.
     pub fn update<I>(&mut self, current_time: ms, interface_driver: &mut I)
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
     {
         self._receive_byte(interface_driver);
         self.packet_filter.update(current_time);
@@ -81,12 +83,25 @@ impl Receiver {
 
     fn _receive_byte<I>(&mut self, interface_driver: &mut I)
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
     {
-        if let Ok(red_byte_option) = interface_driver.getc_try() {
-            if let Some(red_byte) = red_byte_option {
-                self.packet_bytes_parser.push_byte(red_byte);
+        // No read guard
+        match interface_driver.read_ready() {
+            Ok(false) | Err(_) => return,
+            Ok(true) => (),
+        }
+
+        let mut buf = [0u8; RECEIVER_READER_BUFFER_SIZE];
+
+        // Empty read guard
+        if let Ok(red_count) = interface_driver.read(&mut buf) {
+            if red_count < RECEIVER_READER_BUFFER_SIZE {
+                return;
             }
+        }
+
+        for b in buf {
+            self.packet_bytes_parser.push_byte(b);
         }
     }
 }

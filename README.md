@@ -2,13 +2,12 @@
 This is the low speed mesh network protocol. It allows to turn almost any
 kind of MCU device + Radio module device into a mesh node. It is designed
 to be lightweight, easy to use and portable to many plaftorms. The protocol
-may use variety of radio modules, implementation of driver is required for
-radio modulee connected to MCU.
+may use variety of radio modules.
 
 The network extends and heals itself automatically by communicating
 with other nodes, which have same protocol version installed. Most
 versions of this protocol are compatible, but for the best performance
-it is recommended to use the latest version.
+it is recommended to use same and the latest version.
 
 The protocol has been tested with radio
 modules JDY-40 during the development, and potentially can
@@ -23,19 +22,18 @@ use other radio modules, which might be or your choice:
 
 MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.)
 
-## Node architecture:
+## Mesh node architecture:
 ```
  (Library code runs here which turns MCU into a mesh node)
         |                                          
         |                                          
-        V           (Interface                     
-+----------------+    of your   +-----------------+
-|                |    choice)   |                 |
-|      MCU       |<------------>|   Radio module  |
-|                |              |                 |
-+----------------+              +-----------------+
+        V           
++----------------+                 +-----------------+
+|                |  (IO Interface) |                 |
+|      MCU       |<--------------->|   Radio module  |
+|                |                 |                 |
++----------------+                 +-----------------+
 ```
-
 ## Network possible architecture:
 ```
 +----------------+               +----------------+                 +---------------+ 
@@ -65,24 +63,14 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 - [linux-cli-tool](https://github.com/boshtannik/embedded-nano-mesh-cli-tool)
 
 ## Goal:
-The goal of this project is to provide ability to build easy to use,
-mesh - architecture, data transferring network out of cheap, low memory, components.
+The goal of this project is to provide ability to build mesh network out of cheap,
+low memory, components.
 This protocol can be used for:
 - Home automation
 - Remote control
 - Remote monitoring (telemetry)
 - Decentralized messaging
 - etc.
-Goal of to be able to use cheap components - is dictated by
-need to extend the network by nodes built of cheap components which
-may handle simplest logic or no logic at all.
-
-## Support project:
-If you earn money with using that code - Please donate
-to bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
-to support the project.
-Or you can buy me a coffee:
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/boshtannik)
 
 ## Working principle:
 ### The way, how the protocol spreads the data:
@@ -90,9 +78,11 @@ The protocol routes the packets in the most dumb way.
 It spereads the packet in the way, similar to the spread of the atenuating
 wave in the pool. It means, that all near devices, that can catch the packet - cathes it.
 Then the device's router - determines if the packet is reached it's
-destination or has to be transitted further with decrease of `lifetime` value of the packet.
+destination or the packet has to be transitted further into the network with decrease
+of `lifetime` value.
+Lifetime is decreased only during re-transition.
 Once `lifetime` value is reached zero during routing - the packet gets destroyed
-by the exact device which currently routes it.
+by the exact device which currently transits it.
 
 The packets, that were just sent by user by `send_to_exact`, `broadcast`, `send_ping_pong` or `send_with_transaction`
 method in the device, which performs the operation - that packets bypasses routing and are sent directly into
@@ -123,28 +113,28 @@ It means, that the user can send the message with:
 * And so on..
 
 Every node have 2 internal queues, they are not exposed to user:
-- `send` - for sending packets
-- `transit` - for packets, that are sent to the other devices.
+- `send` - for packets that node holds to be sent.
+- `transit` - for packets, that node holds to be transitted from other devices.
 Sizes of those queues are configurable. And their both configuration of size
 is made by `PACKET_QUEUE_SIZE` constant in `./src/mesh_lib/node/constants.rs`.
 
 ### How the protocol avoid packet duplication:
-During sending of the packet - it is offered to set `filter_out_duplication` parameter
-to `true` to prevent network from being jammed by duplicated packets.
-It works in the next way: 
-Once intermediate node receives the packet with `ignore_duplication` flag set to `true`,
+During send of the packet using `send_to_exact` method - you can set `filter_out_duplication` parameter
+to `true` which prevents network from being jammed by duplicated packets.
+Methods `send_ping_pong`, `broadcast`, `send_with_transaction` has this parameter set to `true` by default
+as `send_ping_pong` and `send_with_transaction` needs more than one packet to be sent trough the network.
+
+`filter_out_duplication` works in the next way:
+1 - Node sets `ignore_duplication` flag in the packet flags.
+2 - Once intermediate node receives the packet with `ignore_duplication` flag set to `true`,
 - it remembers the `sender_device_identifier` of the packet and `id` of the packet for the
-`RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD`. - This period is configurable. if the packet
-with same `sender_device_identifier` and with same `id` is sent again - it will be ignored by
-the node for specified period of time which was described above.
+specified `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` period of time. This period is configurable. if the packet
+with same `sender_device_identifier` and with same `id` is received again by that same node - node will ignore
+packet for that specified period of time.
 `ignore_duplication` leads protocol to spread one exact packet trough the network only once.
 
-Special purpose packets as Ping-Pong or Transaction packets are always
-with `filter_out_duplication` flag set to `true` by default, because they
-require more than one packet be sent to handle whole process of `ping-pong` or `transaction`.
-
 ## Status:
-The version is: 2.0.0:
+* The version is: 2.1.0:
   Every planned functionality is working. It is:
   - Send data.
   - Receive data.
@@ -154,6 +144,8 @@ The version is: 2.0.0:
   - Message transition by the intermediate nodes.
   - Send data via Ping-pong method, and receive result saying that ping-pong send finished.
   - Send data via Transaction and receive result saying that transaction being finished.
+* Fully backward compatible with version 2.0.0
+* Backward compatible with version 1.0.0 with no transaction support.
 
 ## Cross-platform compatibility
 Protocol currently natively runs on:
@@ -170,9 +162,7 @@ Not tested yet on:
 ## Porting to other platforms
 While initially designed to be able to run at least on
 Atmega328p microcontollers - it can run natively on huge variety of other platforms and operating systems.
-Protocol is using `embedded-serial` crate to depend on MutBlockingTX and MutNonBlockingRX
-traits which shall be implemented and provided during use of the library, for methods
-`update`, `send_ping_pong` and `send_with_transaction`.
+Protocol is using `embedded-io` trait to communicate with radio modules.
 
 ## Issues and discussions:
 Contacs are:
@@ -185,49 +175,21 @@ This will help this project grow.
 1 - Include library.
 `Cargo.toml`:
 ```
-embedded-nano-mesh = "2.0.0"
-embedded-serial = "0.5.0"
+embedded-nano-mesh = "2.1.0"
 ```
-2 - Include implementation of embedded-serial or implement it yourself.
+
+2 - Include implementation of `embedded-io` or implement it for
+your platform.
+`Cargo.toml`:
+```
+embedded-nano-mesh-linux-io = "0.0.1" # For linux
+# embedded-nano-mesh-arduino-nano-io = { git = "https://github.com/boshtannik/embedded-nano-mesh-arduino-nano-io.git" } # For arduino
+```
+
+3 - initialize and use your implementation of `embedded-io` in your code:
 `src/main.rs`:
 ```
-struct LinuxInterfaceDriver {
-    serial: serialport::TTYPort,
-}
-
-impl LinuxInterfaceDriver {
-    pub fn new(serial: serialport::TTYPort) -> LinuxInterfaceDriver {
-        LinuxInterfaceDriver { serial }
-    }
-}
-
-impl embedded_serial::MutBlockingTx for LinuxInterfaceDriver {
-    type Error = ();
-
-    fn putc(&mut self, ch: u8) -> Result<(), Self::Error> {
-        self.serial.write(&[ch]).unwrap();
-        Ok(())
-    }
-}
-
-impl embedded_serial::MutNonBlockingRx for LinuxInterfaceDriver {
-    type Error = ();
-
-    fn getc_try(&mut self) -> Result<Option<u8>, Self::Error> {
-        let mut buf = [0u8];
-        match self.serial.read(&mut buf) {
-            Ok(_) => Ok(Some(buf[0])),
-            Err(_) => Ok(None),
-        }
-    }
-}
-
-```
-
-3 - initialize and use your implementation of embedded-serial in your code:
-`src/main.rs`:
-```
-    let mut interface = LinuxInterfaceDriver::new( ... );
+    let mut interface = LinuxIO::new( ... );
     let mut mesh_node = ...;
 
     match mesh_node.send_to_exact(
@@ -249,8 +211,8 @@ impl embedded_serial::MutNonBlockingRx for LinuxInterfaceDriver {
     }
 ```
 During sending of message you can regulate the distance that the packet will be able to
-make - by configuring the `lifetime` during making the send
-of the message. For example:
+make - by setting the `lifetime` parameter.
+For example:
 - setting `lifetime` to 1 will limit the message's reach to the nearest devices in the network.
 - setting `lifetime` to 10 will make the packet able to pass 10 nodes before being destroyed.
 
@@ -278,17 +240,17 @@ During call of `update` method - it does all internal work:
 - transits packets that were sent to other devices
 - handles `lifetime` of packets
 - handles special packets like `ping` and `pong`, or any kind of transaction one.
-- saves received packets that wil lbe available trough `receive` method.
+- saves received packets that will be available trough `receive` method.
 - sends packets, that are in the `send` queue.
 
 As the protocol relies on physical environment - it is crucial to provide
-ability to the library to rely on time counting and on communication interface, time
-calculation is provided by millis_provider closure, and interface_driver
-is described above by `embedded-serial` traits.
+ability to the library to rely on time counting and on communication interface.
+Time calculation is provided by millis_provider closure, and interface_driver
+is described above by `embedded-io` traits.
 
 During the use of methods, that relies on millis_provider closure and interface_driver which
-is the structure that implements embedded-serial trait -
-it is needed to provide those implementations during the method call.
+is the structure that implements `embedded-io` trait - it is needed to provide those
+implementations during the method call.
 Those methods are:
 - `update`
 - `send_ping_pong`
@@ -310,8 +272,8 @@ let mut mesh_node = Node::new(NodeConfig {
 ### Broadcast Method
 To send the message to all nodes in the network, you can
 send it with standard `broadcast` method, It sends packet with destination address set as
-`GeneralAddressType::BROADCAST`. Every device will treat `GeneralAddressType::Broadcast`
-as it's own address, will keep the message as received and will transit copy of that message further.
+`GeneralAddressType::BROADCAST`. Every device will treats `GeneralAddressType::Broadcast`
+as it's own address, so they keep the message as received and transits copy of that message further.
 `main.rs`:
 ```
 let _ = mesh_node.broadcast(
@@ -343,12 +305,13 @@ let _ = match mesh_node.send_to_exact(
 ```
 
 ### Receive Method
-The `receive` method optionally returns received data in a `PacketDataBytes` instance in case
+The `receive` method optionally returns received data in a `Packet` instance in case
 if that packet was previously received by this exact device. It does not matter if that data
 was sent via `broadcast`, `send_to_exact`, `ping_pong` or `send_with_transaction` method because
 anyway it was sent to that exact device.
+You can tell by which method the packet is sent by matching `special_state` field of returned `Packet` instance.
 The way that packet was sent to this device can be checked in `special_state` field of returned
-value. Field shall contain `PacketState` enum instance.
+value. Field contains value of `PacketState` enum.
 
 `main.rs`:
 ```
@@ -385,22 +348,23 @@ Ping-pong finish |   <-------Pong--------  |
 `main.rs`:
 ```
 let _ = mesh_node.send_ping_pong(
-    message.into_bytes(),              // Content.
-    ExactAddressType::new(2).unwrap(), // Send to device with address 2.
-    10 as LifeTimeType, // Let message travel 10 devices before being destroyed.
-    1000 as ms,
+    message.into_bytes(),               // Content.
+    ExactAddressType::new(2).unwrap(),  // Send to device with address 2.
+    10 as LifeTimeType,                 // Let message travel 10 devices before being destroyed.
+    1000 as ms,                         // Set timeout to 1000 ms.
     || {
         Instant::now()
             .duration_since(program_start_time)
             .as_millis() as ms
-    },
-    &mut serial,
+    },                                  // Closure providing current time in milliseconds.
+    &mut serial,                        // IO interface.
 );
 ```
 
 ### Send with Transaction Method
 The `send_with_transaction` method sends a message and handles all further work to
-ensure the target device have received it only once and correctly. It returns an error if the transaction failed.
+ensure the target device have received it only once and correctly.
+Method returns an error if the transaction failed.
 
 `Transaction time diagram`:
 ```
@@ -428,22 +392,22 @@ The required arguments are:
 `main.rs`:
 ```
 match mesh_node.send_with_transaction(
-    message.into_bytes(),              // Content.
-    ExactAddressType::new(2).unwrap(), // Send to device with address 2.
-    10 as LifeTimeType, // Let message travel 10 devices before being destroyed.
-    2000 as ms,
+    message.into_bytes(),               // Content.
+    ExactAddressType::new(2).unwrap(),  // Send to device with address 2.
+    10 as LifeTimeType,                 // Let message travel 10 devices before being destroyed.
+    2000 as ms,                         // Wait 2 seconds for response.
     || {
         Instant::now()
             .duration_since(program_start_time)
             .as_millis() as ms
-    },
-    &mut serial,
+    },                                  // Closure providing current time in milliseconds.
+    &mut serial,                        // IO interface.
 );
 ```
 
 ### Update Method
 The `update` method is used to perform all internal operation of the `Node`.
-It shall be called in a loop with providing embedded-serial implemented structure
+It shall be called in a loop with providing `embedded-io` implemented structure
 and current_time im milliseconds. It allows `Node` to interact with outer world.
 With out call this method in a loop - the node will stop working.
 
@@ -484,6 +448,12 @@ Under the hood, data is packed into a `Packet` instance.
 If you need customize packets for your needs - you need configure the `Packet`
 `./src/mesh_lib/node/packet/mod.rs` and `./src/mesh_lib/node/packet/types.rs`
 Also serialization and deserealization part shall be changed too.
+
+## Support project:
+You can support project by
+donate to bitcoin address: bc1qc50tm0ppj3hh7fecd6d0rv8tdygy8uhe2cemzt
+Or you can buy me a coffee:
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/boshtannik)
 
 ## License
 This project is licensed under:

@@ -45,3 +45,5 @@
         * Restored feature of transaction to itself.
           For use of transactions - all nodes shall support version 2.0.0.
 
+2.1.0 - * Change API in order to use more popular embedded-io traits for communicating with radio modules.
+

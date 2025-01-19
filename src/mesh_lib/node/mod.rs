@@ -144,7 +144,7 @@ impl Node {
         interface_driver: &mut I,
     ) -> Result<(), SpecialSendError>
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
         M: Fn() -> ms,
     {
         self._special_send(
@@ -199,7 +199,7 @@ impl Node {
         interface_driver: &mut I,
     ) -> Result<(), SpecialSendError>
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
         M: Fn() -> ms,
     {
         self._special_send(
@@ -226,7 +226,7 @@ impl Node {
         interface_driver: &mut I,
     ) -> Result<(), SpecialSendError>
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
         M: Fn() -> ms,
     {
         let mut current_time = millis_provider();
@@ -386,7 +386,7 @@ impl Node {
         current_time: ms,
     ) -> Result<(), NodeUpdateError>
     where
-        I: embedded_serial::MutNonBlockingRx + embedded_serial::MutBlockingTx,
+        I: embedded_io::ReadReady + embedded_io::Read + embedded_io::Write,
     {
         if self.timer.is_time_to_speak(current_time) {
             self.transmitter.update(interface_driver);
