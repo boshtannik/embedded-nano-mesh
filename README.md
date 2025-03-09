@@ -1,5 +1,5 @@
 # Mesh Network Protocol for embedded devices
-This is the low speed mesh network protocol. It allows to turn almost any
+This is the mesh network protocol. It allows to turn almost any
 kind of MCU device + Radio module device into a mesh node. It is designed
 to be lightweight, easy to use and portable to many plaftorms. The protocol
 may use variety of radio modules.
@@ -63,8 +63,9 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 - [linux-cli-tool](https://github.com/boshtannik/embedded-nano-mesh-cli-tool)
 
 ## Goal:
-The goal of this project is to provide ability to build mesh network out of cheap,
-low memory, components.
+The goal of this project is to provide ability to build mesh
+network with low memory, cheap and easily accessible microcontollers + radio modules
+or even personal computer + radio modules to participate the same network.
 This protocol can be used for:
 - Home automation
 - Remote control
@@ -78,9 +79,11 @@ The protocol routes the packets in the most dumb way.
 It spereads the packet in the way, similar to the spread of the atenuating
 wave in the pool. It means, that all near devices, that can catch the packet - cathes it.
 Then the device's router - determines if the packet is reached it's
-destination or the packet has to be transitted further into the network with decrease
-of `lifetime` value.
-Lifetime is decreased only during re-transition.
+destination or the packet has to be transitted further into the network.
+
+Range of operation is regulated by the `lifetime` during the sending.
+
+While packet is being travel trough the network - it's Lifetime is decreased by intermediate devices.
 Once `lifetime` value is reached zero during routing - the packet gets destroyed
 by the exact device which currently transits it.
 
@@ -112,26 +115,34 @@ It means, that the user can send the message with:
 
 * And so on..
 
-Every node have 2 internal queues, they are not exposed to user:
+Node have 2 internal queues, queues are not exposed to user:
 - `send` - for packets that node holds to be sent.
 - `transit` - for packets, that node holds to be transitted from other devices.
 Sizes of those queues are configurable. And their both configuration of size
 is made by `PACKET_QUEUE_SIZE` constant in `./src/mesh_lib/node/constants.rs`.
 
 ### How the protocol avoid packet duplication:
+Protocol provides mechanism to prevent the network being jammed by
+packet duplication.
+
 During send of the packet using `send_to_exact` method - you can set `filter_out_duplication` parameter
 to `true` which prevents network from being jammed by duplicated packets.
-Methods `send_ping_pong`, `broadcast`, `send_with_transaction` has this parameter set to `true` by default
-as `send_ping_pong` and `send_with_transaction` needs more than one packet to be sent trough the network.
+Methods `send_ping_pong`, `broadcast`, `send_with_transaction` has this parameter set to `true` by default.
+As long as `send_ping_pong` and `send_with_transaction` needs more than one packet to be sent trough the network,
+and `broadcast` without `filter_out_duplication` just jams the whole network by echoed packets.
+
+`filter_out_duplication` leads protocol to spread one exact packet trough the network only once by
+setting `ignore_duplication` flag of the packet.
 
 `filter_out_duplication` works in the next way:
-1 - Node sets `ignore_duplication` flag in the packet flags.
+1 - Node sets `ignore_duplication` flag to the packet flags.
 2 - Once intermediate node receives the packet with `ignore_duplication` flag set to `true`,
-- it remembers the `sender_device_identifier` of the packet and `id` of the packet for the
-specified `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` period of time. This period is configurable. if the packet
-with same `sender_device_identifier` and with same `id` is received again by that same node - node will ignore
-packet for that specified period of time.
-`ignore_duplication` leads protocol to spread one exact packet trough the network only once.
+2.1 it remembers the `sender_device_identifier` of the packet and `id` of the packet for the
+specified `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` period of time. if the packet with same
+`sender_device_identifier` and with same `id` is received again by that same node - node
+ignores packet for that specified period of time.
+ 
+`RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` period of time. This period is configurable in `./src/mesh_lib/node/constants.rs`.
 
 ## Status:
 * The version is: 2.1.0:
@@ -160,9 +171,11 @@ Not tested yet on:
 - Raspberry PI pico
 
 ## Porting to other platforms
-While initially designed to be able to run at least on
-Atmega328p microcontollers - it can run natively on huge variety of other platforms and operating systems.
+Initially it was designed to be able to run on Arduino nano - it can run
+on huge variety of other microcontollers or personal computers.
 Protocol is using `embedded-io` trait to communicate with radio modules.
+To run the protocol on new platform - the implementation of `embedded-io`
+must be provided.
 
 ## Issues and discussions:
 Contacs are:
@@ -193,10 +206,10 @@ embedded-nano-mesh-linux-io = "0.0.1" # For linux
     let mut mesh_node = ...;
 
     match mesh_node.send_to_exact(
-        message.into_bytes(),              // Content.
-        ExactAddressType::new(2).unwrap(), // Send to device with address 2.
-        10 as LifeTimeType, // Let message travel 10 devices before being destroyed.
-        true,
+        message.into_bytes(),               // Content.
+        ExactAddressType::new(2).unwrap(),  // Send to device with address 2.
+        10 as LifeTimeType,                 // Let message travel 10 devices before being destroyed.
+        true,                               // Filter out duplicated messages.
     ) {
         Ok(()) => {
             println!("Message sent")
@@ -231,10 +244,10 @@ Usage examples can be found here:
 - [linux](https://github.com/boshtannik/embedded-nano-mesh-linux-example)
 
 ## API description
-The central component of this protocol is the `Node` structure, which offers interface for
-actions like `send_to_exact`, `broadcast`, `receive`, `send_ping_pong`, and `send_with_transaction`.
+All API of the library is provided by the `Node` structure. It offers interface for
+actions for `send_to_exact`, `broadcast`, `receive`, `send_ping_pong`, and `send_with_transaction`.
 
-The `Node` should be constantly updated by call its `update` method.
+The `Node` must be constantly updated by call its `update` method.
 During call of `update` method - it does all internal work:
 - routes packets trough the network
 - transits packets that were sent to other devices
@@ -245,20 +258,16 @@ During call of `update` method - it does all internal work:
 
 As the protocol relies on physical environment - it is crucial to provide
 ability to the library to rely on time counting and on communication interface.
-Time calculation is provided by millis_provider closure, and interface_driver
+Time calculation is provided by `millis_provider` closure, and `interface_driver`
 is described above by `embedded-io` traits.
 
-During the use of methods, that relies on millis_provider closure and interface_driver which
-is the structure that implements `embedded-io` trait - it is needed to provide those
-implementations during the method call.
-Those methods are:
-- `update`
-- `send_ping_pong`
-- `send_with_transaction`
+Methods: `update`, `send_ping_pong`, `send_with_transaction` relies on `millis_provider` closure and `interface_driver`.
+`interface_driver` - is used for communication with radio modules.
+`millis_provider` - is used for time counting.
 
 ### New Method
 To initialize a `Node`, you need to provide `NodeConfig` with values:
-- `ExactAddressType`: Sets the device's identification address in the node pool. It is ok to have multiple deivces sharing same address in the same network.
+- `ExactAddressType`: Sets the device's identification address in the network. Multiple deivces can share same address in the same network.
 - `listen_period`: Sets period in milliseconds that determines how long the device will wait before transmitting packet to the network. It prevents network congestion.
 
 `main.rs`:
@@ -270,8 +279,9 @@ let mut mesh_node = Node::new(NodeConfig {
 ```
 
 ### Broadcast Method
-To send the message to all nodes in the network, you can
-send it with standard `broadcast` method, It sends packet with destination address set as
+Shares the message to all nodes in the network.
+Distance of sharing is set by `lifetime` parameter.
+It sends packet with destination address set as
 `GeneralAddressType::BROADCAST`. Every device will treats `GeneralAddressType::Broadcast`
 as it's own address, so they keep the message as received and transits copy of that message further.
 `main.rs`:
@@ -283,15 +293,14 @@ let _ = mesh_node.broadcast(
 ```
 
 ### Send to exact Method
-!The term `echoed message` refers to a duplicated message that has
-been re-transmitted into the ether by an intermediate device.
-
-Send to exact method - sends the message to device with exact address in the network.
+Sends the message to device with exact address in the network.
 The `send_to_exact` method requires the following arguments:
 
 - `data`: A `PacketDataBytes` instance to hold the message bytes.
 - `destination_device_identifier`: A `ExactAddressType` instance indicating exact target device.
 - `lifetime`: A `LifeTimeType` instance to control for how far the message can travel.
+!The term `echoed message` refers to a duplicated message that has
+been re-transmitted into the ether by an intermediate device.
 - `filter_out_duplication`: A boolean flag to filter out echoed messages from the network.
 
 `main.rs`:
@@ -305,13 +314,12 @@ let _ = match mesh_node.send_to_exact(
 ```
 
 ### Receive Method
-The `receive` method optionally returns received data in a `Packet` instance in case
+Optionally returns received `Packet` instance in case
 if that packet was previously received by this exact device. It does not matter if that data
 was sent via `broadcast`, `send_to_exact`, `ping_pong` or `send_with_transaction` method because
 anyway it was sent to that exact device.
-You can tell by which method the packet is sent by matching `special_state` field of returned `Packet` instance.
-The way that packet was sent to this device can be checked in `special_state` field of returned
-value. Field contains value of `PacketState` enum.
+You can tell which type the packet is by matching `special_state` field of returned `Packet` instance.
+Field contains value of `PacketState` enum.
 
 `main.rs`:
 ```
@@ -322,9 +330,9 @@ match mesh_node.receive() {
 ```
 
 ### Send Ping-Pong Method
-The `send_ping_pong` method sends a message with a "ping" flag to the destination node and
-waits for the same message with a "pong" flag which tells that the end device have received
-the message at least once. It returns an error if the ping-pong exchange fails.
+Sends a message with a "ping" flag to the destination node and
+waits for the same message with a "pong" flag. Return value tells that the end device have received
+the message at least once or returns an error if the ping-pong exchange fails.
 The following arguments are required:
 
 `Ping-Pong time diagram`:
@@ -334,7 +342,7 @@ The following arguments are required:
             +--------- +              +----------+
                  |                         |     
  Ping-pong start |   --------Ping------->  |   <-- Receiver has received the message
-                 |                         |     
+                 |                         |     (increment packet id by 1)
 Ping-pong finish |   <-------Pong--------  |     
                  |                         |     
                                     
@@ -362,8 +370,8 @@ let _ = mesh_node.send_ping_pong(
 ```
 
 ### Send with Transaction Method
-The `send_with_transaction` method sends a message and handles all further work to
-ensure the target device have received it only once and correctly.
+Sends a message and handles all further work to
+ensure the target device have received it only once.
 Method returns an error if the transaction failed.
 
 `Transaction time diagram`:
@@ -406,9 +414,9 @@ match mesh_node.send_with_transaction(
 ```
 
 ### Update Method
-The `update` method is used to perform all internal operation of the `Node`.
-It shall be called in a loop with providing `embedded-io` implemented structure
-and current_time im milliseconds. It allows `Node` to interact with outer world.
+Performs all necessary internal operation of the `Node`.
+It must be called in a loop with providing `embedded-io` implemented structure
+and `current_time` im milliseconds. It makes `Node` to interact with outer world.
 With out call this method in a loop - the node will stop working.
 
 `main.rs`:
@@ -475,3 +483,12 @@ Pull request shall be created with next data mentioned.
 - Optionally notes or wishes for further maintainance or improvement.
 - Before pushing the pull request - merge it with main branch again to void all possible conflicts.
 - Push the pull request.
+
+# Current protocol configuration:
+* Amount of data that protocol can transfer is 32 bytes.
+* Amount of addresses in the network is 255. (More than 1 device can have same address)
+* Amount of packets that node can store in received queue is 5.
+* Amount of packets that node can store in transit queue is 5.
+* Amount of data about echoed packets to ignore is: 8.
+* Device keeps data about packet to ignore for 1000 ms.
+

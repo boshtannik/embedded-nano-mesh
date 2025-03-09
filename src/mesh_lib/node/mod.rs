@@ -59,6 +59,14 @@ pub enum SendError {
     SendingQueueIsFull,
 }
 
+impl core::fmt::Debug for SendError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            SendError::SendingQueueIsFull => write!(f, "SendingQueueIsFull"),
+        }
+    }
+}
+
 /// Errors, that may occur during the call
 /// of `Node` `send_with_transaction` or `send_ping_pong` method.
 pub enum SpecialSendError {
@@ -68,6 +76,15 @@ pub enum SpecialSendError {
     /// Case, when the limit of number of
     /// packets to send isreached.
     SendingQueueIsFull,
+}
+
+impl core::fmt::Debug for SpecialSendError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            SpecialSendError::Timeout => write!(f, "Timeout"),
+            SpecialSendError::SendingQueueIsFull => write!(f, "SendingQueueIsFull"),
+        }
+    }
 }
 
 impl From<SendError> for SpecialSendError {
@@ -249,7 +266,7 @@ impl Node {
                 // Following the transaction time diagram - it is expected the packet to
                 // have it's id increased three times.
                 PacketState::SendTransaction => expected_response_packet_id + 3,
-                PacketState::Ping => expected_response_packet_id,
+                PacketState::Ping => expected_response_packet_id + 1,
                 _ => expected_response_packet_id,
             },
         };
