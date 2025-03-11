@@ -265,8 +265,8 @@ impl Node {
                 // It is needed to wait for response packet with specific packet id.
                 // Following the transaction time diagram - it is expected the packet to
                 // have it's id increased three times.
-                PacketState::SendTransaction => expected_response_packet_id + 3,
-                PacketState::Ping => expected_response_packet_id + 1,
+                PacketState::SendTransaction => expected_response_packet_id + 1,
+                PacketState::Ping => expected_response_packet_id,
                 _ => expected_response_packet_id,
             },
         };

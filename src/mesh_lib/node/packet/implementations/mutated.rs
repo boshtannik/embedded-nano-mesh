@@ -31,12 +31,13 @@ impl Packet {
         let old_state = self.get_spec_state().clone();
 
         match old_state {
-            PacketState::Ping
-            | PacketState::SendTransaction
-            | PacketState::InitTransaction
-            | PacketState::AcceptTransaction => {
-                self.increment_id();
+            PacketState::Ping => self.swap_source_destination()?,
+            PacketState::SendTransaction | PacketState::InitTransaction => {
                 self.swap_source_destination()?;
+            }
+            PacketState::AcceptTransaction => {
+                self.increment_id();
+                self.swap_source_destination()?
             }
             _ => (),
         };

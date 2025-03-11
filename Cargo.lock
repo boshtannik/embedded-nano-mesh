@@ -16,7 +16,7 @@ checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
 
 [[package]]
 name = "embedded-nano-mesh"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "embedded-io",
  "heapless",

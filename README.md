@@ -145,7 +145,7 @@ ignores packet for that specified period of time.
 `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` period of time. This period is configurable in `./src/mesh_lib/node/constants.rs`.
 
 ## Status:
-* The version is: 2.1.0:
+* The version is: 2.1.1:
   Every planned functionality is working. It is:
   - Send data.
   - Receive data.
@@ -156,7 +156,7 @@ ignores packet for that specified period of time.
   - Send data via Ping-pong method, and receive result saying that ping-pong send finished.
   - Send data via Transaction and receive result saying that transaction being finished.
 * Fully backward compatible with version 2.0.0
-* Backward compatible with version 1.0.0 with no transaction support.
+* Transaction of Backward compatibility with version 1.0.0 is restored. Only backward compatibility with version 2.1.0 is broken.
 
 ## Cross-platform compatibility
 Protocol currently natively runs on:
@@ -188,7 +188,7 @@ This will help this project grow.
 1 - Include library.
 `Cargo.toml`:
 ```
-embedded-nano-mesh = "2.1.0"
+embedded-nano-mesh = "2.1.1"
 ```
 
 2 - Include implementation of `embedded-io` or implement it for
@@ -342,9 +342,9 @@ The following arguments are required:
             +--------- +              +----------+
                  |                         |     
  Ping-pong start |   --------Ping------->  |   <-- Receiver has received the message
-                 |                         |     (increment packet id by 1)
-Ping-pong finish |   <-------Pong--------  |     
-                 |                         |     
+                 |                         |
+Ping-pong finish |   <-------Pong--------  |
+                 |                         |
                                     
 ```
 
@@ -380,14 +380,14 @@ Method returns an error if the transaction failed.
                       |  Sender  |              | Receiver |
                       +--------- +              +----------+
                            |                         |     
-    *Transaction start     | ---SendTransaction--->  |    \
-                           |                         |     (increment packet id by 1)
-                   /       | <--AcceptTransaction--  |    /
-(increment packet id by 1) |                         |     
-                   \       | ---InitTransaction--->  |    \ <--- Receiver has received the message
-                           |                         |     (increment packet id by 1) 
-    *Transaction finish    | <--FinishTransaction--  |    /                           
-                           |                         |     
+    *Transaction start     | ---SendTransaction--->  |
+                           |                         |
+                   /       | <--AcceptTransaction--  |
+(increment packet id by 1) |                         |
+                   \       | ---InitTransaction--->  |    <--- Receiver has received the message
+                           |                         |
+    *Transaction finish    | <--FinishTransaction--  |
+                           |                         |
                                     
 ```
 
