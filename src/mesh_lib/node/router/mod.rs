@@ -2,7 +2,7 @@ use crate::{ExactAddressType, GeneralAddressType};
 
 pub use super::packet::PacketState;
 
-use super::packet::{Packet, PacketLifetimeEnded, RespondToBroadcastAddressError};
+use super::packet::{Packet, PacketLifetimeEnded};
 
 /// Does the Packet routing of the network.
 ///
@@ -23,18 +23,11 @@ pub enum RouteResult {
 
 pub enum RouteError {
     PacketLifetimeEnded,
-    RespondToBroadcastAddressError,
 }
 
 impl From<PacketLifetimeEnded> for RouteError {
     fn from(_: PacketLifetimeEnded) -> Self {
         Self::PacketLifetimeEnded
-    }
-}
-
-impl From<RespondToBroadcastAddressError> for RouteError {
-    fn from(_: RespondToBroadcastAddressError) -> Self {
-        Self::RespondToBroadcastAddressError
     }
 }
 
@@ -65,12 +58,6 @@ impl Router {
         return Ok(RouteResult::ReceivedOnly(received));
     }
 
-    fn keep_copy_and_prepare_transit(&self, packet: Packet) -> Result<RouteResult, RouteError> {
-        let received = packet.clone();
-        let transit = packet.mutated()?;
-        Ok(RouteResult::ReceivedAndTransit { received, transit })
-    }
-
     /// This method makes all the packet routing of the netwok.
     /// It does:
     /// * In case, if the packet is addressed to the current device only - handles it.
@@ -85,12 +72,6 @@ impl Router {
         if packet.is_destination_reached(self.current_device_identifier.into()) {
             return match packet.get_spec_state() {
                 PacketState::Normal => Ok(RouteResult::ReceivedOnly(packet)), // No need
-                PacketState::Ping => self.keep_copy_and_prepare_transit(packet),
-                PacketState::Pong => Ok(RouteResult::ReceivedOnly(packet)),
-                PacketState::SendTransaction => Ok(RouteResult::TransitOnly(packet.mutated()?)),
-                PacketState::AcceptTransaction => Ok(RouteResult::TransitOnly(packet.mutated()?)),
-                PacketState::InitTransaction => self.keep_copy_and_prepare_transit(packet),
-                PacketState::FinishTransaction => Ok(RouteResult::ReceivedOnly(packet)),
             };
         }
 

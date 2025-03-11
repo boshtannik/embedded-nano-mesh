@@ -7,11 +7,9 @@ pub mod implementations;
 pub mod trait_implementations;
 pub mod traits;
 
-pub use implementations::{PacketLifetimeEnded, RespondToBroadcastAddressError};
+pub use implementations::PacketLifetimeEnded;
 
-pub use traits::{
-    FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator, UniqueIdExtractor,
-};
+pub use traits::{FromBytes, PacketFlagOps, PacketUniqueId, Serializer, UniqueIdExtractor};
 
 pub use constants::{
     ADDRESS_TYPE_SIZE, CHECKSUM_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, FLAGS_TYPE_SIZE,

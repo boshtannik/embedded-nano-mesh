@@ -90,31 +90,4 @@ pub enum PacketState {
     /// End-receiver of packet with this state - just receives the data.
     /// does no additional logic over it.
     Normal,
-
-    /// Packet with this state being set - forces end-receiver device,
-    /// to automatically respond packet with same content back with
-    /// `Pong` state being set. Also receiving device receives content
-    /// of the packet.
-    Ping,
-
-    /// Packet with this state being set - indicates, that receiver
-    /// has successfully processed the packet.
-    Pong,
-
-    /// Packet with this state being set - forces end-receiver device,
-    /// to get ready to do full transaction.
-    SendTransaction,
-
-    /// Packet with this state being set - is sent by receiver and
-    /// informs sender device, that receiver have the
-    /// transaction being started.
-    AcceptTransaction,
-
-    /// Packet with this state being set - is sent by sender and
-    /// forces end-receiver device, to do the transaction finish.
-    InitTransaction,
-
-    /// Packet with this state being set - is sent by receiver and
-    /// informs sender device, that receiver have the transaction finished.
-    FinishTransaction,
 }
