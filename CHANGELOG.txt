@@ -48,4 +48,5 @@
 2.1.0 - * Change API in order to use more popular embedded-io traits for communicating with radio modules.
 2.1.1 - * Broke backward compatibility of ping-pong in order to allow doing ping-pong to same address.
           So to use ping-pong - all nodes shall support version 2.1.1.
-
+2.1.2 - * Usage tests were integrated.
+2.1.3 - * Fix of actual data length being sent.

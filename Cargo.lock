@@ -26,7 +26,7 @@ dependencies = [
 
 [[package]]
 name = "embedded-nano-mesh"
-version = "2.1.2"
+version = "2.1.3"
 dependencies = [
  "embedded-io",
  "heapless",
