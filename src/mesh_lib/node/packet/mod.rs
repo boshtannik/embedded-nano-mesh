@@ -49,6 +49,7 @@ impl Packet {
         ignore_duplications_flag: bool,
         mut data: PacketDataBytes,
     ) -> Packet {
+        let data_length = data.len() as DataLengthType;
         while !data.is_full() {
             data.push(b'\0').unwrap_or_else(|_| ());
         }
@@ -58,7 +59,7 @@ impl Packet {
             id,
             lifetime,
             flags: FlagsType::MIN,
-            data_length: data.len() as DataLengthType,
+            data_length,
             data,
             checksum: ChecksumType::MIN,
         };
