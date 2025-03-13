@@ -1,4 +1,8 @@
 # Mesh Network Protocol for embedded devices
+Pure version of embedded-nano-mesh protocol.
+This version has no ping_pong and transaction sending methods and
+their logic implementation.
+
 This is the mesh network protocol. It allows to turn almost any
 kind of MCU device + Radio module device into a mesh node. It is designed
 to be lightweight, easy to use and portable to many plaftorms. The protocol
@@ -34,33 +38,6 @@ MCU - stands for Microcontroller Computer Unit. (Arduino, Raspberry Pi, PC, etc.
 |                |                 |                 |
 +----------------+                 +-----------------+
 ```
-## Network possible architecture:
-```
-+----------------+               +----------------+                 +---------------+ 
-|                |               |                |                 |               | 
-|      Node      |  (( Ether ))  |      Node      |   (( Ether ))   |     Node      |  
-|   Address: 1   |               |   Address: 2   |                 |   Address: 3  | 
-|                |  <--------->  |                |  <----------->  |               | 
-+----------------+               +----------------+                 +---------------+ 
-                  ^               ^                                                    
-                   \             /                                                     
-                    \           /                                                      
-       (( Ether ))   \         /   (( Ether ))                                                    
-                      \       /                                                        
-                       \     /                                                         
-                        v   v                                                           
-                +----------------+                                                       
-                |                |                                                       
-                |      Node      |                                                       
-                |   Address: 4   |                                                       
-                |                |                                                       
-                +----------------+                                                       
-```
-
-## Quick links to usage examples:
-- [arduino-nano](https://github.com/boshtannik/embedded-nano-mesh-arduino-nano-example)
-- [linux](https://github.com/boshtannik/embedded-nano-mesh-linux-example)
-- [linux-cli-tool](https://github.com/boshtannik/embedded-nano-mesh-cli-tool)
 
 ## Goal:
 The goal of this project is to provide ability to build mesh
@@ -87,33 +64,12 @@ While packet is being travel trough the network - it's Lifetime is decreased by 
 Once `lifetime` value is reached zero during routing - the packet gets destroyed
 by the exact device which currently transits it.
 
-The packets, that were just sent by user by `send_to_exact`, `broadcast`, `send_ping_pong` or `send_with_transaction`
-method in the device, which performs the operation - that packets bypasses routing and are sent directly into
+The packets, that were just sent by user by `send_to_exact`, `broadcast` method in the device,
+which performs the operation - that packets bypasses routing and are sent directly into
 sending queue, and then into the ether. It means that lifetime of the packet is not decreased by the router
 of the device. So the message can be sent even with `lifetime` set to `0`, anyway it will be transmitted
 in the ether for the first time.
 Sending of packets from the queues happends during call of `update` method.
-
-It means, that the user can send the message with:
-* Set the `lifetime` to `0`, and the packet will be transmitted into the ether,
-  nearest device will receive it, check if the destination is reached.
-  If the destination is reached - catch the data.
-  Otherwise - try to transmit further with decrease of `lifetime` value which
-  will lead to packet destruction due to the end of packet's `lifetime`.
-
-* Also set the `lifetime` to `1`, and the packet will be transmitted into the ether,
-  nearest device will receive it, check if the destination is reached,
-  If the destination is reached - catch the data.
-  Otherwise - try to transmit further with decrease of `lifetime` value which
-  will lead to packet destruction due to the same reason.
-
-* Set the `lifetime` to `2` and the packet will be transmitted into the ether,
-  nearest device will receive it, check if the destination is reached,
-  If the destination is reached - catch the data.
-  Otherwise - try to transmit further with decrease of `lifetime` value which
-  will lead packet transition back into the ether, but with less `lifetime` value.
-
-* And so on..
 
 Node have 2 internal queues, queues are not exposed to user:
 - `send` - for packets that node holds to be sent.
@@ -127,9 +83,6 @@ packet duplication.
 
 During send of the packet using `send_to_exact` method - you can set `filter_out_duplication` parameter
 to `true` which prevents network from being jammed by duplicated packets.
-Methods `send_ping_pong`, `broadcast`, `send_with_transaction` has this parameter set to `true` by default.
-As long as `send_ping_pong` and `send_with_transaction` needs more than one packet to be sent trough the network,
-and `broadcast` without `filter_out_duplication` just jams the whole network by echoed packets.
 
 `filter_out_duplication` leads protocol to spread one exact packet trough the network only once by
 setting `ignore_duplication` flag of the packet.
@@ -145,7 +98,7 @@ ignores packet for that specified period of time.
 `RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` period of time. This period is configurable in `./src/mesh_lib/node/constants.rs`.
 
 ## Status:
-* The version is: 2.1.1:
+* The version is: 2.1.3:
   Every planned functionality is working. It is:
   - Send data.
   - Receive data.
@@ -153,10 +106,7 @@ ignores packet for that specified period of time.
   - Send data with limited of number of hops.
   - Broadcast data to all nodes.
   - Message transition by the intermediate nodes.
-  - Send data via Ping-pong method, and receive result saying that ping-pong send finished.
-  - Send data via Transaction and receive result saying that transaction being finished.
-* Fully backward compatible with version 2.0.0
-* Transaction of Backward compatibility with version 1.0.0 is restored. Only backward compatibility with version 2.1.0 is broken.
+* Fully backward compatible with no ping_pong or transition functionality.
 
 ## Cross-platform compatibility
 Protocol currently natively runs on:
@@ -245,7 +195,7 @@ Usage examples can be found here:
 
 ## API description
 All API of the library is provided by the `Node` structure. It offers interface for
-actions for `send_to_exact`, `broadcast`, `receive`, `send_ping_pong`, and `send_with_transaction`.
+actions for `send_to_exact`, `broadcast`, `receive`.
 
 The `Node` must be constantly updated by call its `update` method.
 During call of `update` method - it does all internal work:
@@ -261,7 +211,7 @@ ability to the library to rely on time counting and on communication interface.
 Time calculation is provided by `millis_provider` closure, and `interface_driver`
 is described above by `embedded-io` traits.
 
-Methods: `update`, `send_ping_pong`, `send_with_transaction` relies on `millis_provider` closure and `interface_driver`.
+Method `update` relies on `millis_provider` closure and `interface_driver`.
 `interface_driver` - is used for communication with radio modules.
 `millis_provider` - is used for time counting.
 
@@ -327,90 +277,6 @@ match mesh_node.receive() {
     Some(packet) => ...,
     Node => ....,
 }
-```
-
-### Send Ping-Pong Method
-Sends a message with a "ping" flag to the destination node and
-waits for the same message with a "pong" flag. Return value tells that the end device have received
-the message at least once or returns an error if the ping-pong exchange fails.
-The following arguments are required:
-
-`Ping-Pong time diagram`:
-```
-            +----------+              +----------+
-            |  Sender  |              | Receiver |
-            +--------- +              +----------+
-                 |                         |     
- Ping-pong start |   --------Ping------->  |   <-- Receiver has received the message
-                 |                         |
-Ping-pong finish |   <-------Pong--------  |
-                 |                         |
-                                    
-```
-
-- `data`: A `PacketDataBytes` instance.
-- `destination_device_identifier`: A `ExactAddressType` instance, that indicates exact target device address.
-- `lifetime`: A `LifeTimeType` instance.
-- `timeout`: An `ms` instance specifying how long to wait for a response.
-
-`main.rs`:
-```
-let _ = mesh_node.send_ping_pong(
-    message.into_bytes(),               // Content.
-    ExactAddressType::new(2).unwrap(),  // Send to device with address 2.
-    10 as LifeTimeType,                 // Let message travel 10 devices before being destroyed.
-    1000 as ms,                         // Set timeout to 1000 ms.
-    || {
-        Instant::now()
-            .duration_since(program_start_time)
-            .as_millis() as ms
-    },                                  // Closure providing current time in milliseconds.
-    &mut serial,                        // IO interface.
-);
-```
-
-### Send with Transaction Method
-Sends a message and handles all further work to
-ensure the target device have received it only once.
-Method returns an error if the transaction failed.
-
-`Transaction time diagram`:
-```
-                      +----------+              +----------+
-                      |  Sender  |              | Receiver |
-                      +--------- +              +----------+
-                           |                         |     
-    *Transaction start     | ---SendTransaction--->  |
-                           |                         |
-                   /       | <--AcceptTransaction--  |
-(increment packet id by 1) |                         |
-                   \       | ---InitTransaction--->  |    <--- Receiver has received the message
-                           |                         |
-    *Transaction finish    | <--FinishTransaction--  |
-                           |                         |
-                                    
-```
-
-The required arguments are:
-- `data`: A `PacketDataBytes` instance.
-- `destination_device_identifier`: A `ExactAddressType` instance, that indicates exact target device address.
-- `lifetime`: A `LifeTimeType` instance.
-- `timeout`: An `ms` instance to specify the response wait time.
-
-`main.rs`:
-```
-match mesh_node.send_with_transaction(
-    message.into_bytes(),               // Content.
-    ExactAddressType::new(2).unwrap(),  // Send to device with address 2.
-    10 as LifeTimeType,                 // Let message travel 10 devices before being destroyed.
-    2000 as ms,                         // Wait 2 seconds for response.
-    || {
-        Instant::now()
-            .duration_since(program_start_time)
-            .as_millis() as ms
-    },                                  // Closure providing current time in milliseconds.
-    &mut serial,                        // IO interface.
-);
 ```
 
 ### Update Method
