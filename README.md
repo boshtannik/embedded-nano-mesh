@@ -73,6 +73,9 @@ This protocol can be used for:
 - Decentralized messaging
 - etc.
 
+## Help to manage the development by filling that form:
+https://docs.google.com/forms/d/e/1FAIpQLSeB8In06PumPDxdIu-dGr79nFVyfd1nxgKnxvUXoItIFMfO7Q/viewform?usp=header
+
 ## Working principle:
 ### The way, how the protocol spreads the data:
 The protocol routes the packets in the most dumb way.
@@ -456,6 +459,10 @@ Under the hood, data is packed into a `Packet` instance.
 If you need customize packets for your needs - you need configure the `Packet`
 `./src/mesh_lib/node/packet/mod.rs` and `./src/mesh_lib/node/packet/types.rs`
 Also serialization and deserealization part shall be changed too.
+
+It is also Pure version of protocol released. It is made to cut memory usage
+even more. It is partially compatible with embedded-nano-mesh protocol.
+Pure version is located in "pure" branch.
 
 ## Support project:
 You can support project by
