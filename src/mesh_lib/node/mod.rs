@@ -136,6 +136,7 @@ impl Node {
     /// the message at least once or returns an error if the ping-pong exchange fails.
     /// The following arguments are required:
     ///
+    /// ```text
     /// `Ping-Pong time diagram`:
     ///            +----------+              +----------+
     ///            |  Sender  |              | Receiver |
@@ -145,7 +146,7 @@ impl Node {
     ///                 |                         |
     /// Ping-pong finish|   <-------Pong--------  |
     ///                 |                         |
-    ///
+    ///```
     ///`main.rs`:
     ///```
     ///let _ = mesh_node.send_ping_pong(
@@ -217,6 +218,7 @@ impl Node {
     /// ensure the target device have received it only once.
     /// Method returns an error if the transaction failed.
     ///
+    /// ```text
     /// `Transaction time diagram`:
     ///                       +----------+              +----------+
     ///                       |  Sender  |              | Receiver |
@@ -230,9 +232,10 @@ impl Node {
     ///                            |                         |
     ///     *Transaction finish    | <--FinishTransaction--  |
     ///                            |                         |
+    /// ```
     ///
     /// `main.rs`:
-    /// ```text
+    /// ```
     /// match mesh_node.send_with_transaction(
     ///     message.into_bytes(),               // Content.
     ///     ExactAddressType::new(2).unwrap(),  // Send to device with address 2.
