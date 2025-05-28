@@ -218,7 +218,6 @@ impl Node {
     /// Method returns an error if the transaction failed.
     ///
     /// `Transaction time diagram`:
-    /// ```
     ///                       +----------+              +----------+
     ///                       |  Sender  |              | Receiver |
     ///                       +--------- +              +----------+
@@ -231,10 +230,9 @@ impl Node {
     ///                            |                         |
     ///     *Transaction finish    | <--FinishTransaction--  |
     ///                            |                         |
-    /// ```
     ///
     /// `main.rs`:
-    /// ```
+    /// ```text
     /// match mesh_node.send_with_transaction(
     ///     message.into_bytes(),               // Content.
     ///     ExactAddressType::new(2).unwrap(),  // Send to device with address 2.
