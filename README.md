@@ -128,7 +128,7 @@ This will help this project grow.
 1 - Include library.
 `Cargo.toml`:
 ```
-embedded-nano-mesh = "2.1.1"
+embedded-nano-mesh = "2.1.8"
 ```
 
 2 - Include implementation of `embedded-io` or implement it for

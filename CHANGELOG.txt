@@ -52,3 +52,7 @@
 2.1.3 - * Fix of actual data length being sent.
 2.1.4 - * Google form for protocol improvement.
         * Add notification about "Pure" version.
+2.1.5 - * Duplications in documentation fix.
+2.1.6 - * Documentation fix.
+2.1.7 - * Documentation fix.
+2.1.8 - * Documentation fix.
