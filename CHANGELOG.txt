@@ -56,3 +56,4 @@
 2.1.6 - * Documentation fix.
 2.1.7 - * Documentation fix.
 2.1.8 - * Documentation fix.
+2.1.9 - * README rewrite.
