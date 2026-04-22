@@ -13,7 +13,7 @@ pub enum RegistrationError {
 
 struct PacketIgnorancePeriod {
     pub packet_unique_id: PacketUniqueId,
-    pub timeout: ms,
+    pub registered_at: ms,
 }
 
 type RegistrationEntryVec = Vec<PacketIgnorancePeriod, RECEIVER_FILTER_REGISTRATION_SIZE>;
@@ -52,7 +52,9 @@ impl Filter {
         let mut index_to_remove: Option<usize> = None;
 
         for (index, entry) in self.entry_registration_vec.iter().enumerate() {
-            if current_time > entry.timeout {
+            if current_time.wrapping_sub(entry.registered_at)
+                > RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD
+            {
                 index_to_remove.replace(index);
                 break;
             }
@@ -80,7 +82,7 @@ impl Filter {
 
         let new_entry = PacketIgnorancePeriod {
             packet_unique_id: packet_unique_identifier,
-            timeout: current_time + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD,
+            registered_at: current_time,
         };
 
         match self.entry_registration_vec.push(new_entry) {

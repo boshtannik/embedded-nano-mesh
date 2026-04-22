@@ -17,7 +17,7 @@ impl Timer {
     /// Tells if the time since last speak is enough to speak
     /// into the ether again.
     pub fn is_time_to_speak(&self, current_time: ms) -> bool {
-        current_time > { self.last_speak_time + self.listen_period }
+        current_time.wrapping_sub(self.last_speak_time) >= self.listen_period
     }
 
     /// Records current time as last speak time.

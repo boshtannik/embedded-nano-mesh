@@ -318,7 +318,7 @@ impl Node {
         M: Fn() -> ms,
     {
         let mut current_time = millis_provider();
-        let wait_end_time = current_time + timeout;
+        let start_time = current_time;
 
         while let Some(_) = self.receive() {} // Flush out all messages in the queuee.
 
@@ -342,7 +342,7 @@ impl Node {
             },
         };
 
-        while current_time < wait_end_time {
+        while current_time.wrapping_sub(start_time) < timeout {
             let _ = self.update(interface_driver, current_time);
 
             if let Some(answer) = self.receive() {
