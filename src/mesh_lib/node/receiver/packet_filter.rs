@@ -13,7 +13,7 @@ pub enum RegistrationError {
 
 struct PacketIgnorancePeriod {
     pub packet_unique_id: PacketUniqueId,
-    pub timeout: ms,
+    pub registered_at: ms,
 }
 
 type RegistrationEntryVec = Vec<PacketIgnorancePeriod, RECEIVER_FILTER_REGISTRATION_SIZE>;
@@ -52,7 +52,9 @@ impl Filter {
         let mut index_to_remove: Option<usize> = None;
 
         for (index, entry) in self.entry_registration_vec.iter().enumerate() {
-            if current_time > entry.timeout {
+            if current_time.wrapping_sub(entry.registered_at)
+                > RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD
+            {
                 index_to_remove.replace(index);
                 break;
             }
@@ -80,12 +82,93 @@ impl Filter {
 
         let new_entry = PacketIgnorancePeriod {
             packet_unique_id: packet_unique_identifier,
-            timeout: current_time + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD,
+            registered_at: current_time,
         };
 
         match self.entry_registration_vec.push(new_entry) {
             Ok(_) => Ok(()),
             Err(_) => Err(RegistrationError::RegistrationLimitExceeded),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mesh_lib::node::packet::{Packet, PacketDataBytes, PacketState};
+
+    // Construct a minimal packet with ignore_duplication_flag set.
+    // Unique ID is derived from (source_device_identifier, id).
+    fn make_packet(source: u8, id: u8) -> Packet {
+        Packet::new(
+            source,
+            2,
+            id,
+            1,
+            PacketState::Normal,
+            true,
+            PacketDataBytes::new(),
+        )
+    }
+
+    #[test]
+    fn duplicate_detected_within_ignore_period() {
+        let mut filter = Filter::new();
+        let t: ms = 1000;
+        let packet = make_packet(1, 0);
+        assert!(filter.filter_out_duplicated(packet.clone(), t).is_ok());
+        filter.update(t + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD - 1);
+        assert!(filter
+            .filter_out_duplicated(packet, t + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD - 1)
+            .is_err());
+    }
+
+    #[test]
+    fn entry_expires_after_ignore_period() {
+        let mut filter = Filter::new();
+        let t: ms = 1000;
+        let packet = make_packet(1, 0);
+        assert!(filter.filter_out_duplicated(packet.clone(), t).is_ok());
+        filter.update(t + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD + 1);
+        // Entry gone — same packet can be re-registered
+        assert!(filter
+            .filter_out_duplicated(packet, t + RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD + 1)
+            .is_ok());
+    }
+
+    #[test]
+    fn duplicate_detected_within_period_across_u32_wraparound() {
+        let mut filter = Filter::new();
+        // 500ms before overflow
+        let near_max: ms = u32::MAX - 500;
+        let packet = make_packet(1, 0);
+        assert!(filter
+            .filter_out_duplicated(packet.clone(), near_max)
+            .is_ok());
+
+        let t_100ms = near_max.wrapping_add(100);
+        filter.update(t_100ms);
+        assert!(
+            filter.filter_out_duplicated(packet, t_100ms).is_err(),
+            "entry evicted after 100ms; old code overflows deadline to 499 then fires immediately"
+        );
+    }
+
+    #[test]
+    fn entry_expires_after_period_across_u32_wraparound() {
+        let mut filter = Filter::new();
+        // 500ms before overflow
+        let near_max: ms = u32::MAX - 500;
+        let packet = make_packet(1, 0);
+        assert!(filter
+            .filter_out_duplicated(packet.clone(), near_max)
+            .is_ok());
+
+        let t_after = near_max.wrapping_add(RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD + 1);
+        filter.update(t_after);
+        assert!(
+            filter.filter_out_duplicated(packet, t_after).is_ok(),
+            "entry not evicted after 1001ms across wraparound"
+        );
     }
 }
