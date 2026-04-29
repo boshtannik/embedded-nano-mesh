@@ -302,6 +302,12 @@ impl Node {
         )
     }
 
+    /// Return the address of a node
+    /// Used for serial connections to learn which node is connected via serial
+    pub fn get_address(&self) -> ExactAddressType {
+        self.my_address
+    }
+
     fn _special_send<I, M>(
         &mut self,
         data: PacketDataBytes,
