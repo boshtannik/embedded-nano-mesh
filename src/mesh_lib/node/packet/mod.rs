@@ -30,8 +30,8 @@ pub use types::PacketState;
 #[derive(Clone)]
 pub struct Packet {
     pub source_device_identifier: AddressType,
-    destination_device_identifier: AddressType,
-    id: IdType,
+    pub destination_device_identifier: AddressType,
+    pub id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
     data_length: DataLengthType,
