@@ -31,7 +31,7 @@ pub use types::PacketState;
 pub struct Packet {
     pub source_device_identifier: AddressType,
     destination_device_identifier: AddressType,
-    id: IdType,
+    pub id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
     data_length: DataLengthType,
