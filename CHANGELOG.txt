@@ -58,3 +58,4 @@
 2.1.8 - * Documentation fix.
 2.1.9 - * README rewrite.
 2.1.10 - * Fix of wrap around millis counter. It overflows roughly after ~49 days of work. Now code handles that case.
+2.1.11 - * Make id field of `Packet` tyoe public.

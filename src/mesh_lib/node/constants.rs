@@ -1,5 +1,7 @@
 use super::ms;
 
+const SECOND: ms = 1000;
+
 pub const PACKET_QUEUE_SIZE: usize = 5;
 
 /// Start byte of packet. The device will recognize
@@ -14,7 +16,7 @@ pub const PACKET_START_BYTES_COUNT: usize = 3;
 pub const RECEIVER_FILTER_REGISTRATION_SIZE: usize = 8;
 
 /// Perid of time, during which duplicated packets will be ignored.
-pub const RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD: ms = 1000;
+pub const RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD: ms = SECOND;
 
 /// Size of read buffer from serial interface for receiver.
 pub const RECEIVER_READER_BUFFER_SIZE: usize = 1;

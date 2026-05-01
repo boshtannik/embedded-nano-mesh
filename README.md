@@ -88,7 +88,7 @@ automatically extends its range**.
 
 Add the library to your `Cargo.toml`:
 
-    embedded-nano-mesh = "2.1.10"
+    embedded-nano-mesh = "2.1.11"
 
 Then provide a serial interface using `embedded-io`.
 
@@ -260,7 +260,7 @@ layer.
 
 # Status
 
-Current version: **2.1.10**
+Current version: **2.1.11**
 
 Features:
 
