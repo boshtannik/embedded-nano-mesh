@@ -279,8 +279,7 @@ This prevents devices from synchronizing their transmissions.
 
 - Payload size: **32 bytes**
 - Max addresses: **255** (configurable, see below)
-- Receive queue: **5 packets**
-- Transit queue: **5 packets**
+- Packet queues: **5 packets** (received, send and transit, configurable)
 - Duplicate filter size: **8 packets**
 - Duplicate ignore period: **1000 ms**
 
@@ -296,6 +295,7 @@ environment variables take precedence over `.env`.
 | `ENM_RECEIVER_FILTER_REGISTRATION_SIZE` | how many packet ids can be remembered at once | `8` |
 | `ENM_RECEIVER_FILTER_OVERFLOW_STRATEGY` | what to do when the table is full: `evict_oldest` or `drop_new` | `evict_oldest` |
 | `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY` | what to do on a duplicate: `double_period` or `ignore` | `double_period` |
+| `ENM_PACKET_QUEUE_SIZE` | size of the packet queues (received, send and transit) | `5` |
 | `ENM_ADDRESS_BYTES` | wire size of the device address / lifetime field: `1` (u8), `2` (u16) or `4` (u32) | `1` |
 
 When the table is full, `evict_oldest` (default) removes the oldest entry
@@ -319,10 +319,11 @@ with default (`u8`) builds.
 Example:
 
     ENM_RECEIVER_FILTER_REGISTRATION_SIZE=16 cargo build
+    ENM_PACKET_QUEUE_SIZE=10 cargo build
     ENM_ADDRESS_BYTES=2 cargo build
 
-The other protocol limits (payload size, queue sizes) are fixed constants in
-the source code.
+The duplicate ignore period, the registration size, the queue size and the
+address size are also configurable through a `.env` file (see `.env.example`).
 
 ------------------------------------------------------------------------
 

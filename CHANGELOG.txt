@@ -97,3 +97,5 @@
           backoff). The old `ignore` behaviour is selectable via
           `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY=ignore`.
           * Builds, tests and packages cleanly on crates.io.
+3.2.0 - * New compile-time option `ENM_PACKET_QUEUE_SIZE`: size of the packet
+          queues (received, send and transit). Default: 5.

@@ -1,3 +1,23 @@
+# Release notes — embedded-nano-mesh 3.2.0
+
+## Summary
+
+Adds one new compile-time configuration option: the size of the packet
+queues (`ENM_PACKET_QUEUE_SIZE`). It is opt-in via environment variables or
+the `.env` file — the default build behaves exactly like 3.1.0.
+
+## What's new
+
+- `ENM_PACKET_QUEUE_SIZE` — set the size of the packet queues (received,
+  send and transit). Default: `5`.
+
+## Migration guide (3.1.0 → 3.2.0)
+
+No code changes are required. The API, the wire format and the default
+configuration are unchanged from 3.1.0.
+
+---
+
 # Release notes — embedded-nano-mesh 3.1.0
 
 ## Summary

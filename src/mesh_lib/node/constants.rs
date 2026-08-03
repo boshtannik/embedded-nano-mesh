@@ -2,7 +2,14 @@ use super::ms;
 
 const SECOND: ms = 1000;
 
-pub const PACKET_QUEUE_SIZE: usize = 5;
+/// Size of the packet queues (received, send and transit).
+///
+/// Configurable at compile time via the environment variable
+/// `ENM_PACKET_QUEUE_SIZE` or the `.env` file.
+pub const PACKET_QUEUE_SIZE: usize = match option_env!("ENM_PACKET_QUEUE_SIZE") {
+    Some(value) => parse_usize(value),
+    None => 5,
+};
 
 /// Start byte of packet. The device will recognize
 /// packets by this byte.
