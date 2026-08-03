@@ -1,4 +1,4 @@
-use super::super::types::IdType;
+use super::super::types::{IdType, LifeTimeType};
 use super::super::Packet;
 
 impl Packet {
@@ -18,7 +18,7 @@ impl Packet {
     }
 
     /// Returns the remaining packet lifetime (number of hops it can still travel).
-    pub fn get_lifetime(&self) -> u8 {
+    pub fn get_lifetime(&self) -> LifeTimeType {
         self.lifetime
     }
 }

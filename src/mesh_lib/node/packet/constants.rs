@@ -2,10 +2,17 @@ use super::{
     types::{AddressType, ChecksumType, DataLengthType, FlagsType, IdType, LifeTimeType},
     Packet,
 };
+use crate::mesh_lib::node::constants::parse_usize;
 use core::mem::size_of;
 
 /// Size of the content of the packet.
-pub const CONTENT_SIZE: usize = 32;
+///
+/// Configurable at compile time via the environment variable
+/// `ENM_PACKET_DATA_LENGTH` or the `.env` file.
+pub const CONTENT_SIZE: usize = match option_env!("ENM_PACKET_DATA_LENGTH") {
+    Some(value) => parse_usize(value),
+    None => 32,
+};
 
 /// Size of the packet in bytes.
 pub const PACKET_BYTES_SIZE: usize = Packet::size_of_bytes();

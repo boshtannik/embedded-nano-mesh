@@ -88,7 +88,7 @@ automatically extends its range**.
 
 Add the library to your `Cargo.toml`:
 
-    embedded-nano-mesh = "3.0.0"
+    embedded-nano-mesh = "3.1.0"
 
 Then provide a serial interface using `embedded-io`.
 
@@ -166,11 +166,17 @@ automatically ignored.
 
 This keeps the network from being flooded by echoes.
 
+When a duplicate of an already-known packet is detected, the default
+strategy (`double_period`) doubles the time window during which echoes are
+ignored — a simple anti-flood backoff: the busier the network, the longer
+echoes are suppressed. The alternative `ignore` strategy leaves the period
+unchanged.
+
 The filter remembers a limited number of packets at once. When its table is
-full, the default strategy (`evict_oldest`) drops the oldest entry and
-accepts the new packet, so legitimate traffic is never silently lost. Both
-the table size and the time window are configurable at compile time — see
-"Compile-time configuration" below.
+full, the default overflow strategy (`evict_oldest`) drops the oldest entry
+and accepts the new packet, so legitimate traffic is never silently lost.
+Both the table size and the time window are configurable at compile time —
+see "Compile-time configuration" below.
 
 ------------------------------------------------------------------------
 
@@ -272,7 +278,7 @@ This prevents devices from synchronizing their transmissions.
 # Protocol limits (default configuration)
 
 - Payload size: **32 bytes**
-- Max addresses: **255**
+- Max addresses: **255** (configurable, see below)
 - Receive queue: **5 packets**
 - Transit queue: **5 packets**
 - Duplicate filter size: **8 packets**
@@ -280,23 +286,40 @@ This prevents devices from synchronizing their transmissions.
 
 ## Compile-time configuration
 
-The duplicate filter settings are configurable at compile time, either via
-environment variables or a `.env` file in the project root (see
-`.env.example`). Real environment variables take precedence over `.env`.
+The protocol is configurable at compile time, either via environment
+variables or a `.env` file in the project root (see `.env.example`). Real
+environment variables take precedence over `.env`.
 
 | Variable | Meaning | Default |
 |----------|---------|---------|
 | `ENM_RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` | how long (ms) a packet id is remembered | `1000` |
 | `ENM_RECEIVER_FILTER_REGISTRATION_SIZE` | how many packet ids can be remembered at once | `8` |
 | `ENM_RECEIVER_FILTER_OVERFLOW_STRATEGY` | what to do when the table is full: `evict_oldest` or `drop_new` | `evict_oldest` |
+| `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY` | what to do on a duplicate: `double_period` or `ignore` | `double_period` |
+| `ENM_ADDRESS_BYTES` | wire size of the device address / lifetime field: `1` (u8), `2` (u16) or `4` (u32) | `1` |
 
 When the table is full, `evict_oldest` (default) removes the oldest entry
 and accepts the new packet, so legitimate new packets are never silently
 dropped in busy networks. `drop_new` rejects the new packet instead.
 
+When a duplicate of an already-known packet is detected, `double_period`
+(default) doubles the ignore period (anti-flood backoff); `ignore` leaves it
+unchanged.
+
+`ENM_ADDRESS_BYTES` controls the size of the device address and the packet
+lifetime on the wire:
+- `1` → `u8`: 255 addresses, max 255 hops (default)
+- `2` → `u16`: 65535 addresses, max 65535 hops
+- `4` → `u32`: 4 billion addresses, max 4 billion hops
+
+**Warning:** any value other than `1` changes the wire format, so all nodes
+in a network must be built with the same setting and cannot interoperate
+with default (`u8`) builds.
+
 Example:
 
     ENM_RECEIVER_FILTER_REGISTRATION_SIZE=16 cargo build
+    ENM_ADDRESS_BYTES=2 cargo build
 
 The other protocol limits (payload size, queue sizes) are fixed constants in
 the source code.
@@ -314,7 +337,7 @@ layer.
 
 # Status
 
-Current version: **3.0.0**
+Current version: **3.1.0**
 
 Features:
 

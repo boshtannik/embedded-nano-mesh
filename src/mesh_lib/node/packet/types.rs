@@ -1,4 +1,4 @@
-use super::constants::{ADDRESS_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, PACKET_BYTES_SIZE};
+use super::constants::{CONTENT_SIZE, PACKET_BYTES_SIZE};
 
 use heapless::Vec;
 
@@ -13,7 +13,12 @@ pub type FlagsType = u8;
 /// Type alias for device address identification number.
 /// It can contain only non-zero positive number.
 /// The zero value is reserved for broadcast address.
+#[cfg(enm_address_type_u8)]
 pub type ExactAddressType = core::num::NonZeroU8;
+#[cfg(enm_address_type_u16)]
+pub type ExactAddressType = core::num::NonZeroU16;
+#[cfg(enm_address_type_u32)]
+pub type ExactAddressType = core::num::NonZeroU32;
 /// Type to strict interaction with addressing during use of the library.
 /// It provides options to send packet to exact device or to all devices it can reach.
 #[derive(Eq, PartialEq, Clone)]
@@ -42,7 +47,7 @@ impl Into<AddressType> for GeneralAddressType {
 
 impl From<AddressType> for GeneralAddressType {
     fn from(address: AddressType) -> Self {
-        match core::num::NonZeroU8::new(address) {
+        match ExactAddressType::new(address) {
             Some(address) => Self::Exact(address),
             None => Self::Broadcast,
         }
@@ -50,7 +55,12 @@ impl From<AddressType> for GeneralAddressType {
 }
 
 /// Type alias for packet address identification number.
+#[cfg(enm_address_type_u8)]
 pub type AddressType = u8;
+#[cfg(enm_address_type_u16)]
+pub type AddressType = u16;
+#[cfg(enm_address_type_u32)]
+pub type AddressType = u32;
 
 /// Type alias for packet checksum.
 pub type ChecksumType = u8;
@@ -69,14 +79,21 @@ pub type PacketDataBytes = Vec<u8, { CONTENT_SIZE }>;
 
 /// Type alias that represents serialized packet bytes sequence.
 pub type PacketSerializedBytes = Vec<u8, { PACKET_BYTES_SIZE }>;
-impl FromBytes<ADDRESS_TYPE_SIZE> for AddressType {
-    fn from_be_bytes(bytes: [u8; ADDRESS_TYPE_SIZE]) -> Self {
+
+impl FromBytes<1> for u8 {
+    fn from_be_bytes(bytes: [u8; 1]) -> Self {
         Self::from_be_bytes(bytes)
     }
 }
 
-impl FromBytes<DATA_LENGTH_TYPE_SIZE> for DataLengthType {
-    fn from_be_bytes(bytes: [u8; DATA_LENGTH_TYPE_SIZE]) -> Self {
+impl FromBytes<2> for u16 {
+    fn from_be_bytes(bytes: [u8; 2]) -> Self {
+        Self::from_be_bytes(bytes)
+    }
+}
+
+impl FromBytes<4> for u32 {
+    fn from_be_bytes(bytes: [u8; 4]) -> Self {
         Self::from_be_bytes(bytes)
     }
 }

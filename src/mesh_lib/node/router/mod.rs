@@ -75,7 +75,9 @@ impl Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mesh_lib::node::packet::{Packet, PacketDataBytes};
+    use crate::mesh_lib::node::packet::{
+        AddressType, IdType, LifeTimeType, Packet, PacketDataBytes,
+    };
 
     fn make_packet(
         source: u8,
@@ -84,10 +86,10 @@ mod tests {
         ignore_duplication: bool,
     ) -> Packet {
         Packet::new(
-            source,
-            destination,
-            1,
-            lifetime,
+            source as AddressType,
+            destination as AddressType,
+            1 as IdType,
+            lifetime as LifeTimeType,
             ignore_duplication,
             PacketDataBytes::new(),
         )

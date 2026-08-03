@@ -1,3 +1,37 @@
+# Release notes — embedded-nano-mesh 3.1.0
+
+## Summary
+
+Adds two new compile-time configuration options on top of the non-blocking
+v3 core: a configurable device address size (`ENM_ADDRESS_BYTES`) and a new
+default duplicate filter strategy (`double_period`). Both are opt-in via
+environment variables or the `.env` file — the default build behaves exactly
+like 3.0.0.
+
+## What's new
+
+- `ENM_ADDRESS_BYTES` — select the wire type of the device address (and the
+  packet lifetime field):
+  - `1` → `u8` (255 addresses, max 255 hops, default)
+  - `2` → `u16` (65535 addresses, max 65535 hops)
+  - `4` → `u32` (4 billion addresses, max 4 billion hops)
+  The library compiles, tests and is verified in all three configurations.
+  Note: any value other than `1` changes the wire format and breaks
+  interoperability with default (`u8`) builds — all nodes in a network must
+  use the same setting.
+- Duplicate filter default strategy is now `double_period`: when a duplicate
+  of an already-known packet is detected, the ignore period is doubled
+  (simple anti-flood backoff). The previous `ignore` behaviour is still
+  available via `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY=ignore`.
+
+## Migration guide (3.0.0 → 3.1.0)
+
+No code changes are required. The API is unchanged; the wire format and the
+default configuration are unchanged from 3.0.0. If you relied on the old
+`ignore` duplicate strategy, set `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY=ignore`.
+
+---
+
 # Release notes — embedded-nano-mesh 3.0.0
 
 ## Summary

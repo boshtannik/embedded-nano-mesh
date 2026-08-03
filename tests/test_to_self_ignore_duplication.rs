@@ -40,7 +40,7 @@ mod tests {
         let _ = node_1.send_to_exact(
             NodeString::from_iter("This is the message from self".chars()).into_bytes(),
             ExactAddressType::try_from(1).unwrap(),
-            2.into(),
+2u8.into(),
             true,
         );
 

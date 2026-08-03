@@ -41,14 +41,14 @@ mod tests {
         let _ = node_1.send_to_exact(
             NodeString::from_iter("This is the message from node 1".chars()).into_bytes(),
             ExactAddressType::try_from(2).unwrap(),
-            1.into(),
+1u8.into(),
             true,
         );
 
         let _ = node_3.send_to_exact(
             NodeString::from_iter("This is the message from node 3".chars()).into_bytes(),
             ExactAddressType::try_from(2).unwrap(),
-            1.into(),
+1u8.into(),
             true,
         );
 

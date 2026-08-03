@@ -25,7 +25,23 @@ pub enum DuplicateFilterOverflowStrategy {
     DropNew,
 }
 
-const fn parse_usize(value: &str) -> usize {
+/// Strategy used by the duplicate filter when a duplicate of an
+/// already-known packet is detected.
+///
+/// Configurable at compile time via the environment variable
+/// `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY` or the `.env` file
+/// (`ignore` | `double_period`).
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum DuplicateFilterDuplicateStrategy {
+    /// Ignore the duplicate packet and leave the ignore period unchanged.
+    Ignore,
+    /// Ignore the duplicate packet and double the period during which
+    /// duplicates of any packet are ignored. This is a simple anti-flood
+    /// backoff: the busier the network, the longer echoes are suppressed.
+    DoublePeriod,
+}
+
+pub(crate) const fn parse_usize(value: &str) -> usize {
     let bytes = value.as_bytes();
     let mut result: usize = 0;
     let mut i = 0;
@@ -68,6 +84,16 @@ const fn parse_overflow_strategy(value: &str) -> DuplicateFilterOverflowStrategy
     panic!("invalid ENM_RECEIVER_FILTER_OVERFLOW_STRATEGY value");
 }
 
+const fn parse_duplicate_strategy(value: &str) -> DuplicateFilterDuplicateStrategy {
+    if str_eq_bytes(value, b"ignore") {
+        return DuplicateFilterDuplicateStrategy::Ignore;
+    }
+    if str_eq_bytes(value, b"double_period") {
+        return DuplicateFilterDuplicateStrategy::DoublePeriod;
+    }
+    panic!("invalid ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY value");
+}
+
 /// Count of filter's table, that holds reocords for packets, that
 /// need to be ignored.
 ///
@@ -98,6 +124,17 @@ pub const RECEIVER_FILTER_OVERFLOW_STRATEGY: DuplicateFilterOverflowStrategy =
     match option_env!("ENM_RECEIVER_FILTER_OVERFLOW_STRATEGY") {
         Some(value) => parse_overflow_strategy(value),
         None => DuplicateFilterOverflowStrategy::EvictOldest,
+    };
+
+/// Strategy applied when a duplicate of an already-known packet is
+/// detected.
+///
+/// Configurable at compile time via the environment variable
+/// `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY` or the `.env` file.
+pub const RECEIVER_FILTER_DUPLICATE_STRATEGY: DuplicateFilterDuplicateStrategy =
+    match option_env!("ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY") {
+        Some(value) => parse_duplicate_strategy(value),
+        None => DuplicateFilterDuplicateStrategy::DoublePeriod,
     };
 
 /// Size of read buffer from serial interface for receiver.

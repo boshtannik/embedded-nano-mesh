@@ -87,3 +87,13 @@
             When the table is full, the default `evict_oldest` strategy no
             longer silently drops legitimate new packets.
           * `Filter::update()` now evicts all expired entries in one pass.
+3.1.0 - * New compile-time option `ENM_ADDRESS_BYTES` (1/2/4): select the wire
+          type of the device address and the packet lifetime field (u8/u16/u32).
+          All three configurations compile and pass the test suite.
+          Warning: values other than 1 change the wire format, so all nodes in
+          a network must share the same setting.
+          * Duplicate filter default strategy changed to `double_period`
+          (doubles the ignore period on duplicates — simple anti-flood
+          backoff). The old `ignore` behaviour is selectable via
+          `ENM_RECEIVER_FILTER_DUPLICATE_STRATEGY=ignore`.
+          * Builds, tests and packages cleanly on crates.io.

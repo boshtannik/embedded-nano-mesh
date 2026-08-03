@@ -3,7 +3,8 @@ use heapless::Vec;
 
 use crate::mesh_lib::node::{
     constants::{
-        DuplicateFilterOverflowStrategy, RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD,
+        DuplicateFilterDuplicateStrategy, DuplicateFilterOverflowStrategy,
+        RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD, RECEIVER_FILTER_DUPLICATE_STRATEGY,
         RECEIVER_FILTER_OVERFLOW_STRATEGY, RECEIVER_FILTER_REGISTRATION_SIZE,
     },
     packet::{Packet, PacketFlagOps, PacketUniqueId, UniqueIdExtractor},
@@ -33,12 +34,17 @@ type RegistrationEntryVec = Vec<PacketIgnorancePeriod, RECEIVER_FILTER_REGISTRAT
 pub struct Filter {
     // Should be better use hashmaps, but it didn't succeed.
     entry_registration_vec: RegistrationEntryVec,
+    /// The currently active ignore period. Starts from the compile-time
+    /// configured value and may grow when the `double_period` duplicate
+    /// strategy is enabled.
+    current_ignore_period: ms,
 }
 
 impl Filter {
     pub fn new() -> Filter {
         Filter {
             entry_registration_vec: RegistrationEntryVec::new(),
+            current_ignore_period: RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD,
         }
     }
 
@@ -55,7 +61,24 @@ impl Filter {
                 current_time,
             ) {
                 Ok(()) => Ok(packet),
+                Err(RegistrationError::DuplicationFound) => {
+                    self._on_duplicate_detected();
+                    Err(RegistrationError::DuplicationFound)
+                }
                 Err(error) => Err(error),
+            }
+        }
+    }
+
+    /// Hook called every time a duplicate of a known packet is detected.
+    ///
+    /// With the `double_period` strategy this doubles the ignore period,
+    /// so a flooding network suppresses echoes for longer and longer.
+    fn _on_duplicate_detected(&mut self) {
+        match RECEIVER_FILTER_DUPLICATE_STRATEGY {
+            DuplicateFilterDuplicateStrategy::Ignore => (),
+            DuplicateFilterDuplicateStrategy::DoublePeriod => {
+                self.current_ignore_period = self.current_ignore_period.saturating_mul(2);
             }
         }
     }
@@ -64,7 +87,7 @@ impl Filter {
         let mut index = 0;
         while index < self.entry_registration_vec.len() {
             if current_time.wrapping_sub(self.entry_registration_vec[index].registered_at)
-                > RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD
+                > self.current_ignore_period
             {
                 self.entry_registration_vec.swap_remove(index);
             } else {
@@ -127,12 +150,19 @@ impl Filter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mesh_lib::node::packet::{Packet, PacketDataBytes};
+    use crate::mesh_lib::node::packet::{AddressType, LifeTimeType, Packet, PacketDataBytes};
 
     // Construct a minimal packet with ignore_duplication_flag set.
     // Unique ID is derived from (source_device_identifier, id).
     fn make_packet(source: u8, id: u8) -> Packet {
-        Packet::new(source, 2, id, 1, true, PacketDataBytes::new())
+        Packet::new(
+            source as AddressType,
+            2 as AddressType,
+            id,
+            1 as LifeTimeType,
+            true,
+            PacketDataBytes::new(),
+        )
     }
 
     #[test]

@@ -1,3 +1,4 @@
+#[cfg(enm_address_type_u8)]
 #[cfg(test)]
 mod tests {
     extern crate std;
@@ -333,7 +334,7 @@ mod tests {
             let result = match node_v2_src.send_ping_pong(
                 NodeStringV2::from_iter("ping through v3 relay".chars()).into_bytes(),
                 ExactAddressTypeV2::try_from(3).unwrap(),
-                3.into(),
+3u8.into(),
                 600 as ms_v2,
                 || Instant::now().duration_since(start_time).as_millis() as ms_v2,
                 &mut modem_1,
@@ -421,7 +422,7 @@ mod tests {
             let result = match node_v2_src.send_with_transaction(
                 NodeStringV2::from_iter("transaction through v3 relay".chars()).into_bytes(),
                 ExactAddressTypeV2::try_from(3).unwrap(),
-                5.into(),
+5u8.into(),
                 1200 as ms_v2,
                 || Instant::now().duration_since(start_time).as_millis() as ms_v2,
                 &mut modem_1,
