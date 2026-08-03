@@ -1,3 +1,7 @@
+use super::super::constants::{
+    ACCEPT_TRANSACTION_FLAG, FINISH_TRANSACTION_FLAG, IGNORE_DUPLICATIONS_FLAG,
+    INITIATE_TRANSACTION_FLAG, PING_FLAG, PONG_FLAG, SEND_TRANSACTION_FLAG,
+};
 use super::super::{Packet, PacketFlagOps, PacketState};
 
 impl Packet {
@@ -24,17 +28,18 @@ impl Packet {
     }
 
     pub fn set_spec_state(&mut self, new_state: PacketState) {
-        let is_ignore_duplication_flag_set = self.is_ignore_duplication_flag_set();
-        self.flags = 0;
-        match new_state {
-            PacketState::Normal => (),
-            PacketState::Ping => self.set_ping_flag(true),
-            PacketState::Pong => self.set_pong_flag(true),
-            PacketState::SendTransaction => self.set_send_transaction_flag(true),
-            PacketState::AcceptTransaction => self.set_accept_transaction_flag(true),
-            PacketState::InitTransaction => self.set_initiate_transaction_flag(true),
-            PacketState::FinishTransaction => self.set_finish_transaction_flag(true),
-        }
-        self.set_ignore_duplication_flag(is_ignore_duplication_flag_set);
+        self.flags = (self.flags & IGNORE_DUPLICATIONS_FLAG) | state_flag(new_state);
+    }
+}
+
+fn state_flag(new_state: PacketState) -> u8 {
+    match new_state {
+        PacketState::Normal => 0,
+        PacketState::Ping => PING_FLAG,
+        PacketState::Pong => PONG_FLAG,
+        PacketState::SendTransaction => SEND_TRANSACTION_FLAG,
+        PacketState::AcceptTransaction => ACCEPT_TRANSACTION_FLAG,
+        PacketState::InitTransaction => INITIATE_TRANSACTION_FLAG,
+        PacketState::FinishTransaction => FINISH_TRANSACTION_FLAG,
     }
 }
