@@ -130,3 +130,44 @@ where
     }
     T::from_be_bytes(field)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::super::{Packet, PacketDataBytes, Serializer, PACKET_BYTES_SIZE};
+
+    fn make_packet() -> Packet {
+        let data: PacketDataBytes = (0..32).collect();
+        Packet::new(1, 2, 7, 5, true, data)
+    }
+
+    #[test]
+    fn serialized_size_is_packet_size() {
+        assert_eq!(make_packet().summarized().serialized().len(), PACKET_BYTES_SIZE);
+    }
+
+    #[test]
+    fn round_trip_preserves_fields() {
+        let packet = make_packet().summarized();
+        let bytes = packet.clone().serialized();
+        let restored = <Packet as Serializer>::deserialize(bytes);
+
+        assert_eq!(restored.source_device_identifier, packet.source_device_identifier);
+        assert_eq!(restored.id, packet.id);
+        assert_eq!(restored.data, packet.data);
+        assert_eq!(restored.data_length, packet.data_length);
+        assert_eq!(restored.lifetime, packet.lifetime);
+        assert_eq!(restored.flags, packet.flags);
+        assert!(restored.is_checksum_correct());
+    }
+
+    #[test]
+    fn corrupted_packet_fails_checksum() {
+        let packet = make_packet().summarized();
+        let mut bytes = packet.serialized();
+        let last = bytes.len() - 1;
+        bytes[last] = bytes[last].wrapping_add(1);
+
+        let restored = <Packet as Serializer>::deserialize(bytes);
+        assert!(!restored.is_checksum_correct());
+    }
+}

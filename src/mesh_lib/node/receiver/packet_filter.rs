@@ -95,20 +95,12 @@ impl Filter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mesh_lib::node::packet::{Packet, PacketDataBytes, PacketState};
+    use crate::mesh_lib::node::packet::{Packet, PacketDataBytes};
 
     // Construct a minimal packet with ignore_duplication_flag set.
     // Unique ID is derived from (source_device_identifier, id).
     fn make_packet(source: u8, id: u8) -> Packet {
-        Packet::new(
-            source,
-            2,
-            id,
-            1,
-            PacketState::Normal,
-            true,
-            PacketDataBytes::new(),
-        )
+        Packet::new(source, 2, id, 1, true, PacketDataBytes::new())
     }
 
     #[test]

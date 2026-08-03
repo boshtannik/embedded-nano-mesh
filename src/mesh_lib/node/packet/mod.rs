@@ -7,11 +7,9 @@ pub mod implementations;
 pub mod trait_implementations;
 pub mod traits;
 
-pub use implementations::{PacketLifetimeEnded, RespondToBroadcastAddressError};
+pub use implementations::PacketLifetimeEnded;
 
-pub use traits::{
-    FromBytes, PacketFlagOps, PacketUniqueId, Serializer, StateMutator, UniqueIdExtractor,
-};
+pub use traits::{FromBytes, PacketFlagOps, PacketUniqueId, Serializer, UniqueIdExtractor};
 
 pub use constants::{
     ADDRESS_TYPE_SIZE, CHECKSUM_TYPE_SIZE, CONTENT_SIZE, DATA_LENGTH_TYPE_SIZE, FLAGS_TYPE_SIZE,
@@ -25,27 +23,37 @@ pub use self::types::{
     PacketSerializedBytes,
 };
 
-pub use types::PacketState;
-
-#[derive(Clone)]
+/// A packet that is transmitted over the mesh network.
+///
+/// The packet has a fixed wire format of 40 bytes:
+/// source address, destination address, id, lifetime, flags,
+/// data length, 32 bytes of data and a checksum.
+#[derive(Clone, Debug)]
 pub struct Packet {
+    /// Address of the device that sent the packet.
     pub source_device_identifier: AddressType,
     destination_device_identifier: AddressType,
+    /// Packet identification number assigned by the sender.
     pub id: IdType,
     lifetime: LifeTimeType,
     flags: FlagsType,
     data_length: DataLengthType,
+    /// Payload of the packet, zero-padded up to `CONTENT_SIZE` bytes.
     pub data: PacketDataBytes,
     checksum: ChecksumType,
 }
 
 impl Packet {
+    /// Creates a new packet with the given addresses, id, lifetime and data.
+    ///
+    /// `ignore_duplications_flag` tells other nodes whether they shall
+    /// filter echoes of this packet. The payload is zero-padded up to
+    /// `CONTENT_SIZE` bytes; the real length is stored in `data_length`.
     pub fn new(
         source_device_identifier: AddressType,
         destination_device_identifier: AddressType,
         id: IdType,
         lifetime: LifeTimeType,
-        spec_state: PacketState,
         ignore_duplications_flag: bool,
         mut data: PacketDataBytes,
     ) -> Packet {
@@ -64,17 +72,17 @@ impl Packet {
             checksum: ChecksumType::MIN,
         };
         new_packet.set_ignore_duplication_flag(ignore_duplications_flag);
-        new_packet.set_spec_state(spec_state);
         new_packet
     }
 
-    // Because some one can form and transmit packet that is marked
-    // to be sent from broadcast address for example, which should
-    // not be possible case. This method helps prevent it.
+    /// Checks that the packet was sent from a valid (non-zero) address.
+    /// This prevents handling of packets that pretend to be sent from
+    /// the broadcast address, which must not happen in a real network.
     pub fn has_correct_source_device_identifier(&self) -> bool {
         ExactAddressType::new(self.source_device_identifier).is_some()
     }
 
+    /// Returns the size of a serialized packet in bytes (40).
     pub const fn size_of_bytes() -> usize {
         ADDRESS_TYPE_SIZE               // source_device_identifier
         + ADDRESS_TYPE_SIZE             // destination_device_identifier

@@ -59,3 +59,24 @@
 2.1.9 - * README rewrite.
 2.1.10 - * Fix of wrap around millis counter. It overflows roughly after ~49 days of work. Now code handles that case.
 2.1.11 - * Make id field of `Packet` tyoe public.
+3.0.0 - * BREAKING: Removed blocking `send_ping_pong` and `send_with_transaction` methods.
+          They blocked the program flow while waiting for a response, which is
+          unacceptable in a single-threaded embedded event loop.
+          * Removed related `PacketState`, `StateMutator`, ping/pong and transaction flags.
+          * Reliability (ack, retry, transactions) is now application layer responsibility,
+          built on top of `send_to_exact` / `broadcast` / `receive`.
+          * Simplified `Router` - only receive / transit / broadcast handling remains.
+          * Added unit tests for router, packet serialization round-trip and checksum.
+          * Added `Packet::get_lifetime()` getter.
+          * Protocol stays fully `no_std`, `embedded-io` based, Arduino friendly.
+          * Wire format is UNCHANGED: v3 nodes are fully interoperable with v2 nodes.
+            Verified by a new integration test suite (`test_version_compatibility.rs`)
+            that runs v3 and v2.1.11 nodes in the same simulated ether (proto-lab):
+            send_to_exact, broadcast, 2-hop transit and ping-pong through a v3 relay
+            all work across versions. The test prints a compatibility matrix that is
+            mirrored in the README.
+            Known limitation: v2 `send_with_transaction` cannot complete through a v3
+            relay node (v3 duplicate filter drops the `FinishTransaction` step).
+          * License changed to SPDX `MIT OR Apache-2.0 OR GPL-3.0-or-later`
+            (users may choose the license that fits them best).
+          * Full public API documentation (no `missing_docs` warnings).

@@ -16,9 +16,9 @@ checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
 
 [[package]]
 name = "embedded-nano-mesh"
-version = "2.1.7"
+version = "2.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90a8e1aa76f12270ad8c691597fc92e7fb39dd08a41bfc6e91a8ec74bec777ff"
+checksum = "62b1765057f8792fcbaf5e531c119de95bf2db278b5bb19b294ad85994c765fa"
 dependencies = [
  "embedded-io",
  "heapless",
@@ -26,9 +26,10 @@ dependencies = [
 
 [[package]]
 name = "embedded-nano-mesh"
-version = "2.1.11"
+version = "3.0.0"
 dependencies = [
  "embedded-io",
+ "embedded-nano-mesh 2.1.11",
  "heapless",
  "proto-lab",
 ]
@@ -69,7 +70,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd6da1b3c2eb8e5a7743d4eaeddd9630261f8282850e0b0d5b4f3666f9f31d02"
 dependencies = [
  "embedded-io",
- "embedded-nano-mesh 2.1.7",
+ "embedded-nano-mesh 2.1.11",
 ]
 
 [[package]]

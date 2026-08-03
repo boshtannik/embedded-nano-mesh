@@ -11,5 +11,6 @@ pub type ParserBytesBuffer = Deque<u8, { PACKET_BYTES_SIZE + PACKET_START_BYTES_
 /// to simplify messaging between nodes.
 pub type NodeString = String<{ super::packet::CONTENT_SIZE }>;
 
+/// Type alias for milliseconds. All time related values use this type.
 #[allow(non_camel_case_types)]
 pub type ms = u32;
