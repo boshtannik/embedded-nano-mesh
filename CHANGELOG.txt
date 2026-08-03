@@ -80,3 +80,10 @@
           * License changed to SPDX `MIT OR Apache-2.0 OR GPL-3.0-or-later`
             (users may choose the license that fits them best).
           * Full public API documentation (no `missing_docs` warnings).
+          * Duplicate filter is now compile-time configurable via environment
+            variables or a `.env` file (see `.env.example`):
+            ignore period, table size, and overflow strategy
+            (`evict_oldest` default | `drop_new`).
+            When the table is full, the default `evict_oldest` strategy no
+            longer silently drops legitimate new packets.
+          * `Filter::update()` now evicts all expired entries in one pass.

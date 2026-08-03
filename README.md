@@ -166,6 +166,12 @@ automatically ignored.
 
 This keeps the network from being flooded by echoes.
 
+The filter remembers a limited number of packets at once. When its table is
+full, the default strategy (`evict_oldest`) drops the oldest entry and
+accepts the new packet, so legitimate traffic is never silently lost. Both
+the table size and the time window are configurable at compile time — see
+"Compile-time configuration" below.
+
 ------------------------------------------------------------------------
 
 # Version compatibility
@@ -272,7 +278,28 @@ This prevents devices from synchronizing their transmissions.
 - Duplicate filter size: **8 packets**
 - Duplicate ignore period: **1000 ms**
 
-These values can be adjusted if needed.
+## Compile-time configuration
+
+The duplicate filter settings are configurable at compile time, either via
+environment variables or a `.env` file in the project root (see
+`.env.example`). Real environment variables take precedence over `.env`.
+
+| Variable | Meaning | Default |
+|----------|---------|---------|
+| `ENM_RECEIVER_FILTER_DUPLICATE_IGNORE_PERIOD` | how long (ms) a packet id is remembered | `1000` |
+| `ENM_RECEIVER_FILTER_REGISTRATION_SIZE` | how many packet ids can be remembered at once | `8` |
+| `ENM_RECEIVER_FILTER_OVERFLOW_STRATEGY` | what to do when the table is full: `evict_oldest` or `drop_new` | `evict_oldest` |
+
+When the table is full, `evict_oldest` (default) removes the oldest entry
+and accepts the new packet, so legitimate new packets are never silently
+dropped in busy networks. `drop_new` rejects the new packet instead.
+
+Example:
+
+    ENM_RECEIVER_FILTER_REGISTRATION_SIZE=16 cargo build
+
+The other protocol limits (payload size, queue sizes) are fixed constants in
+the source code.
 
 ------------------------------------------------------------------------
 
